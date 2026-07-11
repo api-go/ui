@@ -1,0 +1,21 @@
+name: IconPicker
+purpose: Search and choose a Bootstrap Icons name.
+
+properties:
+  value: string; selected icon name without the 'bi-' prefix
+
+example: |
+  <script>
+    const selectedIcon = 'house'
+    const menu = { icon: 'heart' }
+    const menuSchema = [{ name: 'icon', label: 'Icon', type: 'IconPicker' }]
+  </script>
+
+  <IconPicker $.state.value="selectedIcon"></IconPicker>
+  <AutoForm $.state.data="menu" $.state.schema="menuSchema"></AutoForm>
+
+events:
+  change: detail is the selected icon name
+
+related:
+  - ../AutoForm.yaml

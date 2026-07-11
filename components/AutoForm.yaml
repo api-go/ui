@@ -1,0 +1,65 @@
+name: AutoForm
+purpose: Render and submit a form from a schema array.
+
+attributes:
+  vertical: boolean
+  horizontal: boolean
+  inline: boolean
+  nobutton: boolean
+  submitlabel: string
+
+state:
+  data: object; form values, keyed by schema.name
+  schema: array; field definitions
+
+properties:
+  api: API element used by submit when present.
+  request: HTTP request defaults used when api is absent.
+  response: Latest full HTTP response after submit.
+  result: Latest response.result after submit.
+
+schema:
+  item: "{name, type, label?, setting?, options?, placeholder?, if?}"
+  types: "text|password|email|number|date|datetime|file|select|checkbox|radio|switch|textarea|DatePicker|ColorPicker|IconPicker|TagsInput"
+  options: "select/checkbox/radio options: ['A', {value:'b', label:'B'}]"
+  setting: "attributes copied to the control; DatePicker rangeEnd is an example"
+  if: 'JavaScript expression evaluated by `$$if`; use component data through `this.data`, for example `this.data.role === "admin"`.'
+
+submit:
+  source: Set api to an API element, or set request.url.
+  method: form.submit(options); options override request defaults.
+  events: "submit (cancelable, detail=data), response (detail=response), error (detail=Error)"
+  result: "response is full HTTP response; result is response.result"
+
+examples:
+  basic: |
+    <script>
+      const profile = { name: 'Ada', role: 'admin', tags: ['math'] }
+      const profileSchema = [
+        { name: 'name', label: 'Name', type: 'text', setting: { required: true } },
+        { name: 'role', label: 'Role', type: 'select', options: [{ value: 'admin', label: 'Admin' }, { value: 'user', label: 'User' }] },
+        { name: 'tags', label: 'Tags', type: 'TagsInput' }
+      ]
+    </script>
+    <AutoForm $.state.data="profile" $.state.schema="profileSchema"></AutoForm>
+  submit_api: |
+    <script>
+      const profile = { name: 'Ada' }
+      const profileSchema = [{ name: 'name', label: 'Name', type: 'text' }]
+    </script>
+    <API id="saveApi" $.request="{ url: '/api/profile', method: 'POST' }"></API>
+    <AutoForm id="form" $.api="saveApi" $.state.data="profile" $.state.schema="profileSchema" $onresponse="console.log(event.detail.result)"></AutoForm>
+  custom_actions: |
+    <AutoForm id="form" nobutton $.state.data="profile" $.state.schema="profileSchema">
+      <div slot="actions" $onclick="this.submit()">Save</div>
+    </AutoForm>
+
+related:
+  - ../API.yaml
+  - DatePicker.yaml
+  - ColorPicker.yaml
+  - IconPicker.yaml
+  - TagsInput.yaml
+
+tests:
+  - AutoForm.test.html

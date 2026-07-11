@@ -1,0 +1,28 @@
+name: Modal
+
+binding:
+  behavior: Bind a boolean with $bind to show or hide the modal.
+
+state:
+  title: Default header title.
+  type: Bootstrap contextual type. Default is primary.
+
+methods:
+  show: Show the Bootstrap modal.
+  hide: Hide the Bootstrap modal.
+
+events:
+  change:
+    detail: false when the modal is hidden.
+
+slots:
+  header: Replace the modal header.
+  body: Replace the modal body.
+  footer: Replace the modal footer.
+
+example: |
+  <Modal id="editModal" title="Edit user">
+    <div slot="body"><input id="nameInput"></div>
+    <div slot="footer"><button $onclick="editModal.hide()">Close</button></div>
+  </Modal>
+  <button $onclick="editModal.show()">Edit</button>

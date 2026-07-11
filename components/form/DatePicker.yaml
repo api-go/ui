@@ -1,0 +1,38 @@
+name: DatePicker
+purpose: Native date input. In AutoForm, rangeEnd edits a second field as one date range.
+
+attributes:
+  range: boolean; show a standalone end-date input
+  rangeend: string; second AutoForm data field; schema setting.rangeEnd takes precedence
+
+properties:
+  value: string; start date, YYYY-MM-DD
+
+state:
+  start: string; start date, YYYY-MM-DD
+  end: string; end date, YYYY-MM-DD when range is enabled
+
+events:
+  change: detail is the changed date string
+
+examples:
+  single_and_range: |
+    <script>
+      const booking = { birthday: '1990-01-01', from: '2026-01-01', to: '2026-01-31' }
+      const bookingSchema = [
+        { name: 'birthday', label: 'Birthday', type: 'DatePicker' },
+        { name: 'from', label: 'Period', type: 'DatePicker', setting: { rangeEnd: 'to' } }
+      ]
+    </script>
+
+    <DatePicker $bind="booking.birthday"></DatePicker>
+    <DatePicker range></DatePicker>
+    <AutoForm $.state.data="booking" $.state.schema="bookingSchema"></AutoForm>
+
+rules:
+  - Define page data before DatePicker is parsed.
+  - Use range for a standalone visual range; read its state.start and state.end.
+  - In AutoForm, declare setting.rangeEnd on the start field; the end field does not need its own schema item.
+
+related:
+  - ../AutoForm.yaml

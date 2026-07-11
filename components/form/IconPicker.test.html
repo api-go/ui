@@ -1,0 +1,78 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>components.form.IconPicker tests</title>
+  <script>
+    const selectedIcon = 'house'
+    const menu = { icon: 'heart' }
+    const menuSchema = [{ name: 'icon', label: 'Icon', type: 'IconPicker' }]
+  </script>
+  <script src="../../ui.js" components="IconPicker"></script>
+</head>
+<body class="vh-100 overflow-hidden bg-body-tertiary">
+  <div class="container py-3 h-100 d-flex flex-column gap-3">
+    <header class="d-flex align-items-center gap-2 flex-shrink-0">
+      <h1 class="h4 mb-0">components.form.IconPicker</h1>
+      <span id="status" class="badge text-bg-secondary">未测试</span>
+      <button id="runAll" class="btn btn-primary btn-sm ms-auto" type="button">测试全部</button>
+    </header>
+
+    <main class="flex-fill overflow-auto">
+      <div class="card"><div class="card-body d-grid gap-3">
+        <IconPicker id="iconPicker" style="height: 2.5rem" $.state.value="selectedIcon"></IconPicker>
+        <AutoForm id="menuForm" $.state.data="menu" $.state.schema="menuSchema"></AutoForm>
+      </div></div>
+    </main>
+
+    <pre id="result" class="h-25 overflow-auto border rounded bg-body p-2 mb-0 flex-shrink-0 small"></pre>
+  </div>
+  <script>
+    const cases = ['value', 'open', 'search', 'clear-search', 'change', 'outside-close', 'autoform']
+    const consoleErrors = []
+    const originalConsoleError = console.error
+    console.error = (...args) => { consoleErrors.push(args.map(String).join(' ')); originalConsoleError(...args) }
+    addEventListener('error', event => consoleErrors.push(String(event.message || event.error || event)))
+    addEventListener('unhandledrejection', event => consoleErrors.push(String(event.reason || event)))
+    const tick = () => new Promise(resolve => setTimeout(resolve, 80))
+    const assert = (result, feature, condition, message) => { result.assertions++; if (condition) result.passed++; else { result.failed++; result.failures.push({ feature, message }) } }
+    const finish = result => {
+      result.consoleErrors = [...consoleErrors]
+      result.coverage.tested = [...cases]
+      result.coverage.percent = 100
+      result.status = result.failed || result.consoleErrors.length ? 'failed' : 'passed'
+      const status = document.querySelector('#status')
+      status.className = 'badge text-bg-' + (result.status === 'passed' ? 'success' : 'danger')
+      status.textContent = result.status === 'passed' ? '通过' : '失败'
+      document.querySelector('#result').textContent = JSON.stringify(result, null, 2)
+      globalThis.testResult = result
+      return result
+    }
+    globalThis.runTest = async () => {
+      consoleErrors.length = 0
+      const result = { name: 'components.form.IconPicker', status: 'running', assertions: 0, passed: 0, failed: 0, failures: [], consoleErrors: [], coverage: { tested: [], total: cases, percent: 0 } }
+      await tick()
+      const picker = document.querySelector('#iconPicker')
+      assert(result, 'value', picker.value === 'house' && picker.textContent.includes('house'), 'direct value binding renders the selected icon')
+      picker.querySelector('button').click(); await tick()
+      assert(result, 'open', picker.state.open && picker.querySelector('.dropdown-menu').classList.contains('show'), 'trigger opens the icon menu')
+      const search = picker.querySelector('input')
+      search.value = 'alarm'; search.dispatchEvent(new Event('input')); await tick()
+      assert(result, 'search', picker.querySelectorAll('button[title="alarm"]').length === 1, 'search narrows the icon choices')
+      search.value = ''; search.dispatchEvent(new Event('input')); await tick()
+      assert(result, 'clear-search', picker.querySelectorAll('button[title]').length === 606, 'clearing the search restores the complete icon list')
+      search.value = 'alarm'; search.dispatchEvent(new Event('input')); await tick()
+      let changed
+      picker.addEventListener('change', event => { changed = event.detail }, { once: true })
+      picker.querySelector('button[title="alarm"]').click(); await tick()
+      assert(result, 'change', changed === 'alarm' && picker.value === 'alarm' && !picker.state.open, 'selecting an icon updates value, closes the menu, and emits its name')
+      picker.querySelector('button').click(); await tick(); document.body.dispatchEvent(new MouseEvent('click', { bubbles: true })); await tick()
+      assert(result, 'outside-close', !picker.state.open && picker.querySelector('.dropdown-menu').classList.contains('d-none'), 'outside click closes and hides the icon menu')
+      assert(result, 'autoform', document.querySelector('#menuForm IconPicker')?.value === 'heart', 'AutoForm renders and binds the registered IconPicker field')
+      return finish(result)
+    }
+    document.querySelector('#runAll').onclick = globalThis.runTest
+  </script>
+</body>
+</html>

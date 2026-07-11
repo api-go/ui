@@ -1,0 +1,42 @@
+name: DataChart
+
+constructor:
+  signature: new DataChart(canvas, options)
+  options:
+    type: line, bar, or pie. Default is line.
+    data: Chart.js data object or source object array.
+    options: Chart.js options object.
+    map: "{ labels, values, label } for source object arrays."
+
+component:
+  attributes:
+    type: line, bar, or pie.
+  state:
+    data: Chart.js data object or source object array.
+    options: Chart.js options.
+    map: "{ labels, values, label }"
+  property:
+    chartInstance: Underlying DataChart instance.
+
+methods:
+  update: Update optional data and redraw.
+  destroy: Destroy the underlying Chart.js instance.
+
+rules:
+  - Give the DataChart container an explicit height.
+  - Use map only when data is an array of objects.
+  - DataChart destroys its Chart.js instance when the component unloads.
+
+example: |
+  <DataChart id="sales" type="bar"></DataChart>
+  <script>
+  const chart = document.querySelector('#sales')
+  chart.state.data = [
+    { month: 'Jan', amount: 12 },
+    { month: 'Feb', amount: 18 }
+  ]
+  chart.state.map = { labels: 'month', values: 'amount' }
+  </script>
+
+tests:
+  - apigo.cc/web/chart/test/all.spec.js

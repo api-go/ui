@@ -1,0 +1,21 @@
+name: Dialog
+
+purpose: Modal-based alert and confirmation dialog.
+
+methods:
+  Dialog.show: Show a custom dialog and resolve with its button index.
+  Dialog.alert: Show a message and resolve after closing.
+  Dialog.confirm: Show Cancel/Confirm and resolve to boolean.
+
+state:
+  title: Dialog title.
+  message: Dialog body text.
+  buttons: Button labels.
+  type: Bootstrap contextual type.
+
+examples:
+  alert: "Dialog.alert('Saved successfully')"
+  confirm: "Dialog.confirm('Delete this record?').then(ok => { if (ok) remove() })"
+
+example: |
+  Dialog.confirm('Delete this record?').then(ok => { if (ok) remove() })

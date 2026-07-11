@@ -1,0 +1,24 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="/ui/ui.js" components="API,AutoForm,List,Modal,Dialog,Nav,Resizer,DatePicker,ColorPicker,IconPicker,TagsInput"></script>
+</head>
+<body>
+  <List id="users" $.state.list="State.users" auto-select>
+    <button slot="item-actions" class="edit" $onclick="event.stopPropagation()">Edit</button>
+  </List>
+  <Nav id="mainNav" $.state.list="State.nav"></Nav>
+  <div id="resizeTarget" style="width:100px"></div><Resizer id="resize"></Resizer>
+  <Modal id="dialog" $.state.title="State.title"><div slot="body">Body</div></Modal>
+  <Dialog id="alertDialog"></Dialog>
+  <DatePicker id="datePicker"></DatePicker>
+  <ColorPicker id="colorPicker"></ColorPicker>
+  <TagsInput id="tagsInput"></TagsInput>
+  <script>
+    State.users = [{ id: 'ada', label: 'Ada', summary: 'Admin' }]
+    State.nav = [{ type: 'button', name: 'home', label: 'Home', icon: 'house' }]
+    State.title = 'Dialog'
+  </script>
+</body>
+</html>

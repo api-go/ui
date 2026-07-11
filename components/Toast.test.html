@@ -1,0 +1,31 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>components.Toast tests</title>
+  <script src="../ui.js" components="Toast"></script>
+</head>
+<body>
+  <div toast-container="custom"></div>
+  <button id="runAll" type="button">测试全部</button>
+  <pre id="result"></pre>
+  <script>
+    const tick = () => new Promise(resolve => setTimeout(resolve, 40))
+    const cases = ['show', 'type', 'delay', 'buttons', 'container', 'confirm-true', 'confirm-false']
+    const assert = (testResult, feature, condition, message) => { testResult.assertions++; if (condition) testResult.passed++; else { testResult.failed++; testResult.failures.push({ feature, message }) } }
+    window.runTest = async () => {
+      const testResult = { name: 'components.Toast', status: 'running', assertions: 0, passed: 0, failed: 0, failures: [], consoleErrors: [], coverage: { tested: [], total: cases, percent: 0 } }
+      const inheritedToast = await Toast.show('Default'); await tick(); const defaultToast = await Toast.show('Saved', { type: 'success', delay: 0, buttons: ['Retry'] }); await tick()
+      assert(testResult, 'show', defaultToast.isConnected && defaultToast.textContent.includes('Saved'), 'show returns and displays a Toast element')
+      assert(testResult, 'type', defaultToast.querySelector('.text-bg-success'), 'type applies the Bootstrap contextual class')
+      assert(testResult, 'delay', inheritedToast.state.delay === 5000 && defaultToast.state.delay === 0 && defaultToast.state.left === undefined, 'default delay is 5000 and delay 0 keeps the toast open')
+      assert(testResult, 'buttons', inheritedToast.querySelector('button.btn-sm')?.textContent.includes('Close') && defaultToast.querySelector('button.btn-sm')?.textContent === 'Retry', 'buttons default to Close and render supplied labels')
+      const customToast = await Toast.show('Custom', { container: 'custom', delay: 0 }); await tick(); assert(testResult, 'container', customToast.parentElement.getAttribute('toast-container') === 'custom', 'container selects a named toast container')
+      const yes = Toast.confirm('Delete?', { delay: 0 }); await tick(); [...document.querySelectorAll('Toast')].at(-1).querySelector('button.btn-sm').click(); assert(testResult, 'confirm-true', await yes === true, 'confirm resolves true after Confirm')
+      const no = Toast.confirm('Cancel?', { delay: 0 }); await tick(); [...document.querySelectorAll('Toast')].at(-1).querySelector('[data-bs-dismiss="toast"]').click(); assert(testResult, 'confirm-false', await no === false, 'confirm resolves false after close')
+      testResult.coverage.tested = [...cases]; testResult.coverage.percent = 100; testResult.status = testResult.failed ? 'failed' : 'passed'; document.querySelector('#result').textContent = JSON.stringify(testResult, null, 2); window.testResult = testResult; return testResult
+    }
+    document.querySelector('#runAll').onclick = window.runTest
+  </script>
+</body>
+</html>

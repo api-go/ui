@@ -1,0 +1,15 @@
+purpose: Navigation with a dropdown and a listener for selection.
+
+code: |
+  <Nav id="mainNav" vertical></Nav>
+  <script>
+  const nav = document.querySelector('#mainNav')
+  nav.state.list = [
+    { type: 'button', name: 'home', label: 'Home', icon: 'house' },
+    { type: 'dropdown', name: 'admin', label: 'Admin', items: [
+      { type: 'button', name: 'users', label: 'Users' },
+      { type: 'button', name: 'roles', label: 'Roles' }
+    ] }
+  ]
+  nav.addEventListener('change', event => openPage(event.detail))
+  </script>

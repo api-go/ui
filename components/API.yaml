@@ -1,0 +1,53 @@
+name: API
+
+attributes:
+  auto:
+    type: boolean
+    behavior: Request after request changes when request.url exists.
+
+properties:
+  request:
+    default:
+      url: ''
+      method: GET
+      headers: {}
+      data: null
+      timeout: 10000
+      responseType: ''
+  response:
+    fields: [loading, ok, status, error, headers, responseType, result]
+  result:
+    behavior: Latest response result.
+
+methods:
+  do:
+    signature: api.do(options)
+    behavior: Merge options with request and perform HTTP.request.
+    options:
+      noui: Suppress automatic error toast.
+
+events:
+  response:
+    detail: Complete HTTP response object.
+  error:
+    detail: Error object.
+
+rules:
+  - request.url is required before calling do.
+  - Bind request with $.request when external state owns request configuration.
+
+examples:
+  auto: |
+    <script>
+      const usersRequest = { url: '/api/users', method: 'GET' }
+    </script>
+    <API id="usersApi" auto $.request="usersRequest"></API>
+    <List $.state.list="usersApi.result.list"></List>
+  do: |
+    <script>
+      const response = await usersApi.do({ url: '/api/users', method: 'GET', noui: true })
+      if (response.ok) console.log(response.result)
+    </script>
+
+tests:
+  - API.test.html

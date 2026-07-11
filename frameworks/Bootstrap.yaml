@@ -1,0 +1,24 @@
+name: Bootstrap
+
+provided:
+  css: 'Bootstrap.js injects Bootstrap 5 CSS and Bootstrap Icons; do not add another Bootstrap stylesheet or runtime.'
+  bootstrap: 'Native Bootstrap API: Alert, Button, Carousel, Collapse, Dropdown, Modal, Offcanvas, Popover, ScrollSpy, Tab, Toast, Tooltip.'
+  Bootstrap: 'apigo helper API for theme configuration.'
+
+config:
+  colors: 'Bootstrap.config({ primary: "#6f42c1", success: "#198754" }) patches CSS variables and related component colors.'
+  dark_mode: 'Bootstrap.config({ darkMode: true }) sets data-bs-theme.'
+  bind_dark_mode: 'Bootstrap.config({ bindDarkMode: [LocalStorage, "darkMode"] }) reacts to a state key.'
+
+rules:
+  - ui.js loads Bootstrap before utilities and components.
+  - Use Bootstrap classes and Icons directly in component markup.
+  - Do not load a second Bootstrap CSS file or runtime.
+
+examples: |
+  Bootstrap.config({ primary: '#6f42c1' })
+  Bootstrap.config({ bindDarkMode: [LocalStorage, 'darkMode'] })
+  bootstrap.Modal.getOrCreateInstance(document.querySelector('#settings')).show()
+
+tests:
+  - apigo.cc/web/bootstrap/test/

@@ -1,0 +1,66 @@
+name: State
+
+globals:
+  State: 'Reactive in-memory application state.'
+  Hash: 'Reactive JSON values persisted in location.hash.'
+  LocalStorage: 'Reactive JSON values persisted in localStorage.'
+  NewState: 'NewState(defaults, getter?, setter?) -> reactive object.'
+
+state:
+  watch: 'state.__watch(key, callback); key=null watches every write.'
+  unwatch: 'state.__unwatch(key, callback).'
+  rules:
+    - Assign through State, Hash, LocalStorage, component.state, or a NewState object to notify bindings.
+    - Hash and LocalStorage values must be JSON-serializable.
+    - Do not use __unsafeRefreshState in application code.
+
+directives:
+  $text: 'Set textContent. Without a value, evaluates the element text as a template.'
+  $html: Set innerHTML.
+  $class: 'Set dynamic classes while retaining static classes.'
+  $style: 'Set dynamic styles while retaining static styles.'
+  $if: Conditionally render a node or template.
+  $each: 'Render an iterable; supports as and index.'
+  $bind: Two-way bind a form control or component value.
+  $onname: 'Register an event handler; for example $onclick.'
+  $.path: 'Evaluate once during component initialization and assign its property path.'
+  .path: 'Bind an evaluated value to a DOM or component property path.'
+  $$if: 'Evaluate its value once, then evaluate the resulting expression. Use schema expressions such as `$$if="item.if"`.'
+  $$each: 'Two-stage equivalent of $each when the iterable expression itself is stored as data.'
+
+expression:
+  values: [State, Hash, LocalStorage, top-level const data, this, this.parent, event, thisNode]
+  rules:
+    - 'Define page data with top-level const before DOM parsing, then bind it directly: `$.state.list="users"`.'
+    - Use `this` in a component template and `this.parent` from nested component/template content.
+    - Use template around $if or $each when the surrounding DOM must remain intact.
+    - Use key for large or identity-sensitive $each lists.
+
+component:
+  register: 'Component.register(name, setup, template?).'
+  instance: 'Every component has this.state; public API is its attributes, state, methods, events, and slots.'
+  slots: '`slot="name"` supplies content; `slot-id="name"` receives it in a component template.'
+  lifecycle:
+    $onload: After initialization.
+    $onupdate: After a bound node updates.
+    $onunload: Before a bound node is removed.
+  rules:
+    - Keep required public behavior declarative; do not expose internal DOM as an application contract.
+    - A bindable component listens for bind and writes event.detail into its state.
+
+examples: |
+  <script>
+    const users = [{ id: 'ada', name: 'Ada' }]
+  </script>
+  <div $text>Hello ${users[0].name}</div>
+  <List $.state.list="users"></List>
+  <button $onclick="State.dark = !State.dark">Toggle</button>
+
+  Component.register('Counter', container => {
+    container.state.value = 0
+    container.addEventListener('bind', event => { container.state.value = event.detail })
+  }, Util.makeDom('<button $text="this.state.value" $onclick="this.state.value++"></button>'))
+  <!-- <Counter $bind="State.count"></Counter> -->
+
+tests:
+  - apigo.cc/web/state/test/

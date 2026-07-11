@@ -1,0 +1,46 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>components.form.ColorPicker tests</title>
+  <script>
+    const theme = { accent: '#0d6efd' }
+    const themeSchema = [{ name: 'accent', label: 'Accent', type: 'ColorPicker' }]
+  </script>
+  <script src="../../ui.js" components="AutoForm,ColorPicker"></script>
+</head>
+<body class="vh-100 overflow-hidden bg-body-tertiary">
+  <main class="container py-3 h-100 d-flex flex-column gap-3">
+    <div class="d-flex align-items-center gap-2 flex-shrink-0"><h1 class="h5 mb-0">ColorPicker</h1><button id="runAll" class="btn btn-primary btn-sm ms-auto" type="button">测试全部</button></div>
+    <div class="row g-3 flex-fill overflow-auto">
+      <section class="col-md-6"><div class="card h-100"><div class="card-header">Direct binding</div><div class="card-body"><ColorPicker id="accent" $bind="theme.accent"></ColorPicker></div></div></section>
+      <section class="col-md-6"><div class="card h-100"><div class="card-header">AutoForm</div><div class="card-body"><AutoForm id="themeForm" nobutton $.state.data="theme" $.state.schema="themeSchema"></AutoForm></div></div></section>
+    </div>
+    <pre id="result" class="card card-body mb-0 flex-shrink-0 overflow-auto" style="height:25%">请选择测试</pre>
+  </main>
+  <script>
+    const features = ['properties.value', 'state.value', 'events.change', 'autoform']
+    const pause = () => new Promise(resolve => setTimeout(resolve, 80))
+    const assert = (result, feature, condition, message) => { result.assertions++; if (condition) result.passed++; else { result.failed++; result.failures.push({ feature, message }) } }
+    window.runTest = async () => {
+      const result = { name: 'components.form.ColorPicker', status: 'running', assertions: 0, passed: 0, failed: 0, failures: [], consoleErrors: [], coverage: { tested: [], total: features, percent: 0 } }
+      await pause()
+      const accent = document.querySelector('#accent')
+      const textInput = accent.querySelector('input[type="text"]')
+      const colorInput = accent.querySelector('input[type="color"]')
+      assert(result, 'properties.value', accent.value === '#0d6efd', 'value exposes the bound color')
+      assert(result, 'state.value', accent.state.value === '#0d6efd' && colorInput.value === '#0d6efd' && textInput.value === '#0d6efd', 'state.value keeps both controls in sync')
+      let changed
+      accent.addEventListener('change', event => { changed = event.detail }, { once: true })
+      textInput.value = '#198754'; textInput.dispatchEvent(new Event('change', { bubbles: true })); await pause()
+      assert(result, 'events.change', changed === '#198754' && theme.accent === '#198754' && colorInput.value === '#198754', 'change exposes and writes the selected color')
+      const formPicker = document.querySelector('#themeForm ColorPicker')
+      const formText = formPicker?.querySelector('input[type="text"]')
+      assert(result, 'autoform', !!formPicker && formText?.value === '#0d6efd', 'AutoForm type ColorPicker renders and receives initial form data')
+      result.coverage.tested = [...features]; result.coverage.percent = 100; result.status = result.failed ? 'failed' : 'passed'; document.querySelector('#result').textContent = JSON.stringify(result, null, 2); window.testResult = result; return result
+    }
+    document.querySelector('#runAll').onclick = window.runTest
+  </script>
+</body>
+</html>

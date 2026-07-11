@@ -1,0 +1,90 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>components.List tests</title>
+  <script src="../ui.js" components="List"></script>
+  <script>
+    const users = Array.from({ length: 60 }, (_, index) => ({ id: index + 1, label: 'User ' + (index + 1), summary: index % 2 ? 'Editor' : 'Admin' }))
+    const groups = [{ id: 'ops', label: 'Operations', summary: '20 members' }, { id: 'design', label: 'Design', summary: '20 members' }, { id: 'qa', label: 'QA', summary: '20 members' }]
+    const groupedUsers = groups.flatMap(group => Array.from({ length: 20 }, (_, index) => ({ id: group.id + '-' + (index + 1), label: group.label + ' ' + (index + 1), summary: 'Member', group: group.id })))
+    const treeUsers = [{ id: 'root', label: 'Root', summary: 'Parent node', parent: '' }, ...Array.from({ length: 20 }, (_, index) => ({ id: 'child-' + (index + 1), label: 'Child ' + (index + 1), summary: 'Tree child', parent: 'root' }))]
+    const fastUsers = Array.from({ length: 1000 }, (_, index) => ({ id: index + 1, label: 'Virtual user ' + (index + 1), summary: 'Virtual scrolling row' }))
+    const searchableUsers = Array.from({ length: 100 }, (_, index) => ({ id: index + 1, label: index === 49 ? 'Beta' : (index % 2 ? 'Alpha ' : 'Gamma ') + (index + 1), summary: 'Searchable row ' + (index + 1) }))
+    const customUsers = [{ key: 'ada', title: 'Ada', desc: 'Admin' }, { key: 'lin', title: 'Lin', desc: 'Editor' }]
+    State.nav = 'normal'
+  </script>
+</head>
+<body class="vh-100 overflow-hidden bg-body-tertiary">
+  <div class="container-fluid h-100 py-3 d-flex flex-column">
+    <header class="d-flex align-items-center gap-2 mb-3 flex-shrink-0">
+      <h1 class="h4 mb-0">components.List</h1>
+      <span id="status" class="badge text-bg-secondary">未测试</span>
+      <button id="runAll" class="btn btn-primary btn-sm ms-auto" type="button">测试全部</button>
+      <span id="coverage" class="text-body-secondary small"></span>
+    </header>
+
+    <ul class="nav nav-tabs mb-3 flex-shrink-0">
+      <li class="nav-item"><button class="nav-link" $class="nav-link ${State.nav === 'normal' ? 'active' : ''}" $onclick="State.nav = 'normal'">普通</button></li>
+      <li class="nav-item"><button class="nav-link" $class="nav-link ${State.nav === 'actions' ? 'active' : ''}" $onclick="State.nav = 'actions'">Actions</button></li>
+      <li class="nav-item"><button class="nav-link" $class="nav-link ${State.nav === 'group' ? 'active' : ''}" $onclick="State.nav = 'group'">分组</button></li>
+      <li class="nav-item"><button class="nav-link" $class="nav-link ${State.nav === 'tree' ? 'active' : ''}" $onclick="State.nav = 'tree'">树形</button></li>
+      <li class="nav-item"><button class="nav-link" $class="nav-link ${State.nav === 'fast' ? 'active' : ''}" $onclick="State.nav = 'fast'">虚拟滚动</button></li>
+      <li class="nav-item"><button class="nav-link" $class="nav-link ${State.nav === 'filterSort' ? 'active' : ''}" $onclick="State.nav = 'filterSort'">过滤排序</button></li>
+      <li class="nav-item"><button class="nav-link" $class="nav-link ${State.nav === 'fields' ? 'active' : ''}" $onclick="State.nav = 'fields'">自定义字段</button></li>
+    </ul>
+
+    <main class="flex-fill overflow-hidden">
+      <section class="h-100 d-flex flex-column" $if="State.nav === 'normal'"><List id="normalList" class="flex-fill border rounded bg-body" $.state.list="users" auto-select></List></section>
+
+      <section class="h-100 d-flex flex-column" $if="State.nav === 'actions'"><List id="actionsList" class="flex-fill border rounded bg-body" $.state.list="users" auto-select><button slot="item-actions" class="actions-action btn btn-sm btn-outline-secondary" $onclick="event.stopPropagation()">Edit</button></List></section>
+
+      <section class="h-100 d-flex flex-column" $if="State.nav === 'group'"><List id="groupList" class="flex-fill border rounded bg-body" mode="group" $.state.groups="groups" $.state.list="groupedUsers" auto-select-group></List></section>
+
+      <section class="h-100 d-flex flex-column" $if="State.nav === 'tree'"><List id="treeList" class="flex-fill border rounded bg-body" mode="tree" $.state.list="treeUsers" collapsible></List></section>
+
+      <section class="h-100 d-flex flex-column" $if="State.nav === 'fast'"><List id="fastList" class="flex-fill border rounded bg-body" $.state.list="fastUsers" fast></List></section>
+
+      <section class="h-100 d-flex flex-column" $if="State.nav === 'filterSort'">
+        <h2 class="h5 flex-shrink-0">过滤与排序</h2>
+        <List id="filterList" class="flex-fill border rounded bg-body order-2" $.state.list="searchableUsers" $.state.filter="'Beta'"></List>
+        <div class="input-group mb-2 flex-shrink-0 order-1"><input id="filterInput" class="form-control" placeholder="输入过滤文字" $bind="filterList.state.filter"><select id="sortInput" class="form-select" $bind="filterList.state.order"><option value="">原始顺序</option><option value="label">标签升序</option><option value="-label">标签降序</option></select></div>
+      </section>
+
+      <section class="h-100 d-flex flex-column" $if="State.nav === 'fields'"><List id="fieldList" class="flex-fill border rounded bg-body" idfield="key" labelfield="title" summaryfield="desc" $.state.list="customUsers"></List></section>
+    </main>
+
+    <pre id="result" class="h-25 overflow-auto border rounded bg-body p-2 mt-3 mb-0 flex-shrink-0 small"></pre>
+  </div>
+
+  <script>
+    const cases = ['normal', 'actions', 'group', 'tree', 'fast', 'filterSort', 'fields']
+    const featureMap = { normal: ['normal', 'select'], actions: ['actions'], group: ['group', 'group-select'], tree: ['tree', 'collapse'], fast: ['fast'], filterSort: ['filter', 'sort'], fields: ['custom-fields'] }
+    const allFeatures = Object.values(featureMap).flat()
+    const consoleErrors = []
+    const originalConsoleError = console.error
+    console.error = (...args) => { consoleErrors.push(args.map(String).join(' ')); originalConsoleError(...args) }
+    addEventListener('error', event => consoleErrors.push(String(event.message || event.error || event)))
+    addEventListener('unhandledrejection', event => consoleErrors.push(String(event.reason || event)))
+    const tick = () => new Promise(resolve => setTimeout(resolve, 80))
+    const newResult = id => ({ name: 'components.List', ...(id ? { case: id } : {}), status: 'running', assertions: 0, passed: 0, failed: 0, failures: [], consoleErrors: [], coverage: { tested: [], total: allFeatures, percent: 0 } })
+    const assert = (result, feature, condition, message) => { result.assertions++; if (condition) result.passed++; else { result.failed++; result.failures.push({ feature, message }) } }
+    const currentList = id => document.querySelector('#' + ({ normal: 'normalList', actions: 'actionsList', group: 'groupList', tree: 'treeList', fast: 'fastList', filterSort: 'filterList', fields: 'fieldList' }[id]))
+    async function verify(id, result) {
+      State.nav = id; await tick(); const list = currentList(id)
+      if (id === 'normal') { list.state.selectedItem = null; assert(result, 'normal', list.querySelectorAll('.list-group-item').length === 60, 'normal list renders 60 rows'); list.querySelector('.list-group-item').click(); assert(result, 'select', list.state.selectedItem === 1, 'row click selects item') }
+      if (id === 'actions') { assert(result, 'actions', list.querySelectorAll('.actions-action').length === 60, 'actions render for every row'); list.querySelector('.actions-action').click(); assert(result, 'actions', list.state.selectedItem == null, 'action does not select row') }
+      if (id === 'group') { list.state.selectedGroup = null; assert(result, 'group', list.querySelectorAll('.fw-bold').length === 3, 'three group headers render'); list.querySelector('.fw-bold').click(); assert(result, 'group-select', list.state.selectedGroup === 'ops', 'group click selects group') }
+      if (id === 'tree') { list.collapsed.root = false; list.state.list = [...treeUsers]; await tick(); assert(result, 'tree', list.querySelectorAll('.list-group-item').length === 21, 'tree renders all nodes'); const toggle = list.querySelector('.bi-caret-down-fill'); assert(result, 'collapse', !!toggle, 'expanded root has a collapse control'); if (toggle) { toggle.click(); await tick(); assert(result, 'collapse', list.querySelectorAll('.list-group-item').length === 1, 'tree collapses children') } }
+      if (id === 'fast') { assert(result, 'fast', list.querySelectorAll('.list-group-item').length < 1000, 'virtual list renders a window'); list.scrollTop = list.scrollHeight; list.dispatchEvent(new Event('scroll')); await tick(); assert(result, 'fast', list.scrollTop > 0, 'List itself scrolls') }
+      if (id === 'filterSort') { assert(result, 'filter', list.querySelectorAll('.list-group-item').length === 1, 'Beta filter keeps one item'); filterInput.value = ''; filterInput.dispatchEvent(new Event('input')); sortInput.value = '-label'; sortInput.dispatchEvent(new Event('change')); await tick(); assert(result, 'sort', list.querySelector('.list-group-item')?.textContent.includes('Gamma'), 'descending order puts Gamma first') }
+      if (id === 'fields') assert(result, 'custom-fields', list.textContent.includes('Ada') && list.textContent.includes('Admin'), 'custom field mapping renders title and desc')
+    }
+    function finish(testResult, ids) { testResult.coverage.tested = ids.flatMap(id => featureMap[id]); testResult.coverage.percent = Math.round(testResult.coverage.tested.length / allFeatures.length * 100); testResult.consoleErrors = [...consoleErrors]; testResult.status = testResult.failed || testResult.consoleErrors.length ? 'failed' : 'passed'; const statusNode = document.querySelector('#status'); const coverageNode = document.querySelector('#coverage'); statusNode.className = 'badge text-bg-' + (testResult.status === 'passed' ? 'success' : 'danger'); statusNode.textContent = testResult.status === 'passed' ? '通过' : '失败'; coverageNode.textContent = `覆盖 ${testResult.coverage.percent}%`; document.querySelector('#result').textContent = JSON.stringify(testResult, null, 2); window.testResult = testResult; return testResult }
+    window.runCase = async id => { consoleErrors.length = 0; const testResult = newResult(id); await verify(id, testResult); return finish(testResult, [id]) }
+    window.runTest = async () => { consoleErrors.length = 0; const testResult = newResult(); for (const id of cases) await verify(id, testResult); return finish(testResult, cases) }
+    document.querySelector('#runAll').onclick = window.runTest
+  </script>
+</body>
+</html>

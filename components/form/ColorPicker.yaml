@@ -1,0 +1,28 @@
+name: ColorPicker
+purpose: Native color input paired with an editable CSS color value.
+
+properties:
+  value: string; CSS color, normally #rrggbb
+
+state:
+  value: string; CSS color, normally #rrggbb
+
+events:
+  change: detail is the selected color string
+
+examples:
+  standalone_and_form: |
+    <script>
+      const theme = { accent: '#0d6efd' }
+      const themeSchema = [{ name: 'accent', label: 'Accent', type: 'ColorPicker' }]
+    </script>
+
+    <ColorPicker $bind="theme.accent"></ColorPicker>
+    <AutoForm $.state.data="theme" $.state.schema="themeSchema"></AutoForm>
+
+rules:
+  - Define page data before ColorPicker is parsed.
+  - Use $bind for a standalone reactive value; use AutoForm schema type ColorPicker for generated forms.
+
+related:
+  - ../AutoForm.yaml

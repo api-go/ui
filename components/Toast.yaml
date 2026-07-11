@@ -1,0 +1,25 @@
+name: Toast
+
+methods:
+  show: 'Toast.show(message, options) -> Promise<Toast element>'
+  confirm: 'Toast.confirm(message, options) -> Promise<boolean>'
+
+options:
+  type: 'Bootstrap contextual type: primary|secondary|success|info|warning|danger'
+  delay: 'milliseconds; default 5000, 0 keeps the toast open'
+  buttons: 'button labels; default is Close'
+  container: 'toast-container name; default is default'
+
+behavior:
+  buttons: 'Button click stores a 1-based result on the returned Toast element before it closes.'
+  confirm: 'Confirm resolves true only when the Confirm button is clicked; close resolves false.'
+
+examples: |
+  Toast.show('Saved', { type: 'success' })
+  const confirmed = await Toast.confirm('Delete this record?')
+
+  <div toast-container="custom"></div>
+  Toast.show('Retry upload?', { type: 'warning', delay: 0, buttons: ['Retry'], container: 'custom' })
+
+tests:
+  - Toast.test.html

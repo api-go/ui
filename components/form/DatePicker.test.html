@@ -1,0 +1,56 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>components.form.DatePicker tests</title>
+  <script>
+    const dates = { birthday: '1990-01-01', from: '2026-01-01', to: '2026-01-31' }
+    const dateSchema = [{ name: 'from', label: 'Period', type: 'DatePicker', setting: { rangeEnd: 'to' } }]
+  </script>
+  <script src="../../ui.js" components="AutoForm,DatePicker"></script>
+</head>
+<body class="vh-100 overflow-hidden bg-body-tertiary">
+  <main class="container py-3 h-100 d-flex flex-column gap-3">
+    <div class="d-flex align-items-center gap-2 flex-shrink-0"><h1 class="h5 mb-0">DatePicker</h1><button id="runAll" class="btn btn-primary btn-sm ms-auto" type="button">测试全部</button></div>
+    <div class="row g-3 flex-fill overflow-auto">
+      <section class="col-md-6"><div class="card h-100"><div class="card-header">Direct binding</div><div class="card-body"><DatePicker id="birthday" $bind="dates.birthday"></DatePicker></div></div></section>
+      <section class="col-md-6"><div class="card h-100"><div class="card-header">Standalone range</div><div class="card-body"><DatePicker id="standaloneRange" range></DatePicker></div></div></section>
+      <section class="col-12"><div class="card"><div class="card-header">AutoForm range</div><div class="card-body"><AutoForm id="dateForm" nobutton $.state.data="dates" $.state.schema="dateSchema"></AutoForm></div></div></section>
+    </div>
+    <pre id="result" class="card card-body mb-0 flex-shrink-0 overflow-auto" style="height:25%">请选择测试</pre>
+  </main>
+  <script>
+    const features = ['attributes.range', 'attributes.rangeend', 'properties.value', 'state.start', 'state.end', 'events.change', 'autoform']
+    const pause = () => new Promise(resolve => setTimeout(resolve, 80))
+    const assert = (result, feature, condition, message) => { result.assertions++; if (condition) result.passed++; else { result.failed++; result.failures.push({ feature, message }) } }
+    window.runTest = async () => {
+      const result = { name: 'components.form.DatePicker', status: 'running', assertions: 0, passed: 0, failed: 0, failures: [], consoleErrors: [], coverage: { tested: [], total: features, percent: 0 } }
+      await pause()
+      const birthday = document.querySelector('#birthday')
+      const standaloneRange = document.querySelector('#standaloneRange')
+      const dateForm = document.querySelector('#dateForm')
+      const birthdayInput = birthday.querySelector('input')
+      assert(result, 'properties.value', birthday.value === '1990-01-01', 'value exposes the bound start date')
+      assert(result, 'state.start', birthday.state.start === '1990-01-01' && birthdayInput.value === '1990-01-01', 'state.start renders in the input')
+      let changed
+      birthday.addEventListener('change', event => { changed = event.detail }, { once: true })
+      birthdayInput.value = '1991-02-03'; birthdayInput.dispatchEvent(new Event('change', { bubbles: true })); await pause()
+      assert(result, 'events.change', changed === '1991-02-03' && dates.birthday === '1991-02-03', 'change exposes and writes the new start date')
+      const standaloneInputs = standaloneRange.querySelectorAll('input[type="date"]')
+      assert(result, 'attributes.range', standaloneInputs.length === 2, 'range renders a second native date input')
+      let endChanged
+      standaloneRange.addEventListener('change', event => { endChanged = event.detail }, { once: true })
+      standaloneInputs[1].value = '2026-02-28'; standaloneInputs[1].dispatchEvent(new Event('change', { bubbles: true })); await pause()
+      assert(result, 'state.end', standaloneRange.state.end === '2026-02-28' && endChanged === '2026-02-28', 'state.end and change update for the end date')
+      const formPicker = dateForm.querySelector('DatePicker')
+      const formInputs = formPicker.querySelectorAll('input[type="date"]')
+      assert(result, 'attributes.rangeend', formInputs.length === 2 && formInputs[1].value === '2026-01-31', 'schema setting.rangeEnd renders and initializes the paired field')
+      formInputs[1].value = '2026-02-15'; formInputs[1].dispatchEvent(new Event('change', { bubbles: true })); await pause()
+      assert(result, 'autoform', dateForm.data.to === '2026-02-15', 'range end writes the configured AutoForm field')
+      result.coverage.tested = [...features]; result.coverage.percent = 100; result.status = result.failed ? 'failed' : 'passed'; document.querySelector('#result').textContent = JSON.stringify(result, null, 2); window.testResult = result; return result
+    }
+    document.querySelector('#runAll').onclick = window.runTest
+  </script>
+</body>
+</html>

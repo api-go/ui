@@ -1,0 +1,60 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>@apigo.cc/ui tests</title>
+  <script src="ui.js" components="Resizer"></script>
+</head>
+<body class="bg-body-tertiary vh-100 overflow-hidden">
+  <div class="container-fluid py-3 h-100 d-flex">
+    <aside id="testNav" class="flex-shrink-0" style="width:19rem">
+      <div class="card h-100">
+        <div class="card-header d-flex align-items-center"><strong>UI tests</strong><button id="all" class="btn btn-primary btn-sm ms-auto" type="button">测试全部</button></div>
+        <div id="tests" class="list-group list-group-flush overflow-auto">
+          <a data-test="utilities.HTTP" href="utilities/HTTP.test.html" target="testFrame" class="list-group-item list-group-item-action d-flex align-items-center gap-2"><span class="status badge rounded-pill text-bg-secondary">—</span>HTTP</a>
+          <a data-test="components.API" href="components/API.test.html" target="testFrame" class="list-group-item list-group-item-action d-flex align-items-center gap-2"><span class="status badge rounded-pill text-bg-secondary">—</span>API</a>
+          <a data-test="components.AutoForm" href="components/AutoForm.test.html" target="testFrame" class="list-group-item list-group-item-action d-flex align-items-center gap-2"><span class="status badge rounded-pill text-bg-secondary">—</span>AutoForm</a>
+          <a data-test="components.form.DatePicker" href="components/form/DatePicker.test.html" target="testFrame" class="list-group-item list-group-item-action d-flex align-items-center gap-2 ps-4"><span class="status badge rounded-pill text-bg-secondary">—</span>form.DatePicker</a>
+          <a data-test="components.form.ColorPicker" href="components/form/ColorPicker.test.html" target="testFrame" class="list-group-item list-group-item-action d-flex align-items-center gap-2 ps-4"><span class="status badge rounded-pill text-bg-secondary">—</span>form.ColorPicker</a>
+          <a data-test="components.form.IconPicker" href="components/form/IconPicker.test.html" target="testFrame" class="list-group-item list-group-item-action d-flex align-items-center gap-2 ps-4"><span class="status badge rounded-pill text-bg-secondary">—</span>form.IconPicker</a>
+          <a data-test="components.form.TagsInput" href="components/form/TagsInput.test.html" target="testFrame" class="list-group-item list-group-item-action d-flex align-items-center gap-2 ps-4"><span class="status badge rounded-pill text-bg-secondary">—</span>form.TagsInput</a>
+          <a data-test="components.Toast" href="components/Toast.test.html" target="testFrame" class="list-group-item list-group-item-action d-flex align-items-center gap-2"><span class="status badge rounded-pill text-bg-secondary">—</span>Toast</a>
+          <a data-test="components.Resizer" href="components/Resizer.test.html" target="testFrame" class="list-group-item list-group-item-action d-flex align-items-center gap-2"><span class="status badge rounded-pill text-bg-secondary">—</span>Resizer</a>
+          <a data-test="components.List" href="components/List.test.html" target="testFrame" class="list-group-item list-group-item-action d-flex align-items-center gap-2"><span class="status badge rounded-pill text-bg-secondary">—</span>List</a>
+        </div>
+      </div>
+    </aside>
+    <Resizer min="224" max="640"></Resizer>
+    <main class="flex-fill min-w-0 ms-3"><div class="card h-100"><iframe id="testFrame" name="testFrame" class="card-body p-0 border-0 w-100 h-100"></iframe></div></main>
+  </div>
+  <script>
+    const rows = [...document.querySelectorAll('[data-test]')]
+    const frame = document.querySelector('#testFrame')
+    let activeRow
+    const select = row => { activeRow = row; rows.forEach(item => item.classList.toggle('active', item === row)) }
+    const setStatus = (row, status) => { const badge = row.querySelector('.status'); badge.className = 'status badge rounded-pill text-bg-' + ({ passed: 'success', failed: 'danger', running: 'warning' }[status] || 'secondary'); badge.textContent = ({ passed: '✓', failed: '!', running: '…' }[status] || '—') }
+    const run = async row => {
+      select(row); setStatus(row, 'running')
+      frame.src = row.getAttribute('href')
+      await new Promise(resolve => { frame.onload = resolve })
+      const errors = []
+      const onError = event => { if (event instanceof ErrorEvent) errors.push(String(event.message || event.error || event)) }
+      frame.contentWindow.addEventListener('error', onError)
+      frame.contentWindow.addEventListener('unhandledrejection', onError)
+      const result = await frame.contentWindow.runTest()
+      frame.contentWindow.removeEventListener('error', onError)
+      frame.contentWindow.removeEventListener('unhandledrejection', onError)
+      result.consoleErrors = [...(result.consoleErrors || []), ...errors]
+      if (result.consoleErrors.length) result.status = 'failed'
+      setStatus(row, result.status)
+      return result
+    }
+    rows.forEach(row => row.onclick = event => { event.preventDefault(); run(row) })
+    document.querySelector('#all').onclick = async () => { for (const row of rows) await run(row) }
+    const selected = new URLSearchParams(location.search).get('test')
+    const selectedTestRow = rows.find(row => row.dataset.test === selected)
+    if (selectedTestRow) run(selectedTestRow)
+  </script>
+</body>
+</html>

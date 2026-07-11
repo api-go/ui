@@ -1,0 +1,22 @@
+{
+  "name": "@apigo.cc/ui",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "build": "node tools/build.cjs",
+    "dev": "node tools/dev.cjs",
+    "test": "node tools/dev.cjs --test"
+  },
+  "files": [
+    "frameworks",
+    "components",
+    "utilities",
+    "ui.js",
+    "ui.test.html",
+    "AI.yaml",
+    "README.md",
+    "README.zh-CN.md",
+    "test",
+    "tools"
+  ]
+}

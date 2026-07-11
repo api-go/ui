@@ -1,0 +1,83 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>components.form.AutoForm tests</title>
+  <script src="../ui.js" components="API,AutoForm,DatePicker,ColorPicker,IconPicker,TagsInput"></script>
+  <script>
+    const profile = {
+      name: 'Ada', password: 'secret', email: 'ada@example.test', age: 36,
+      birthday: '1815-12-10', appointment: '1843-07-01T09:00', role: 'admin',
+      alerts: true, plan: 'pro', active: true, bio: 'First programmer.',
+      periodStart: '1843-07-01', periodEnd: '1843-07-31', color: '#0d6efd', icon: 'star', tags: ['math']
+    }
+    const profileSchema = [
+      { name: 'name', label: 'Name', type: 'text', setting: { required: true }, placeholder: 'Name' },
+      { name: 'password', label: 'Password', type: 'password' },
+      { name: 'email', label: 'Email', type: 'email' },
+      { name: 'age', label: 'Age', type: 'number' },
+      { name: 'birthday', label: 'Birthday', type: 'date' },
+      { name: 'appointment', label: 'Appointment', type: 'datetime' },
+      { name: 'avatar', label: 'Avatar', type: 'file' },
+      { name: 'role', label: 'Role', type: 'select', options: [{ value: 'admin', label: 'Admin' }, { value: 'user', label: 'User' }] },
+      { name: 'alerts', label: 'Alerts', type: 'checkbox', text: 'Receive alerts' },
+      { name: 'plan', label: 'Plan', type: 'radio', options: ['free', 'pro'] },
+      { name: 'active', label: 'Active', type: 'switch' },
+      { name: 'bio', label: 'Bio', type: 'textarea' },
+      { name: 'periodStart', label: 'Period', type: 'DatePicker', setting: { rangeEnd: 'periodEnd' } },
+      { name: 'color', label: 'Color', type: 'ColorPicker' },
+      { name: 'icon', label: 'Icon', type: 'IconPicker' },
+      { name: 'tags', label: 'Tags', type: 'TagsInput' },
+      { name: 'hidden', label: 'Hidden', type: 'text', if: "this.data.role === 'user'" }
+    ]
+    const compactSchema = [{ name: 'name', label: 'Name', type: 'text' }]
+    const saveRequest = { url: '/__http__/json', method: 'POST' }
+    const errorRequest = { url: '/__http__/api-error', method: 'POST' }
+  </script>
+</head>
+<body>
+  <API id="saveApi" $.request="saveRequest"></API>
+  <API id="errorApi" $.request="errorRequest"></API>
+  <AutoForm id="profileForm" $.state.data="profile" $.state.schema="profileSchema"></AutoForm>
+  <AutoForm id="verticalForm" vertical nobutton $.state.data="profile" $.state.schema="compactSchema"><div slot="actions" $onclick="this.submit()">Save</div></AutoForm>
+  <AutoForm id="horizontalForm" horizontal submitlabel="Update" $.state.data="profile" $.state.schema="compactSchema"></AutoForm>
+  <AutoForm id="inlineForm" inline $.state.data="profile" $.state.schema="compactSchema"></AutoForm>
+  <AutoForm id="saveForm" nobutton $.api="saveApi" $.state.data="profile" $.state.schema="compactSchema"></AutoForm>
+  <AutoForm id="errorForm" nobutton $.api="errorApi" $.state.data="profile" $.state.schema="compactSchema"></AutoForm>
+  <AutoForm id="cancelForm" nobutton $.api="saveApi" $.state.data="profile" $.state.schema="compactSchema"></AutoForm>
+  <button id="runAll" type="button">测试全部</button>
+  <pre id="result"></pre>
+  <script>
+    const tick = () => new Promise(resolve => setTimeout(resolve, 80))
+    const cases = ['data', 'all-controls', 'setting', 'options', 'if', 'custom-type', 'vertical', 'horizontal', 'inline', 'nobutton', 'submitlabel', 'slot', 'submit', 'submit-event', 'response-event', 'error-event']
+    const assert = (testResult, feature, condition, message) => { testResult.assertions++; if (condition) testResult.passed++; else { testResult.failed++; testResult.failures.push({ feature, message }) } }
+    window.runTest = async () => {
+      const testResult = { name: 'components.form.AutoForm', status: 'running', assertions: 0, passed: 0, failed: 0, failures: [], consoleErrors: [], coverage: { tested: [], total: cases, percent: 0 } }
+      await tick()
+      const form = document.querySelector('#profileForm')
+      assert(testResult, 'data', form.data.name === 'Ada' && form.querySelector('input[name="name"]').value === 'Ada', 'data initializes form controls')
+      const standardTypes = ['text', 'password', 'email', 'number', 'date', 'datetime', 'file', 'select', 'checkbox', 'radio', 'switch', 'textarea']
+      const customTypes = ['DatePicker', 'ColorPicker', 'IconPicker', 'TagsInput']
+      assert(testResult, 'all-controls', form.querySelectorAll('[control-wrapper]').length === 16 && standardTypes.every(type => form.querySelector(`[name="${profileSchema.find(item => item.type === type).name}"]`)) && customTypes.every(type => form.querySelector(type)), 'one schema renders every documented standard and custom control type')
+      assert(testResult, 'setting', form.querySelector('input[name="name"]').required, 'setting attributes are copied to controls')
+      assert(testResult, 'options', form.querySelectorAll('[name="role"] option').length === 2, 'select options render schema options')
+      assert(testResult, 'if', !form.querySelector('input[name="hidden"]'), '$$if hides fields whose expression is false')
+      form.data.role = 'user'; await tick(); assert(testResult, 'if', !!form.querySelector('input[name="hidden"]'), '$$if evaluates item.if again after form data changes'); form.data.role = 'admin'
+      assert(testResult, 'custom-type', !!form.querySelector('TagsInput'), 'registered AutoForm component type renders its component')
+      assert(testResult, 'vertical', document.querySelector('#verticalForm form').classList.contains('flex-column'), 'vertical applies vertical layout')
+      assert(testResult, 'horizontal', document.querySelector('#horizontalForm form').classList.contains('forced-horizontal'), 'horizontal applies horizontal layout')
+      assert(testResult, 'inline', document.querySelector('#inlineForm form').classList.contains('flex-wrap'), 'inline applies inline layout')
+      assert(testResult, 'nobutton', !document.querySelector('#verticalForm [type="submit"]') && !document.querySelector('#saveForm [type="submit"]'), 'nobutton hides the default submit button')
+      assert(testResult, 'submitlabel', document.querySelector('#horizontalForm [type="submit"]').textContent === 'Update', 'submitlabel changes default button text')
+      assert(testResult, 'slot', document.querySelector('#verticalForm').textContent.includes('Save'), 'actions slot renders custom controls')
+      let submitEvent; let responseEvent; document.querySelector('#saveForm').addEventListener('submit', event => { submitEvent = event.detail }, { once: true }); document.querySelector('#saveForm').addEventListener('response', event => { responseEvent = event.detail }, { once: true }); document.querySelector('#saveForm').submit(); await tick()
+      assert(testResult, 'submit', document.querySelector('#saveForm').result?.method === 'POST', 'submit sends data through the configured API')
+      assert(testResult, 'submit-event', submitEvent?.name === 'Ada', 'submit event is cancelable and exposes form data')
+      assert(testResult, 'response-event', responseEvent?.ok === true, 'response event exposes the HTTP response')
+      let errorEvent; document.querySelector('#errorForm').addEventListener('error', event => { errorEvent = event.detail }, { once: true }); document.querySelector('#errorForm').submit(); await tick(); assert(testResult, 'error-event', errorEvent instanceof Error && errorEvent.message === 'application failed', 'error event exposes Error detail')
+      testResult.coverage.tested = [...cases]; testResult.coverage.percent = 100; testResult.status = testResult.failed ? 'failed' : 'passed'; document.querySelector('#result').textContent = JSON.stringify(testResult, null, 2); window.testResult = testResult; return testResult
+    }
+    document.querySelector('#runAll').onclick = window.runTest
+  </script>
+</body>
+</html>

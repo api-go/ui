@@ -1,0 +1,11 @@
+purpose: Basic navigation.
+
+code: |
+  <Nav id="mainNav"></Nav>
+
+data: |
+  const nav = document.querySelector('#mainNav')
+  nav.state.list = [
+    { type: 'button', name: 'home', label: 'Home', icon: 'house' },
+    { type: 'button', name: 'settings', label: 'Settings', icon: 'gear' }
+  ]

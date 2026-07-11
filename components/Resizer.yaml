@@ -1,0 +1,33 @@
+name: Resizer
+
+attributes:
+  vertical: Resize height instead of width.
+  min: Minimum size in pixels. Default is 10.
+  max: Maximum size in pixels. Default is 1000.
+
+properties:
+  target: Target element. Defaults to the previous sibling.
+
+binding:
+  behavior: '$bind or a bind event sets the target size in pixels.'
+
+events:
+  resizing:
+    detail: "{ oldSize, newSize }"
+  resize:
+    detail: "{ oldSize, newSize }"
+  change:
+    detail: Final size in pixels.
+
+rules:
+  - MouseMover is an internal dependency and is loaded automatically.
+
+example: |
+  <div id="sidebar" style="width:240px"></div>
+  <Resizer min="160" max="480" $bind="State.sidebarWidth" $onchange="State.sidebarWidth = event.detail"></Resizer>
+
+  <div id="bottomPanel" style="height:240px"></div>
+  <Resizer vertical min="120" max="480" $.target="bottomPanel"></Resizer>
+
+tests:
+  - Resizer.test.html

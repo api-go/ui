@@ -1,0 +1,38 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>components.Resizer tests</title>
+  <script src="../ui.js" components="Resizer"></script>
+</head>
+<body>
+  <div class="d-flex align-items-stretch border mb-3" style="height:80px"><div id="widthTarget" class="bg-primary" style="width:100px"></div><Resizer id="widthResizer" min="10" max="200"></Resizer></div>
+  <div class="d-flex flex-column border mb-3" style="width:120px"><div id="heightTarget" class="bg-success" style="height:40px"></div><Resizer id="heightResizer" vertical min="20" max="80"></Resizer></div>
+  <div class="d-flex align-items-stretch border" style="height:80px"><div id="customTarget" class="bg-warning" style="width:50px"></div><Resizer id="customResizer" $.target="customTarget"></Resizer></div>
+  <button id="runAll" type="button">测试全部</button>
+  <pre id="result"></pre>
+  <script>
+    const tick = () => new Promise(resolve => setTimeout(resolve, 20))
+    const cases = ['target', 'min', 'max', 'vertical', 'binding', 'resizing-event', 'resize-event', 'change-event']
+    const assert = (testResult, feature, condition, message) => { testResult.assertions++; if (condition) testResult.passed++; else { testResult.failed++; testResult.failures.push({ feature, message }) } }
+    const drag = (resizer, x, y) => { resizer.dispatchEvent(new MouseEvent('mousedown', { bubbles: true, clientX: 0, clientY: 0 })); document.dispatchEvent(new MouseEvent('mousemove', { clientX: x, clientY: y })); document.dispatchEvent(new MouseEvent('mouseup', { clientX: x, clientY: y })) }
+    window.runTest = async () => {
+      const testResult = { name: 'components.Resizer', status: 'running', assertions: 0, passed: 0, failed: 0, failures: [], consoleErrors: [], coverage: { tested: [], total: cases, percent: 0 } }
+      const widthTarget = document.querySelector('#widthTarget'); const widthResizer = document.querySelector('#widthResizer'); const heightTarget = document.querySelector('#heightTarget'); const heightResizer = document.querySelector('#heightResizer'); const customTarget = document.querySelector('#customTarget'); const customResizer = document.querySelector('#customResizer')
+      let resizing; let resize; let change
+      widthResizer.addEventListener('resizing', event => { resizing = event.detail }, { once: true }); widthResizer.addEventListener('resize', event => { resize = event.detail }, { once: true }); widthResizer.addEventListener('change', event => { change = event.detail }, { once: true })
+      drag(widthResizer, 30, 0); await tick()
+      assert(testResult, 'target', widthTarget.style.width === '130px', 'default target is the previous sibling')
+      assert(testResult, 'resizing-event', resizing?.oldSize === 100 && resizing?.newSize === 130, 'resizing detail has oldSize and newSize')
+      assert(testResult, 'resize-event', resize?.oldSize === 100 && resize?.newSize === 130, 'resize detail has oldSize and newSize')
+      assert(testResult, 'change-event', change === 130, 'change detail is final size')
+      drag(widthResizer, -300, 0); await tick(); assert(testResult, 'min', widthTarget.style.width === '10px', 'min clamps width')
+      drag(widthResizer, 300, 0); await tick(); assert(testResult, 'max', widthTarget.style.width === '200px', 'max clamps width')
+      drag(heightResizer, 0, 20); await tick(); assert(testResult, 'vertical', heightTarget.style.height === '60px', 'vertical resizer changes height')
+      customResizer.dispatchEvent(new CustomEvent('bind', { detail: 75 })); await tick(); assert(testResult, 'binding', customTarget.style.width === '75px', '$.target and bind update a custom target')
+      testResult.coverage.tested = [...cases]; testResult.coverage.percent = 100; testResult.status = testResult.failed ? 'failed' : 'passed'; document.querySelector('#result').textContent = JSON.stringify(testResult, null, 2); window.testResult = testResult; return testResult
+    }
+    document.querySelector('#runAll').onclick = window.runTest
+  </script>
+</body>
+</html>

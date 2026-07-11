@@ -1,0 +1,23 @@
+name: TagsInput
+purpose: Enter a list of unique string tags; Enter, comma, or space commits a tag.
+
+attributes:
+  placeholder: string; input placeholder (the built-in default is localized)
+properties:
+  value: array of strings; current unique tags
+
+example: |
+  <script>
+    const tags = ['admin', 'editor']
+    const user = { tags: ['admin', 'editor'] }
+    const userSchema = [{ name: 'tags', label: 'Tags', type: 'TagsInput' }]
+  </script>
+
+  <TagsInput placeholder="Add a tag" $.state.value="tags"></TagsInput>
+  <AutoForm $.state.data="user" $.state.schema="userSchema"></AutoForm>
+
+events:
+  change: detail is the complete updated string array
+
+related:
+  - ../AutoForm.yaml

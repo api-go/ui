@@ -1,0 +1,24 @@
+name: VirtualScroll
+
+purpose: Variable-height virtual scrolling utility used by List and DataTable.
+
+factory:
+  signature: VirtualScroll(options)
+  options:
+    itemHeight: Optional fixed initial item height.
+
+methods:
+  reset: Initialize a new list and return its first render window.
+  init: Measure initial data and invoke refresh callback.
+  update: Measure one rendered item.
+  calc: Return paddings, renderedList, and listStartIndex for current scroll position.
+
+rules:
+  - Treat this as an internal UI utility unless implementing a virtualized component.
+  - Call update after each rendered row can be measured.
+
+example: |
+  const virtual = VirtualScroll({ itemHeight: 40 })
+  virtual.reset(rows, container)
+  virtual.init(rows, () => refresh())
+  const view = virtual.calc(container, rows)

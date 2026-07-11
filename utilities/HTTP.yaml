@@ -1,0 +1,50 @@
+name: HTTP
+
+methods:
+  request:
+    signature: HTTP.request(options)
+  get:
+    signature: HTTP.get(options)
+  post:
+    signature: HTTP.post(options)
+  put:
+    signature: HTTP.put(options)
+  delete:
+    signature: HTTP.delete(options)
+  head:
+    signature: HTTP.head(options)
+
+properties:
+  keepHeaders: 'Header names retained from responses and injected into later requests. Default: [Session-Id, Device-Id].'
+
+options:
+  url: Required request URL.
+  method: HTTP method. request defaults to POST.
+  data: Object, string, ArrayBuffer, FormData, or HTMLFormElement.
+  headers: Request headers.
+  responseType: json, text, or binary. Defaults from Content-Type.
+  timeout: Milliseconds. Default is 10000.
+
+response:
+  fields: [ok, status, headers, responseType, result, error]
+  behavior: HTTP failures resolve with ok false and error. Transport failures also resolve with ok false.
+
+rules:
+  - Plain object request data is sent as JSON unless it contains File, Blob, or FileList values.
+  - File-like values are converted to FormData.
+  - Do not set Content-Type for FormData.
+  - Session-Id and Device-Id response headers are retained by default; extend HTTP.keepHeaders to retain additional headers.
+
+examples:
+  get_json: |
+    const response = await HTTP.get({ url: '/api/users' })
+    if (response.ok) render(response.result)
+  post_json: |
+    const response = await HTTP.post({ url: '/api/users', data: { name: 'Ada' } })
+  upload: |
+    const response = await HTTP.post({ url: '/api/upload', data: document.querySelector('#form') })
+  api_component: |
+    <API id="usersApi" auto $.request="{ url: '/api/users', method: 'GET' }"></API>
+
+tests:
+  - HTTP.test.html

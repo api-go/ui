@@ -1,0 +1,80 @@
+name: List
+
+attributes:
+  mode: [normal|group|tree]
+  fast: "boolean — virtual scrolling"
+  collapsible: "boolean — collapsible tree nodes"
+  auto-select: "boolean — clicked item id -> selectedItem"
+  auto-select-group: "boolean — clicked group id -> selectedGroup"
+  idfield: id
+  labelfield: label
+  summaryfield: summary
+  groupidfield: id
+  grouplabelfield: label
+  groupsummaryfield: summary
+  groupfield: group
+  parentfield: parent
+
+state:
+  list: 'Array of item objects. Declarative form: `$.state.list="users"`.'
+  groups: 'Array of group objects when mode=group. Declarative form: `$.state.groups="groups"`.'
+  filter: String or object filter.
+  order: Field name, `-name`, or `name desc`.
+  selectedItem: Selected item id (written by auto-select).
+  selectedGroup: Selected group id (written by auto-select-group).
+
+properties:
+  filterFunc: Custom item predicate.
+  orderFunc: Custom sorting comparator.
+
+events:
+  change:
+    detail: selectedItem
+  itemclick:
+    detail: "{ item, index }"
+  groupclick:
+    detail: "{ item, index }"
+
+slots:
+  item: Replace the complete item row.
+  item-actions: Render at the right side of every item row.
+  group-actions: Render at the right side of every group row.
+
+rules:
+  - With fast, a custom item row must retain list-group-item and $onupdate.
+  - Use event.stopPropagation() for action controls that must not select the row.
+  - 'Non-default field mapping is declarative: `idfield="key" labelfield="title" summaryfield="desc"`.'
+
+examples: |
+  <script>
+    const users = [
+      { id: 'ada', label: 'Ada', summary: 'Admin' },
+      { id: 'lin', label: 'Lin', summary: 'Editor' }
+    ]
+    const groups = [{ id: 'ops', label: 'Operations' }]
+    const groupedUsers = [{ id: 'ada', label: 'Ada', group: 'ops' }]
+    const treeUsers = [
+      { id: 'root', label: 'Root', parent: '' },
+      { id: 'child', label: 'Child', parent: 'root' }
+    ]
+  </script>
+
+  <List $.state.list="users" auto-select></List>
+
+  <List $.state.list="users" auto-select>
+    <button slot="item-actions" $onclick="event.stopPropagation(); edit(item)">Edit</button>
+  </List>
+
+  <List mode="group" $.state.groups="groups" $.state.list="groupedUsers"></List>
+
+  <List mode="tree" collapsible $.state.list="treeUsers"></List>
+
+  <List fast $.state.list="users"></List>
+
+data_shape:
+  item: "{ id, label, summary }"
+  group: "{ id, label, summary }"
+  tree_item: "{ id, label, summary, parent }"
+
+tests:
+  - List.test.html

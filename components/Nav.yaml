@@ -1,0 +1,31 @@
+name: Nav
+
+attributes:
+  vertical:
+    type: boolean
+
+state:
+  brand: "{ image?, icon?, label? }"
+  list: Array of navigation item objects; assign `nav.state.list = items`.
+  value: Selected item `name`.
+  openName: Open dropdown name in vertical mode.
+
+item_types:
+  label: Non-clickable text.
+  button: Selectable navigation item.
+  dropdown: Group of label, button, or switch items.
+  fill: Horizontal spacer item.
+
+events:
+  change:
+    detail: Selected item name.
+  nav:
+    detail: '{ item } or { item, open } for vertical dropdown changes.'
+
+item_shape: "{ type, name, label, icon?, items? }"
+
+examples:
+  - EXAMPLE/Nav/Basic.yaml
+  - EXAMPLE/Nav/Dropdown.yaml
+
+example: EXAMPLE/Nav/Basic.yaml

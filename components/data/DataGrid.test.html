@@ -1,0 +1,50 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>components.data.DataGrid tests</title>
+  <script src="../../ui.js" components="data.DataGrid"></script>
+  <script>
+    const gridFields = [
+      { id: 'id', name: 'ID', type: 'number', settings: { width: 70, formType: 'number', pinned: 'left' } },
+      { id: 'name', name: 'Name', type: 'text', settings: { width: 160, formType: 'text' } },
+      { id: 'role', name: 'Role', type: 'text', settings: { width: 120, formType: 'select', options: [{ label: 'Administrator', value: 'admin' }, { label: 'Editor', value: 'editor' }] } },
+      { id: 'score', name: 'Score', type: 'number', settings: { width: 100, formType: 'number', prefix: '$', decimals: 2 } },
+      { id: 'active', name: 'Active', type: 'boolean', settings: { width: 90, formType: 'switch' } },
+      { id: 'choices', name: 'Choices', type: 'object', settings: { width: 130, formType: 'checkbox', options: ['a', 'b'] } },
+      { id: 'priority', name: 'Priority', type: 'text', settings: { width: 120, formType: 'radio', options: ['low', 'high'] } },
+      { id: 'note', name: 'Note', type: 'text', settings: { width: 160, formType: 'textarea' } },
+      { id: 'date', name: 'Date', type: 'date', settings: { width: 120, formType: 'date' } },
+      { id: 'datetime', name: 'DateTime', type: 'datetime', settings: { width: 180, formType: 'datetime' } },
+      { id: 'tags', name: 'Tags', type: 'object', settings: { width: 140, formType: 'TagsInput' } },
+      { id: 'range', name: 'Range', type: 'date', settings: { width: 140, formType: 'DatePicker' } },
+      { id: 'color', name: 'Color', type: 'text', settings: { width: 110, formType: 'ColorPicker' } },
+      { id: 'icon', name: 'Icon', type: 'text', settings: { width: 120, formType: 'IconPicker' } }
+    ]
+    const gridRows = Array.from({ length: 200 }, (_, index) => ({ id: index + 1, name: 'User ' + (index + 1), role: index % 2 ? 'editor' : 'admin', score: index + 0.5, active: index % 2 === 0, choices: ['a'], priority: 'high', note: 'Note ' + (index + 1), date: '2026-07-12', datetime: '2026-07-12T09:30', tags: ['grid'], range: '2026-07-12', color: '#0d6efd', icon: 'star' }))
+  </script>
+</head>
+<body class="vh-100 overflow-hidden bg-body-tertiary"><div class="container-fluid h-100 py-3 d-flex flex-column">
+  <header class="d-flex align-items-center gap-2 mb-3 flex-shrink-0"><h1 class="h4 mb-0">components.data.DataGrid</h1><span id="status" class="badge text-bg-secondary">未测试</span><button id="runAll" class="btn btn-primary btn-sm ms-auto" type="button">测试全部</button><span id="coverage" class="small text-body-secondary"></span></header>
+  <main class="flex-fill overflow-hidden"><DataGrid id="usersGrid" class="h-100" editable $.state.fields="gridFields" $.state.list="gridRows"></DataGrid></main><pre id="result" class="h-25 overflow-auto border rounded bg-body p-2 mt-3 mb-0 flex-shrink-0 small"></pre>
+</div><script>
+  const cases = ['editable', 'fields', 'list', 'field', 'formType', 'format', 'addRow', 'saveChanges', 'save-event', 'applySortFilter', 'sortConfig', 'filterConfig', 'virtual-scroll', 'selection-scroll', 'deleteField', 'DataGrid.registerFieldType', 'DataGrid.getFieldTypes']; const errors = []; const originalError = console.error; console.error = (...args) => { errors.push(args.map(String).join(' ')); originalError(...args) }; addEventListener('error', event => errors.push(String(event.message || event.error || event))); addEventListener('unhandledrejection', event => errors.push(String(event.reason || event))); const tick = (ms = 260) => new Promise(resolve => setTimeout(resolve, ms)); const assert = (r, feature, ok, message) => { r.assertions++; if (ok) r.passed++; else { r.failed++; r.failures.push({ feature, message }) } }
+  window.runTest = async () => { errors.length = 0; const r = { name: 'components.data.DataGrid', status: 'running', assertions: 0, passed: 0, failed: 0, failures: [], consoleErrors: [], coverage: { tested: [], total: cases, percent: 0 } }; await tick(); const grid = document.querySelector('#usersGrid');
+    assert(r, 'editable', grid.editable === true && grid.querySelector('.dt-footer'), 'editable enables grid controls')
+    assert(r, 'fields', grid.state.fields.length === gridFields.length && grid.querySelectorAll('.dt-header-row .dt-cell').length === gridFields.length, 'fields render grid columns')
+    assert(r, 'list', grid.state.list.length === 200 && grid.querySelectorAll('.dt-body-row').length < 200, 'list renders a virtual row window')
+    assert(r, 'field', grid.state.fields.every(field => field.id && field.name), 'field definitions expose id and name')
+    assert(r, 'formType', ['text', 'number', 'select', 'switch', 'checkbox', 'radio', 'textarea', 'date', 'datetime', 'TagsInput', 'DatePicker', 'ColorPicker', 'IconPicker'].every(type => grid.state.fields.some(field => field.settings.formType === type)), 'one grid visibly declares every supported editor type')
+    assert(r, 'format', grid.format('admin', grid.state.fields[2]) === 'Administrator' && grid.format(1.5, grid.state.fields[3]) === '$1.50', 'field settings and formatters render values')
+    const beforeRows = grid.state.list.length; grid.addRow(); await tick(); assert(r, 'addRow', grid.state.list.length === beforeRows + 1 && grid.state.isDirty, 'addRow adds a field-shaped row and marks changes dirty')
+    let save; grid.addEventListener('save', event => { save = event.detail }, { once: true }); grid.saveChanges(); assert(r, 'saveChanges', grid.state.isDirty === false, 'saveChanges clears pending changes'); assert(r, 'save-event', save?.list.length === beforeRows + 1 && save?.fields.length === gridFields.length, 'save event exposes list and fields')
+    grid.state.activeFieldId = 'name'; grid.applySortFilter({ sort: 'desc' }); await tick(); assert(r, 'applySortFilter', grid.state.list[0].name === 'User 99', 'applySortFilter sorts the current rows')
+    assert(r, 'sortConfig', grid.state.sortConfig.fieldId === 'name' && grid.state.sortConfig.direction === 'desc', 'sortConfig records field and direction')
+    grid.state.activeFieldId = 'role'; grid.state.filterConfig = { role: { mode: 'equals', value: 'admin', selectedValues: [] } }; grid.applySortFilter(); await tick(); assert(r, 'filterConfig', grid.state.list.every(row => row.role === 'admin'), 'filterConfig filters by field value')
+    const main = grid.querySelector('.dt-main'); main.scrollTop = main.scrollHeight; main.dispatchEvent(new Event('scroll')); await tick(); assert(r, 'virtual-scroll', grid.state._renderedList.length < grid.state.list.length && grid.state._listStartIndex > 0, 'virtual scroll updates the rendered row window')
+    const selected = grid.querySelector('.dt-body-row .dt-cell'); grid.onMainMouseDown({ target: selected, ctrlKey: false, metaKey: false }); main.scrollTop = 0; main.dispatchEvent(new Event('scroll')); await tick(400); main.scrollTop = main.scrollHeight; main.dispatchEvent(new Event('scroll')); await tick(400); assert(r, 'selection-scroll', grid.state.selectedRowCount === 1 && grid.querySelectorAll('.dt-cell-selected').length > 0, 'selected cells restore their visible highlight after virtual scrolling away and back')
+    const fieldCount = grid.state.fields.length; grid.state.activeField = grid.state.fields.at(-1); const removing = grid.deleteField(); await tick(550); document.querySelector('Dialog')?.querySelectorAll('button')[1]?.click(); await removing; await tick(); assert(r, 'deleteField', grid.state.fields.length === fieldCount - 1 && !grid.querySelector('.null') && !grid.textContent.includes('null'), 'deleteField removes its cells without orphan null rows')
+    DataGrid.registerFieldType({ value: 'test', label: 'Test', schema: [] }); assert(r, 'DataGrid.registerFieldType', DataGrid.getFieldTypes().some(type => type.value === 'test'), 'registerFieldType registers a public field type'); assert(r, 'DataGrid.getFieldTypes', DataGrid.getFieldTypes().length >= 8, 'getFieldTypes returns built-in and registered types')
+    r.coverage.tested = [...cases]; r.coverage.percent = 100; r.consoleErrors = [...errors]; r.status = r.failed || r.consoleErrors.length ? 'failed' : 'passed'; document.querySelector('#status').className = 'badge text-bg-' + (r.status === 'passed' ? 'success' : 'danger'); document.querySelector('#status').textContent = r.status === 'passed' ? '通过' : '失败'; document.querySelector('#coverage').textContent = '覆盖 100%'; document.querySelector('#result').textContent = JSON.stringify(r, null, 2); return r }
+  document.querySelector('#runAll').onclick = window.runTest
+</script></body></html>

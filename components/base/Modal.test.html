@@ -1,0 +1,37 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>components.Modal tests</title>
+  <script src="../../ui.js" components="Modal"></script>
+  <script>
+    const modalModel = { open: false }
+    const modalState = { title: 'Edit user', type: 'success' }
+  </script>
+</head>
+<body class="vh-100 overflow-hidden bg-body-tertiary">
+  <div class="container-fluid h-100 py-3 d-flex flex-column">
+    <header class="d-flex align-items-center gap-2 mb-3 flex-shrink-0"><h1 class="h4 mb-0">components.Modal</h1><span id="status" class="badge text-bg-secondary">未测试</span><button id="runAll" class="btn btn-primary btn-sm ms-auto" type="button">测试全部</button><span id="coverage" class="small text-body-secondary"></span></header>
+    <main class="flex-fill overflow-auto"><Modal id="titleModal" $.state.title="modalState.title" $.state.type="modalState.type"></Modal><Modal id="editModal" $bind="modalModel.open" $.state.type="modalState.type"><div slot="header" id="customHeader">Custom header</div><div slot="body" id="customBody">Custom body</div><div slot="footer" id="customFooter">Custom footer</div></Modal></main>
+    <pre id="result" class="h-25 overflow-auto border rounded bg-body p-2 mt-3 mb-0 flex-shrink-0 small"></pre>
+  </div>
+  <script>
+    const cases = ['binding', 'title', 'type', 'show', 'hide', 'change-event', 'header-slot', 'body-slot', 'footer-slot']
+    const errors = []; const originalError = console.error; console.error = (...args) => { errors.push(args.map(String).join(' ')); originalError(...args) }; addEventListener('error', event => errors.push(String(event.message || event.error || event))); addEventListener('unhandledrejection', event => errors.push(String(event.reason || event)))
+    const tick = () => new Promise(resolve => setTimeout(resolve, 500)); const assert = (r, feature, ok, message) => { r.assertions++; if (ok) r.passed++; else { r.failed++; r.failures.push({ feature, message }) } }
+    window.runTest = async () => { errors.length = 0; const r = { name: 'components.Modal', status: 'running', assertions: 0, passed: 0, failed: 0, failures: [], consoleErrors: [], coverage: { tested: [], total: cases, percent: 0 } }; const modal = document.querySelector('#editModal'); let change
+      modal.addEventListener('change', event => { change = event.detail }, { once: true }); modal.dispatchEvent(new CustomEvent('bind', { detail: true })); await tick()
+      assert(r, 'binding', modal.classList.contains('show'), '$bind true shows the modal')
+      assert(r, 'title', document.querySelector('#titleModal .modal-title')?.textContent === 'Edit user', 'title renders the default header title')
+      assert(r, 'type', modal.querySelector('.modal-content')?.classList.contains('border-success'), 'type applies the Bootstrap contextual type')
+      assert(r, 'show', typeof modal.show === 'function' && modal.classList.contains('show'), 'show() is exposed and shows the Bootstrap modal')
+      assert(r, 'header-slot', modal.querySelector('#customHeader')?.textContent === 'Custom header', 'header slot replaces the header')
+      assert(r, 'body-slot', modal.querySelector('#customBody')?.textContent === 'Custom body', 'body slot replaces the body')
+      assert(r, 'footer-slot', modal.querySelector('#customFooter')?.textContent === 'Custom footer', 'footer slot replaces the footer')
+      modal.hide(); await tick(); assert(r, 'hide', !modal.classList.contains('show'), 'hide() hides the Bootstrap modal'); assert(r, 'change-event', change === false, 'change detail is false when the modal is hidden')
+      r.coverage.tested = [...cases]; r.coverage.percent = 100; r.consoleErrors = [...errors]; r.status = r.failed || r.consoleErrors.length ? 'failed' : 'passed'; document.querySelector('#status').className = 'badge text-bg-' + (r.status === 'passed' ? 'success' : 'danger'); document.querySelector('#status').textContent = r.status === 'passed' ? '通过' : '失败'; document.querySelector('#coverage').textContent = '覆盖 100%'; document.querySelector('#result').textContent = JSON.stringify(r, null, 2); return r }
+    document.querySelector('#runAll').onclick = window.runTest
+  </script>
+</body>
+</html>

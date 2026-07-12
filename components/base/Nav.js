@@ -61,12 +61,12 @@ globalThis.Component.register('Nav', container => {
 							</button>
 							<template $if="this.state.openName===item.name">
 								<div class="d-flex flex-column w-100 ps-2 mt-1">
-									<template $each="item.list" as="subitem">
+									<template $each="item.items || item.list" as="subitem">
 										<template $if="subitem.type==='label'">
 											<div $class="small text-uppercase text-body-secondary fw-semibold px-2 py-1 \${subitem.class || ''}" $text="subitem.label"></div>
 										</template>
 										<template $if="subitem.type==='button'">
-											<button $class="nav-link w-100 text-start py-1 px-2 \${subitem.class || ''}" $onclick="this.clickSubitem(subitem)">
+											<button $class="nav-link w-100 text-start py-1 px-2 \${this.state.value===subitem.name?'active':''} \${subitem.class || ''}" $onclick="this.clickSubitem(subitem)">
 												<i $class="bi bi-\${subitem.icon} me-2 d-inline-block" style="width: 16px;"></i><span $text="subitem.label"></span>
 											</button>
 										</template>
@@ -87,12 +87,12 @@ globalThis.Component.register('Nav', container => {
 								<i $class="bi bi-\${item.icon} me-2"></i><span $class="'d-none d-' + (this.state?.list?.length>5?'lg':'md') + '-inline'" $text="item.label"></span>
 							</button>
 							<div class="dropdown-menu dropdown-menu-end p-2 bg-body-secondary shadow" $style="'width: ' + (item.width || 250) + 'px;'">
-								<template $each="item.list" as="subitem">
+								<template $each="item.items || item.list" as="subitem">
 									<template $if="subitem.type==='label'">
 										<div $class="dropdown-header \${subitem.class || ''}" $text="subitem.label"></div>
 									</template>
 									<template $if="subitem.type==='button'">
-										<button $class="dropdown-item \${subitem.class || ''}" $onclick="this.clickSubitem(subitem)">
+										<button $class="dropdown-item \${this.state.value===subitem.name?'active':''} \${subitem.class || ''}" $onclick="this.clickSubitem(subitem)">
 											<i $class="bi bi-\${subitem.icon} me-2 d-inline-block" style="width: 16px;"></i><span $text="subitem.label"></span>
 										</button>
 									</template>

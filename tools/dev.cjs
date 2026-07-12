@@ -5,7 +5,8 @@ const index = process.argv.indexOf('--test');
 const requested = index === -1 ? '' : process.argv[index + 1];
 let target = 'ui.test.html';
 if (requested) {
-  const name = requested.includes('.') ? requested : 'components.' + requested;
+  const aliases = { DataGrid: 'components.data.DataGrid', 'data.DataGrid': 'components.data.DataGrid' };
+  const name = aliases[requested] || (requested.includes('.') ? requested : 'components.' + requested);
   const parts = name.split('.');
   if (parts[0] !== 'components' && parts[0] !== 'utilities') throw new Error('Use npm test -- List, form.DatePicker, or components.form.DatePicker');
   target += '?test=' + encodeURIComponent(name);

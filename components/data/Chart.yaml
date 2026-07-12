@@ -1,7 +1,7 @@
-name: DataChart
+name: Chart
 
 constructor:
-  signature: new DataChart(canvas, options)
+  signature: new Chart(canvas, options)
   options:
     type: line, bar, or pie. Default is line.
     data: Chart.js data object or source object array.
@@ -16,19 +16,19 @@ component:
     options: Chart.js options.
     map: "{ labels, values, label }"
   property:
-    chartInstance: Underlying DataChart instance.
+    chartInstance: Underlying Chart instance.
 
 methods:
   update: Update optional data and redraw.
   destroy: Destroy the underlying Chart.js instance.
 
 rules:
-  - Give the DataChart container an explicit height.
+  - Give the Chart container an explicit height.
   - Use map only when data is an array of objects.
-  - DataChart destroys its Chart.js instance when the component unloads.
+  - Chart destroys its Chart.js instance when the component unloads.
 
 example: |
-  <DataChart id="sales" type="bar"></DataChart>
+  <Chart id="sales" type="bar"></Chart>
   <script>
   const chart = document.querySelector('#sales')
   chart.state.data = [

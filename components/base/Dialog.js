@@ -13,13 +13,19 @@ globalThis.Component.register('Dialog', globalThis.Component.getSetupFunction('M
       </div>
       <div class="modal-footer py-2 px-3 bg-light border-0 d-flex justify-content-center gap-3">
         <template $each="this.state?.buttons">
-          <button type="button" $class="btn btn-\${this.state?.type} px-4" data-bs-dismiss="modal" $onclick="this.result=index+1" $text="item"></button>
+        <button type="button" $class="btn btn-\${this.state?.type} px-4" $onclick="this.result=index+1; this.hide()" $text="item"></button>
         </template>
       </div>
     </div>
   </div>
 </div>
 `))
+,
+globalThis.Util.makeDom(/*html*/`
+<style>
+  Dialog.modal { background: transparent; border: 0; padding: 0; }
+</style>
+`)
 
 let _dialogCount = 0
 globalThis.Dialog = {

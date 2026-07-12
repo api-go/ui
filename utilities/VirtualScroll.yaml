@@ -1,6 +1,6 @@
 name: VirtualScroll
 
-purpose: Variable-height virtual scrolling utility used by List and DataTable.
+purpose: Variable-height virtual scrolling utility used by List and DataGrid.
 
 factory:
   signature: VirtualScroll(options)

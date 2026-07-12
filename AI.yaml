@@ -11,13 +11,14 @@ rules:
   - Prefer framework directives ($if, $bind, $onclick, slots) and Bootstrap classes over imperative page setup or custom CSS. Keep test actions limited to assertions and interaction verification.
   - Test pages use full-height flex layouts: the component area fills remaining space and result output is a bounded, internally scrollable region.
   - The outer test console keeps the selected test active and represents pass/fail with a visible status badge; detailed output belongs inside the selected test page.
-  - Public source and YAML use the same PascalCase basename (for example `components/List.js` and `components/List.yaml`, `frameworks/State.js` and `frameworks/State.yaml`).
+  - Public source and YAML use the same PascalCase basename (for example `components/base/List.js` and `components/base/List.yaml`, `frameworks/State.js` and `frameworks/State.yaml`).
 
 loading:
-  example: '<script src="https://cdn.jsdelivr.net/npm/@apigo.cc/ui@1.0.0/ui.js" components="List,AutoForm"></script>'
+  example: '<script src="https://cdn.jsdelivr.net/npm/@apigo.cc/ui@1.0.0/ui.js" components="base,form"></script>'
   rules:
     - Load ui.js in head without async, defer, or type="module".
     - Always write components with every public component used by the page.
+    - Use `base` or `form` to load the documented component category; individual names and category names can be mixed.
     - Do not list utilities or framework dependencies.
     - ui.js loads frameworks/State.js and frameworks/Bootstrap.js beside itself.
     - npm run build writes source modification versions into ui.js; ui.min.js loads matching adjacent .min.js files.
@@ -27,20 +28,20 @@ framework:
     - frameworks/Bootstrap.yaml
 
 components:
-    - components/API.yaml
-    - components/AutoForm.yaml
-    - components/List.yaml
-    - components/Modal.yaml
-    - components/Dialog.yaml
-    - components/Toast.yaml
-    - components/Nav.yaml
-    - components/Resizer.yaml
+    - components/base/API.yaml
+    - components/base/AutoForm.yaml
+    - components/base/List.yaml
+    - components/base/Modal.yaml
+    - components/base/Dialog.yaml
+    - components/base/Toast.yaml
+    - components/base/Nav.yaml
+    - components/base/Resizer.yaml
     - components/form/DatePicker.yaml
     - components/form/ColorPicker.yaml
     - components/form/IconPicker.yaml
     - components/form/TagsInput.yaml
-    - components/DataTable.yaml
-    - components/DataChart.yaml
+    - components/data/DataGrid.yaml
+    - components/data/Chart.yaml
 
 utilities:
     - utilities/HTTP.yaml

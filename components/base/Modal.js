@@ -10,7 +10,9 @@ globalThis.Component.register('Modal', container => {
                 document.activeElement?.blur()
                 container.dispatchEvent(new CustomEvent('change', { bubbles: false, detail: false }))
         })
-        globalThis.Util.copyFunction(container, container.modal, 'show', 'hide')
+        // Dialog is a native HTML element whose show/hide methods would otherwise shadow Bootstrap's methods.
+        container.show = (...args) => container.modal.show(...args)
+        container.hide = (...args) => container.modal.hide(...args)
 }, globalThis.Util.makeDom(/*html*/`
 <div class="modal fade" data-bs-backdrop="static">
   <div class="modal-dialog modal-dialog-centered">

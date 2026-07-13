@@ -2113,7 +2113,71 @@ url("data:font/woff;base64,d09GRgABAAAAAsBAAAsAAAAHavgAAQAAAAAAAAAAAAAAAAAAAAAAA
 .bi-globe-americas-fill::before { content: "\\f91b"; }
 .bi-globe-asia-australia-fill::before { content: "\\f91c"; }
 .bi-globe-central-south-asia-fill::before { content: "\\f91d"; }
-.bi-globe-europe-africa-fill::before { content: "\\f91e"; }`));
+.bi-globe-europe-africa-fill::before { content: "\\f91e"; }
+/* Bootstrap 原生仅提供 .btn-link；为链接按钮补充语义色变体。 */
+.btn-link-primary,
+.btn-link.btn-link-primary {
+    --bs-btn-color: var(--bs-primary);
+    --bs-btn-hover-color: color-mix(in srgb, var(--bs-primary) 85%, #000);
+    --bs-btn-active-color: color-mix(in srgb, var(--bs-primary) 80%, #000);
+    --bs-btn-disabled-color: var(--bs-primary);
+}
+
+.btn-link-secondary,
+.btn-link.btn-link-secondary {
+    --bs-btn-color: var(--bs-secondary);
+    --bs-btn-hover-color: color-mix(in srgb, var(--bs-secondary) 85%, #000);
+    --bs-btn-active-color: color-mix(in srgb, var(--bs-secondary) 80%, #000);
+    --bs-btn-disabled-color: var(--bs-secondary);
+}
+
+.btn-link-success,
+.btn-link.btn-link-success {
+    --bs-btn-color: var(--bs-success);
+    --bs-btn-hover-color: color-mix(in srgb, var(--bs-success) 85%, #000);
+    --bs-btn-active-color: color-mix(in srgb, var(--bs-success) 80%, #000);
+    --bs-btn-disabled-color: var(--bs-success);
+}
+
+.btn-link-info,
+.btn-link.btn-link-info {
+    --bs-btn-color: var(--bs-info);
+    --bs-btn-hover-color: color-mix(in srgb, var(--bs-info) 85%, #000);
+    --bs-btn-active-color: color-mix(in srgb, var(--bs-info) 80%, #000);
+    --bs-btn-disabled-color: var(--bs-info);
+}
+
+.btn-link-warning,
+.btn-link.btn-link-warning {
+    --bs-btn-color: var(--bs-warning);
+    --bs-btn-hover-color: color-mix(in srgb, var(--bs-warning) 85%, #000);
+    --bs-btn-active-color: color-mix(in srgb, var(--bs-warning) 80%, #000);
+    --bs-btn-disabled-color: var(--bs-warning);
+}
+
+.btn-link-danger,
+.btn-link.btn-link-danger {
+    --bs-btn-color: var(--bs-danger);
+    --bs-btn-hover-color: color-mix(in srgb, var(--bs-danger) 85%, #000);
+    --bs-btn-active-color: color-mix(in srgb, var(--bs-danger) 80%, #000);
+    --bs-btn-disabled-color: var(--bs-danger);
+}
+
+.btn-link-light,
+.btn-link.btn-link-light {
+    --bs-btn-color: var(--bs-light);
+    --bs-btn-hover-color: color-mix(in srgb, var(--bs-light) 85%, #000);
+    --bs-btn-active-color: color-mix(in srgb, var(--bs-light) 80%, #000);
+    --bs-btn-disabled-color: var(--bs-light);
+}
+
+.btn-link-dark,
+.btn-link.btn-link-dark {
+    --bs-btn-color: var(--bs-dark);
+    --bs-btn-hover-color: color-mix(in srgb, var(--bs-dark) 85%, #000);
+    --bs-btn-active-color: color-mix(in srgb, var(--bs-dark) 80%, #000);
+    --bs-btn-disabled-color: var(--bs-dark);
+}`));
       document.head.appendChild(elementStyle);
     }
   } catch (e) {
@@ -7192,15 +7256,17 @@ url("data:font/woff;base64,d09GRgABAAAAAsBAAAsAAAAHavgAAQAAAAAAAAAAAAAAAAAAAAAAA
           const rgb = Bootstrap._hexToRgb(hex);
           if (rgb) {
             const rgbStr = `${rgb.r}, ${rgb.g}, ${rgb.b}`;
+            const hoverColor = Bootstrap._shadeColor(hex, 0.15);
+            const activeColor = Bootstrap._shadeColor(hex, 0.2);
             root.style.setProperty(`--bs-${name}-rgb`, rgbStr);
             cssPatch += `
                         .btn-${name} {
                             --bs-btn-bg: var(--bs-${name}) !important;
                             --bs-btn-border-color: var(--bs-${name}) !important;
-                            --bs-btn-hover-bg: var(--bs-${name}) !important;
-                            --bs-btn-hover-border-color: var(--bs-${name}) !important;
-                            --bs-btn-active-bg: var(--bs-${name}) !important;
-                            --bs-btn-active-border-color: var(--bs-${name}) !important;
+                            --bs-btn-hover-bg: ${hoverColor} !important;
+                            --bs-btn-hover-border-color: ${hoverColor} !important;
+                            --bs-btn-active-bg: ${activeColor} !important;
+                            --bs-btn-active-border-color: ${activeColor} !important;
                             --bs-btn-disabled-bg: var(--bs-${name}) !important;
                             --bs-btn-disabled-border-color: var(--bs-${name}) !important;
                         }
@@ -7208,6 +7274,15 @@ url("data:font/woff;base64,d09GRgABAAAAAsBAAAsAAAAHavgAAQAAAAAAAAAAAAAAAAAAAAAAA
                         .text-${name} { color: var(--bs-${name}) !important; }
                         .border-${name} { border-color: var(--bs-${name}) !important; }
                         .badge.bg-${name} { background-color: var(--bs-${name}) !important; }
+
+                        /* 语义色链接按钮 */
+                        .btn-link-${name},
+                        .btn-link.btn-link-${name} {
+                            --bs-btn-color: var(--bs-${name});
+                            --bs-btn-hover-color: ${hoverColor};
+                            --bs-btn-active-color: ${activeColor};
+                            --bs-btn-disabled-color: var(--bs-${name});
+                        }
 
                         /* 表单控件补丁 (Form Controls) */
                         .form-check-input:checked {
@@ -7291,6 +7366,12 @@ url("data:font/woff;base64,d09GRgABAAAAAsBAAAsAAAAHavgAAQAAAAAAAAAAAAAAAAAAAAAAA
       hex = hex.replace(shorthandRegex, (m, r, g, b) => r + r + g + g + b + b);
       const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
       return result ? { r: parseInt(result[1], 16), g: parseInt(result[2], 16), b: parseInt(result[3], 16) } : null;
+    },
+    _shadeColor: (hex, amount) => {
+      const rgb = Bootstrap._hexToRgb(hex);
+      if (!rgb) return hex;
+      const shade = (value) => Math.round(value * (1 - amount)).toString(16).padStart(2, "0");
+      return `#${shade(rgb.r)}${shade(rgb.g)}${shade(rgb.b)}`;
     }
   };
   if (typeof globalThis !== "undefined") {

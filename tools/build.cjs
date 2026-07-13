@@ -1,17 +1,13 @@
-const { execFileSync } = require('node:child_process');
-const { readdir, readFile, stat, writeFile } = require('node:fs/promises');
+const { copyFile, readdir, readFile, stat, writeFile } = require('node:fs/promises');
 const { join, relative, sep } = require('node:path');
 const terser = require('terser');
 
 const root = join(__dirname, '..');
 const publicDirs = ['frameworks', 'utilities', 'components'];
 
-const version = () => {
-  const tags = execFileSync('git', ['tag', '--sort=-v:refname'], { cwd: root, encoding: 'utf8' })
-    .trim().split(/\s+/).filter(tag => /^v\d+\.\d+\.\d+$/.test(tag));
-  if (!tags.length) return '1.0.0';
-  const [major, minor, patch] = tags[0].slice(1).split('.').map(Number);
-  return `${major}.${minor}.${patch + 1}`;
+const frameworks = {
+  Bootstrap: join(root, '..', 'bootstrap', 'dist', 'bootstrap.js'),
+  State: join(root, '..', 'state', 'dist', 'state.js')
 };
 
 const filesBelow = async directory => {
@@ -23,22 +19,20 @@ const filesBelow = async directory => {
   return results.flat();
 };
 
-const setVersion = (text, nextVersion) => text
-  .replace(/"version": "\d+\.\d+\.\d+"/, `"version": "${nextVersion}"`)
-  .replace(/@apigo\.cc\/ui@\d+\.\d+\.\d+/g, `@apigo.cc/ui@${nextVersion}`);
-
 (async () => {
-  const nextVersion = version();
+  await Promise.all(Object.entries(frameworks).map(([name, source]) => copyFile(source, join(root, 'frameworks', `${name}.js`))));
   const sources = (await Promise.all(publicDirs.map(dir => filesBelow(join(root, dir))))).flat();
-  const sourceVersions = Object.fromEntries(await Promise.all(sources.map(async file => {
+  const sourceStats = await Promise.all(sources.map(async file => {
     const path = relative(root, file).split(sep).join('/');
-    return [path, Math.floor((await stat(file)).mtimeMs).toString(36)];
-  })));
+    return [path, Math.floor((await stat(file)).mtimeMs)];
+  }));
+  const sourceVersions = Object.fromEntries(sourceStats.map(([path, modified]) => [path, modified.toString(36)]));
+  const buildVersion = Math.max(...sourceStats.map(([, modified]) => modified)).toString(36);
   const uiFile = join(root, 'ui.js');
   const uiSource = await readFile(uiFile, 'utf8');
   const builtUi = uiSource.replace(
     /const build = \{ version: '[^']*', files: \{[^\n]*\} \};/,
-    `const build = { version: '${nextVersion}', files: ${JSON.stringify(sourceVersions)} };`
+    `const build = { version: '${buildVersion}', files: ${JSON.stringify(sourceVersions)} };`
   );
   if (builtUi === uiSource && !uiSource.includes('const build =')) throw new Error('ui.js build manifest is missing');
   await writeFile(uiFile, builtUi);
@@ -50,9 +44,5 @@ const setVersion = (text, nextVersion) => text
   };
   await Promise.all([...sources, uiFile].map(minify));
 
-  for (const name of ['package.json', 'README.md', 'README.zh-CN.md', 'AI.yaml']) {
-    const file = join(root, name);
-    await writeFile(file, setVersion(await readFile(file, 'utf8'), nextVersion));
-  }
-  console.log(`Built @apigo.cc/ui@${nextVersion} (${sources.length} module files)`);
+  console.log(`Built @apigo.cc/ui (${sources.length} module files; cache ${buildVersion})`);
 })();

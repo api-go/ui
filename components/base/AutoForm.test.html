@@ -31,6 +31,10 @@
       { name: 'hidden', label: 'Hidden', type: 'text', if: "this.data.role === 'user'" }
     ]
     const compactSchema = [{ name: 'name', label: 'Name', type: 'text' }]
+    const databaseFields = [
+      { id: 'f-name', tableID: 'users', name: 'name', type: 'v100', settings: { type: 'text', attrs: { required: true } } },
+      { id: 'f-role', tableID: 'users', name: 'role', type: 'v30', settings: { type: 'select', options: ['admin', 'user'] } }
+    ]
     const saveRequest = { url: '/__http__/json', method: 'POST' }
     const errorRequest = { url: '/__http__/api-error', method: 'POST' }
   </script>
@@ -45,11 +49,12 @@
   <AutoForm id="saveForm" nobutton $.api="saveApi" $.state.data="profile" $.state.schema="compactSchema"></AutoForm>
   <AutoForm id="errorForm" nobutton $.api="errorApi" $.state.data="profile" $.state.schema="compactSchema"></AutoForm>
   <AutoForm id="cancelForm" nobutton $.api="saveApi" $.state.data="profile" $.state.schema="compactSchema"></AutoForm>
+  <AutoForm id="databaseForm" nobutton $.state.data="profile" $.state.schema="databaseFields"></AutoForm>
   <button id="runAll" type="button">测试全部</button>
   <pre id="result"></pre>
   <script>
     const tick = () => new Promise(resolve => setTimeout(resolve, 80))
-    const cases = ['data', 'all-controls', 'setting', 'options', 'if', 'custom-type', 'vertical', 'horizontal', 'inline', 'nobutton', 'submitlabel', 'slot', 'submit', 'submit-event', 'response-event', 'error-event']
+    const cases = ['data', 'all-controls', 'setting', 'options', 'database-schema', 'if', 'custom-type', 'vertical', 'horizontal', 'inline', 'nobutton', 'submitlabel', 'slot', 'submit', 'submit-event', 'response-event', 'error-event']
     const assert = (testResult, feature, condition, message) => { testResult.assertions++; if (condition) testResult.passed++; else { testResult.failed++; testResult.failures.push({ feature, message }) } }
     window.runTest = async () => {
       const testResult = { name: 'components.form.AutoForm', status: 'running', assertions: 0, passed: 0, failed: 0, failures: [], consoleErrors: [], coverage: { tested: [], total: cases, percent: 0 } }
@@ -61,6 +66,7 @@
       assert(testResult, 'all-controls', form.querySelectorAll('[control-wrapper]').length === 16 && standardTypes.every(type => form.querySelector(`[name="${profileSchema.find(item => item.type === type).name}"]`)) && customTypes.every(type => form.querySelector(type)), 'one schema renders every documented standard and custom control type')
       assert(testResult, 'setting', form.querySelector('input[name="name"]').required, 'setting attributes are copied to controls')
       assert(testResult, 'options', form.querySelectorAll('[name="role"] option').length === 2, 'select options render schema options')
+      const databaseForm = document.querySelector('#databaseForm'); assert(testResult, 'database-schema', databaseForm.querySelector('input[name="name"]')?.required && databaseForm.querySelectorAll('select[name="role"] option').length === 2, 'database field definitions are converted to a plain form schema without changing form data keys')
       assert(testResult, 'if', !form.querySelector('input[name="hidden"]'), '$$if hides fields whose expression is false')
       form.data.role = 'user'; await tick(); assert(testResult, 'if', !!form.querySelector('input[name="hidden"]'), '$$if evaluates item.if again after form data changes'); form.data.role = 'admin'
       assert(testResult, 'custom-type', !!form.querySelector('TagsInput'), 'registered AutoForm component type renders its component')

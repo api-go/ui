@@ -17,7 +17,7 @@
     <pre id="result" class="h-25 overflow-auto border rounded bg-body p-2 mt-3 mb-0 flex-shrink-0 small"></pre>
   </div>
   <script>
-    const cases = ['binding', 'title', 'type', 'show', 'hide', 'change-event', 'header-slot', 'body-slot', 'footer-slot']
+    const cases = ['binding', 'title', 'type', 'show', 'hide', 'change-event', 'header-slot', 'body-slot', 'footer-slot', 'body-scroll']
     const errors = []; const originalError = console.error; console.error = (...args) => { errors.push(args.map(String).join(' ')); originalError(...args) }; addEventListener('error', event => errors.push(String(event.message || event.error || event))); addEventListener('unhandledrejection', event => errors.push(String(event.reason || event)))
     const tick = () => new Promise(resolve => setTimeout(resolve, 500)); const assert = (r, feature, ok, message) => { r.assertions++; if (ok) r.passed++; else { r.failed++; r.failures.push({ feature, message }) } }
     window.runTest = async () => { errors.length = 0; const r = { name: 'components.Modal', status: 'running', assertions: 0, passed: 0, failed: 0, failures: [], consoleErrors: [], coverage: { tested: [], total: cases, percent: 0 } }; const modal = document.querySelector('#editModal'); let change
@@ -29,6 +29,7 @@
       assert(r, 'header-slot', modal.querySelector('#customHeader')?.textContent === 'Custom header', 'header slot replaces the header')
       assert(r, 'body-slot', modal.querySelector('#customBody')?.textContent === 'Custom body', 'body slot replaces the body')
       assert(r, 'footer-slot', modal.querySelector('#customFooter')?.textContent === 'Custom footer', 'footer slot replaces the footer')
+      assert(r, 'body-scroll', modal.querySelector('.modal-dialog')?.classList.contains('modal-dialog-scrollable'), 'long body content scrolls without moving the header or footer')
       modal.hide(); await tick(); assert(r, 'hide', !modal.classList.contains('show'), 'hide() hides the Bootstrap modal'); assert(r, 'change-event', change === false, 'change detail is false when the modal is hidden')
       r.coverage.tested = [...cases]; r.coverage.percent = 100; r.consoleErrors = [...errors]; r.status = r.failed || r.consoleErrors.length ? 'failed' : 'passed'; document.querySelector('#status').className = 'badge text-bg-' + (r.status === 'passed' ? 'success' : 'danger'); document.querySelector('#status').textContent = r.status === 'passed' ? '通过' : '失败'; document.querySelector('#coverage').textContent = '覆盖 100%'; document.querySelector('#result').textContent = JSON.stringify(r, null, 2); return r }
     document.querySelector('#runAll').onclick = window.runTest

@@ -6,8 +6,12 @@ const AUTOFORM_BLUEPRINT = globalThis.Util.makeDom(/*html*/`
 <div class="auto-form-root">
   <form $class="\${this.inline ? 'd-flex flex-wrap align-items-center gap-3' : (this.vertical ? 'd-flex flex-column' : (this.horizontal ? 'auto-grid-form forced-horizontal' : 'auto-grid-form'))}" $onsubmit="event.stopPropagation();event.preventDefault();this.submit()">
 
-  <template $each="this.state.schema || []">
+  <template $each="this.state._schema || []">
     <template $$if="item.if || 'true'">
+    <template $if="item.type === 'divider'">
+      <div style="grid-column:1/-1" class="pt-2 pb-1"><hr class="my-2"><div $if="item.label" $text="item.label" class="small fw-semibold text-muted text-uppercase"></div></div>
+    </template>
+    <template $if="item.type !== 'divider'">
     <div style="display:contents">
         <label $name="item.name" $class="\${this.inline ? 'mb-0 text-muted text-nowrap' : 'col-form-label text-muted'}" $text="item.label"></label>
         <div control-wrapper $class="\${this.inline ? 'd-flex align-items-center' : 'mb-3 d-flex align-items-center'}">
@@ -30,8 +34,11 @@ const AUTOFORM_BLUEPRINT = globalThis.Util.makeDom(/*html*/`
           </div></template>
 
           <template $if="item.type === 'textarea'"><textarea $name="item.name" class="form-control" $.="item.setting || {}" $bind="this.state.data[item.name]"></textarea></template>
+
+          <template $if="item.type === 'label'"><span $name="item.name" $.="item.setting || {}" $text="item.value ?? this.state.data[item.name] ?? ''" class="form-control-plaintext text-break py-1"></span></template>
         </div>
     </div>
+    </template>
     </template>
   </template>
 
@@ -61,8 +68,36 @@ const AUTOFORM_STYLE = globalThis.Util.makeDom(/*html*/`<style>
     .auto-form-root .form-switch .form-check-input { width: 2em; }
 </style>`)
 
+const DB_FORM_TYPE_MAP = {
+        i: 'number', ui: 'number', bi: 'number', ubi: 'number', ti: 'number', f: 'number', ff: 'number',
+        b: 'switch', d: 'date', dt: 'datetime', t: 'textarea'
+};
+
+const getDbFormType = type => DB_FORM_TYPE_MAP[type] || 'text';
+
+// Database field definitions are converted only for rendering. Form data keeps
+// its original keys, so submitting an AutoForm still returns the API row shape.
+const normalizeSchemaItem = field => {
+        if (!field?.tableID) return field;
+        const settings = field.settings || {};
+        return {
+                ...field,
+                name: field.name,
+                label: settings.label ?? field.label ?? field.name,
+                type: settings.type ?? getDbFormType(field.type),
+                options: settings.options ?? field.options,
+                placeholder: settings.placeholder ?? field.placeholder,
+                setting: settings.attrs ?? field.setting
+        };
+};
+
 globalThis.Component.register('AutoForm', container => {
-        if (!container.state.schema) container.state.schema = []
+        if (!Array.isArray(container.state.schema)) container.state.schema = []
+        const setSchema = schema => {
+                container.state._schema = Array.isArray(schema) ? schema.map(normalizeSchemaItem) : [];
+        };
+        container.state.__watch('schema', setSchema)
+        setSchema(container.state.schema)
 
         const ensureProxy = v => (v && typeof v === 'object' && !v.__isProxy) ? globalThis.NewState(v) : v;
         const setData = value => {

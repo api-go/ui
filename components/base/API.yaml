@@ -9,7 +9,7 @@ properties:
   request:
     default:
       url: ''
-      method: GET
+      method: "GET when data is null; POST when data is present, unless explicitly set."
       headers: {}
       data: null
       timeout: 10000
@@ -34,6 +34,7 @@ events:
 
 rules:
   - request.url is required before calling do.
+  - Without request.method, API uses POST when request.data is present and GET otherwise.
   - Bind request with $.request when external state owns request configuration.
 
 examples:
@@ -47,6 +48,9 @@ examples:
     <script>
       const response = await usersApi.do({ url: '/api/users', method: 'GET', noui: true })
       if (response.ok) console.log(response.result)
+  post_default: |
+    <API auto .request.url="/admin/table" .request.data.action="tables"></API>
+    <!-- data is present, so this request uses POST unless method is explicitly set -->
     </script>
 
 tests:

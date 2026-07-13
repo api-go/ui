@@ -19,27 +19,28 @@
     const tick = () => new Promise(resolve => setTimeout(resolve, 80))
     const assert = (testResult, feature, condition, message) => { testResult.assertions++; if (condition) testResult.passed++; else { testResult.failed++; testResult.failures.push({ feature, message }) } }
     window.runTest = async () => {
-      const testResult = { name: 'components.API', status: 'running', assertions: 0, passed: 0, failed: 0, failures: [], consoleErrors: [], coverage: { tested: [], total: ['auto', 'request', 'response', 'result', 'do', 'response-event', 'error-event', 'noui'], percent: 0 } }
+      const testResult = { name: 'components.API', status: 'running', assertions: 0, passed: 0, failed: 0, failures: [], coverage: { tested: [], total: ['auto', 'request', 'response', 'result', 'do', 'post-default', 'response-event', 'error-event', 'noui'], percent: 0 } }
       await tick()
       let autoResponses = 0; autoApi.addEventListener('response', () => { autoResponses++ })
       autoApi.request.url = '/__http__/json?next=1'; await tick()
       assert(testResult, 'auto', autoApi.response.ok === true && autoApi.result.method === 'GET' && autoResponses === 1, 'auto requests again after request changes')
-      assert(testResult, 'request', manualApi.request.url === '' && manualApi.request.method === 'GET' && manualApi.request.data === null && manualApi.request.timeout === 10000 && manualApi.request.responseType === '' && typeof manualApi.request.headers === 'object', 'request exposes documented defaults')
+      assert(testResult, 'request', manualApi.request.url === '' && manualApi.request.method === '' && manualApi.request.data === null && manualApi.request.timeout === 10000 && manualApi.request.responseType === '' && typeof manualApi.request.headers === 'object', 'request exposes documented defaults')
       assert(testResult, 'response', autoApi.response.loading === false && autoApi.response.status === 200 && autoApi.response.responseType === 'json' && typeof autoApi.response.headers === 'object', 'response exposes loading, status, headers, and responseType')
       assert(testResult, 'result-binding', document.querySelector('#autoResult').textContent === 'GET', 'response result is usable in declarative DOM bindings')
       let responseEvent
       manualApi.addEventListener('response', event => { responseEvent = event.detail }, { once: true })
       const response = await manualApi.do(successRequest)
       assert(testResult, 'do', response.ok && manualApi.result.method === 'GET', 'do() sends a request and updates result')
+      const postResponse = await manualApi.do({ url: '/__http__/json', data: { action: 'tables' } }); assert(testResult, 'post-default', postResponse.ok && manualApi.result.method === 'POST', 'data defaults an unspecified method to POST')
       assert(testResult, 'response-event', responseEvent?.status === 200, 'response event exposes the complete HTTP response')
-      assert(testResult, 'result', manualApi.result.method === 'GET', 'result exposes the latest response result')
+      assert(testResult, 'result', manualApi.result.method === 'POST', 'result exposes the latest response result')
       let failed = false; let errorEvent
       manualApi.addEventListener('error', event => { errorEvent = event.detail }, { once: true })
       try { await manualApi.do({ ...errorRequest, noui: true }) } catch (error) { failed = true }
       assert(testResult, 'error', failed && manualApi.response.status === 200 && manualApi.response.ok === true && manualApi.result.error === 'application failed', 'application error rejects and preserves response state')
       assert(testResult, 'error-event', errorEvent instanceof Error && errorEvent.message === 'application failed', 'error event exposes Error detail')
       assert(testResult, 'noui', !document.querySelector('Toast'), 'noui suppresses automatic error Toast')
-      testResult.coverage.tested = ['auto', 'request', 'response', 'result', 'do', 'response-event', 'error-event', 'noui']; testResult.coverage.percent = 100; testResult.status = testResult.failed ? 'failed' : 'passed'; document.querySelector('#result').textContent = JSON.stringify(testResult, null, 2); window.testResult = testResult; return testResult
+      testResult.coverage.tested = ['auto', 'request', 'response', 'result', 'do', 'post-default', 'response-event', 'error-event', 'noui']; testResult.coverage.percent = 100; testResult.status = testResult.failed ? 'failed' : 'passed'; document.querySelector('#result').textContent = JSON.stringify(testResult, null, 2); window.testResult = testResult; return testResult
     }
     document.querySelector('#runAll').onclick = window.runTest
   </script>

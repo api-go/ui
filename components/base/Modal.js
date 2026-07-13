@@ -15,7 +15,7 @@ globalThis.Component.register('Modal', container => {
         container.hide = (...args) => container.modal.hide(...args)
 }, globalThis.Util.makeDom(/*html*/`
 <div class="modal fade" data-bs-backdrop="static">
-  <div class="modal-dialog modal-dialog-centered">
+  <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
     <div $class="modal-content border-\${this.state?.type || 'primary'} border-2 shadow-lg">
       <div slot-id="header" class="modal-header py-2 px-3 bg-light">
         <h6 $class="modal-title fw-bold text-\${this.state?.type || 'primary'}" $text="this.state?.title"></h6>

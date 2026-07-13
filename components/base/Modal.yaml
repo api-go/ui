@@ -3,6 +3,9 @@ name: Modal
 binding:
   behavior: Bind a boolean with $bind to show or hide the modal.
 
+layout:
+  behavior: Long body content scrolls inside the modal; the header and footer remain visible.
+
 state:
   title: Default header title.
   type: Bootstrap contextual type. Default is primary.

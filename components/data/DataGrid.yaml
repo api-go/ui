@@ -4,10 +4,16 @@ attributes:
   editable:
     type: boolean
     behavior: Enable row, field, cell, and save controls.
+  api:
+    type: string
+    behavior: POST endpoint for the data-table action protocol. Requires state.table.
+
+purpose: Editable data-API table manager. It consumes the field definitions returned by the data API and keeps them unchanged for save events.
 
 state:
-  fields: Array of column definitions; assign before list.
-  list: Array of row objects; each key matches a field id.
+  table: Table name sent as request.name when api is configured.
+  fields: Array of data-API field definitions; assign before list.
+  list: Array of row objects; each key matches a field name.
   _originalList: Internal unfiltered row snapshot.
   sortConfig: "{ fieldId, direction }"
   filterConfig: Per-field filter configuration.
@@ -17,18 +23,20 @@ state:
 editing:
   formTypes: [text, number, select, checkbox, radio, switch, textarea, date, datetime, TagsInput, DatePicker, ColorPicker, IconPicker]
   rule: Double-click an editable cell, then click outside the editor or press Enter to save its bound value.
+  field_settings: Field Name and Field Type are common settings. Advanced Settings shows read-only Field ID and Table ID, plus editable Database Type, Index, and Memo. Changing Field Type assigns its default database type; Database Type may be manually overridden.
 
 filtering:
   rule: Click a column header, enter a value in its menu, and the grid filters immediately. Use the menu controls for sort and reset.
 
 field:
-  required: [id, name]
+  required: [id, tableID, name, type, settings]
   fields:
-    id: Unique column id and row value key.
-    name: Header label.
-    type: Source value type.
+    id: _Fields record ID; used for field metadata operations.
+    tableID: Owning table ID.
+    name: Database column name and row value key.
+    type: Database storage type, for example v100, v30, ff, b, or dt. It is preserved when editing an unchanged UI type; changing settings.type assigns that UI type's default storage type.
     memo: Field description.
-    settings: "{ width, pinned, formType, options, decimals, prefix, suffix, thousandSep, labelOn, labelOff }"
+    settings: "{ type, label, options, attrs, width, pinned, decimals, prefix, suffix, thousandSep, labelOn, labelOff }; type is the application/editor type."
     formatter: Function receiving value and field.
 
 methods:
@@ -50,6 +58,20 @@ events:
   remove:
     detail: "{ items }"
 
+api:
+  request: "POST { action, name: state.table, ...payload }"
+  actions:
+    fields: "response { ok, fields }; loaded when table changes."
+    query: "request { filter, sort, offset: 0, limit: 1000 }; response { ok, data, count } or { ok, list, count }. Filter items are { field, operator, value }; sort is ['field DESC']."
+    setField: "request { fields: [field] }; called after adding or editing a field."
+    removeField: "request { fields: [field] }; called after deleting a field."
+    save: "request { data: list }; called by Save."
+    remove: "request { data: items }; called by Delete."
+  behavior: Sorting and filters build validated filter plus sort structures and reload from the server. Pending edits require confirmation before a reload.
+
+advanced_mode:
+  behavior: The footer toggle appends read-only internal columns id, creator, createTime, updater, and updateTime. They are not added to fields or included in field save requests.
+
 global:
   DataGrid:
     methods:
@@ -69,6 +91,9 @@ related:
 
 rules:
   - Bind fields and list with $.state.fields and $.state.list.
+  - DataGrid uses field.name (not field.id) to read and update each row value.
+  - DataGrid only supports data-API field definitions; use datatable for generic tabular display.
+  - Async fields and list bindings may be undefined before an API response; DataGrid waits for arrays.
   - Give the DataGrid or its parent an explicit height so virtual scrolling has a viewport.
   - Treat underscore-prefixed state fields as internal read-only diagnostics.
   - Custom field editors must be registered in AutoForm before use.
@@ -76,12 +101,9 @@ rules:
 example: |
   <script>
   const orderFields = [
-    { id: 'name', name: 'Name', type: 'text', settings: { formType: 'text' } },
-    { id: 'total', name: 'Total', type: 'number', settings: { formType: 'number', prefix: '$', decimals: 2 } },
-    { id: 'status', name: 'Status', type: 'text', settings: { formType: 'select', options: ['draft', 'paid'] } },
-    { id: 'paid', name: 'Paid', type: 'boolean', settings: { formType: 'switch' } },
-    { id: 'tags', name: 'Tags', type: 'object', settings: { formType: 'TagsInput' } },
-    { id: 'due', name: 'Due', type: 'date', settings: { formType: 'DatePicker' } }
+    { id: 'f-name', tableID: 'orders', name: 'name', type: 'v100', isIndex: true, memo: '', settings: { type: 'text' } },
+    { id: 'f-total', tableID: 'orders', name: 'total', type: 'ff', isIndex: false, memo: '', settings: { type: 'number', prefix: '$', decimals: 2 } },
+    { id: 'f-status', tableID: 'orders', name: 'status', type: 'v30', isIndex: false, memo: '', settings: { type: 'select', options: ['draft', 'paid'] } }
   ]
   const orders = [{ name: 'Ada', total: 42, status: 'paid', paid: true, tags: ['priority'], due: '2026-07-12' }]
   const saveRows = rows => console.log(rows)
@@ -89,6 +111,7 @@ example: |
   <div style="height: 480px">
     <DataGrid id="orders" editable $.state.fields="orderFields" $.state.list="orders" $onsave="saveRows(event.detail.list)"></DataGrid>
   </div>
+  <DataGrid editable api="/admin/table" $.state.table="Hash.table"></DataGrid>
 
 tests:
   - DataGrid.test.html

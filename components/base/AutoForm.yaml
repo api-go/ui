@@ -20,10 +20,13 @@ properties:
 
 schema:
   item: "{name, type, label?, setting?, options?, placeholder?, if?}"
-  types: "text|password|email|number|date|datetime|file|select|checkbox|radio|switch|textarea|DatePicker|ColorPicker|IconPicker|TagsInput"
+  types: "text|password|email|number|date|datetime|file|select|checkbox|radio|switch|textarea|label|divider|DatePicker|ColorPicker|IconPicker|TagsInput"
   options: "select/checkbox/radio options: ['A', {value:'b', label:'B'}]"
   setting: "attributes copied to the control; DatePicker rangeEnd is an example"
   if: 'JavaScript expression evaluated by `$$if`; use component data through `this.data`, for example `this.data.role === "admin"`.'
+  label: Read-only text displaying item.value or data[item.name].
+  divider: Full-width section divider; label is its optional section title.
+  database_fields: 'Data-API field definitions with tableID are accepted and converted for rendering only: name stays the data key; settings.type is the control type; settings.options are control options; settings.attrs become control attributes. The original fields and data are not changed.'
 
 submit:
   source: Set api to an API element, or set request.url.
@@ -42,6 +45,10 @@ examples:
       ]
     </script>
     <AutoForm $.state.data="profile" $.state.schema="profileSchema"></AutoForm>
+  database_fields: |
+    const fields = [{ id: 'f-role', tableID: 'users', name: 'Role', type: 'v30', settings: { type: 'select', options: ['Admin', 'User'] } }]
+    const user = { Role: 'Admin' }
+    <AutoForm $.state.data="user" $.state.schema="fields"></AutoForm>
   submit_api: |
     <script>
       const profile = { name: 'Ada' }

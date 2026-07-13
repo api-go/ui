@@ -11,20 +11,21 @@ globalThis.Component.register('Nav', container => {
 	})
 
 	container.click = (item, noselect) => {
-		if (!item.noselect && !noselect) {
+		const selected = !item.noselect && !noselect
+		if (selected) {
 			container.state.value = item.name
 			container.dispatchEvent(new CustomEvent('change', { detail: item.name, bubbles: false }))
 		}
-		container.dispatchEvent(new CustomEvent('nav', { detail: { item }, bubbles: false }))
+		container.dispatchEvent(new CustomEvent('nav', { detail: { item, name: item.name, selected }, bubbles: false }))
 	}
 	container.clickSubitem = item => {
 		container.state.value = item.name
 		container.dispatchEvent(new CustomEvent('change', { detail: item.name, bubbles: false }))
-		container.dispatchEvent(new CustomEvent('nav', { detail: { item }, bubbles: false }))
+		container.dispatchEvent(new CustomEvent('nav', { detail: { item, name: item.name, selected: true }, bubbles: false }))
 	}
 	container.toggleGroup = item => {
 		container.state.openName = container.state.openName === item.name ? null : item.name
-		container.dispatchEvent(new CustomEvent('nav', { detail: { item, open: container.state.openName === item.name }, bubbles: false }))
+		container.dispatchEvent(new CustomEvent('nav', { detail: { item, name: item.name, open: container.state.openName === item.name, selected: false }, bubbles: false }))
 	}
 }, globalThis.Util.makeDom(/*html*/`
 <div $class="\${this.vertical ? 'd-flex flex-column border-end h-100 align-self-stretch overflow-visible' : 'navbar navbar-expand border-bottom'} bg-body-secondary px-2 \${this.vertical ? 'py-3' : 'py-1'} align-items-center \${this.vertical ? 'align-items-start' : ''}" $style="this.vertical ? 'min-height:0;' : ''">
@@ -41,7 +42,7 @@ globalThis.Component.register('Nav', container => {
 	</div>
 	<div $class="d-flex \${this.vertical ? 'w-100 flex-fill mt-2 flex-column' : 'ms-2 align-items-center flex-fill'}" $style="this.vertical ? 'min-height:0; overflow-y:auto; overflow-x:visible;' : ''">
 		<template $each="this.state?.list || []">
-			<div $class="\${this.vertical ? 'nav nav-pills flex-column w-100 position-relative' : 'navbar-nav flex-row align-items-center'} \${!this.vertical && item.type==='fill' ? 'flex-fill' : ''}" style="transform: translateY(3px);">
+				<div $class="\${this.vertical ? 'nav nav-pills flex-column w-100 position-relative' : 'navbar-nav flex-row align-items-center'} \${!this.vertical && item.type==='fill' ? 'flex-fill' : ''}">
 			<template $if="item.type==='label'">
 				<div $class="\${this.vertical ? 'small text-uppercase text-body-secondary fw-semibold px-2 py-1 mt-2' : 'navbar-text small text-uppercase text-body-secondary fw-semibold px-2'} \${item.class || ''}" $text="item.label"></div>
 			</template>
@@ -86,7 +87,7 @@ globalThis.Component.register('Nav', container => {
 							<button type="button" $class="nav-link dropdown-toggle \${item.class || ''}" data-bs-toggle="dropdown">
 								<i $class="bi bi-\${item.icon} me-2"></i><span $class="'d-none d-' + (this.state?.list?.length>5?'lg':'md') + '-inline'" $text="item.label"></span>
 							</button>
-							<div class="dropdown-menu dropdown-menu-end p-2 bg-body-secondary shadow" $style="'width: ' + (item.width || 250) + 'px;'">
+							<div class="dropdown-menu dropdown-menu-end p-2 bg-body-secondary shadow" $style="'width: ' + (item.width || 250) + 'px; z-index: 1080;'">
 								<template $each="item.items || item.list" as="subitem">
 									<template $if="subitem.type==='label'">
 										<div $class="dropdown-header \${subitem.class || ''}" $text="subitem.label"></div>

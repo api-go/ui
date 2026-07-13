@@ -8,7 +8,7 @@ const APIComponent = globalThis.Component.register('API', container => {
 
         container.request = globalThis.NewState({
                 url: '',
-                method: 'GET',
+                method: '',
                 headers: {},
                 data: null,
                 timeout: 10000,
@@ -32,6 +32,7 @@ const APIComponent = globalThis.Component.register('API', container => {
                 return new Promise((resolve, reject) => {
                         const req = { ...container.request, ...opt }
                         if (!req.url) throw new Error('.url is required')
+                        if (!req.method) req.method = req.data == null ? 'GET' : 'POST'
                         req.headers = { ...container.request.headers, ...opt.headers }
                         container.response.loading = true
                         globalThis.HTTP.request(req).then(resp => {

@@ -1,11 +1,12 @@
 {
   "name": "@apigo.cc/ui",
-  "version": "1.0.0",
-  "private": true,
+  "version": "1.0.1",
+  "private": false,
   "scripts": {
     "build": "node tools/build.cjs",
     "dev": "node tools/dev.cjs",
-    "test": "node tools/dev.cjs --test"
+    "test": "node tools/test.cjs",
+    "pub": "npm run build && npm publish --access public"
   },
   "files": [
     "frameworks",

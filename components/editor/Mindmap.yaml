@@ -1,0 +1,114 @@
+name: Mindmap
+purpose: Edit a logical tree with automatic left or right layout, reusable graph JSON, pan, zoom, slots, and optional document transport.
+
+attributes:
+  api: Optional endpoint for automatic document load and save.
+  path: Static path; state.path supports reactive paths.
+  version: Optional historical load version.
+  readonly: Disable content mutations.
+  direction: Initial default direction when data.settings.direction is absent. Values are right or left.
+  node-width: Initial default node width when data.settings.nodeWidth is absent.
+  node-height: Initial default node height when data.settings.nodeHeight is absent.
+  h-gap: Initial default horizontal gap when data.settings.hGap is absent.
+  v-gap: Initial default vertical gap when data.settings.vGap is absent.
+
+state:
+  data: "{ nodes:[{ id, title, content, collapsed? }], edges:[{ id, from, to }], view:{ x, y, scale }, settings:{ direction, nodeWidth, nodeHeight, hGap, vGap } }"
+  path: Document path that triggers load when api is present.
+  version: Load-only historical version.
+  extraSchemas: "Optional { node: Field[] } merged by field name with the built-in schema."
+  selectedNodeId: Selected node ID.
+  previewNode: Node shown by the temporary Space-key preview.
+  dirty: True after a local edit or setting change; successful save resets it.
+  editing: Current node draft and merged schema.
+  loading: Automatic load state.
+  saving: Automatic save state.
+  loadedVersion: Version returned by the last get. A set response without version does not change it.
+  error: Last transport error message.
+
+default_schemas:
+  node: [title, content]
+
+methods:
+  load: Load state.path when api is configured.
+  save: Emit or persist a mindmap document; current viewport is included.
+  selectNode: Select a node and emit select.
+  addChild: Add and edit a child of the supplied or selected node.
+  addSibling: Add and edit a sibling of the supplied node.
+  editNode: Open AutoForm or the editor slot for a node.
+  removeNode: Ask with a danger-styled confirmation, then remove a non-root subtree. The unique root cannot be deleted.
+  toggleNode: Collapse or expand a subtree.
+  setDirection: Persist left or right expansion in state.data.settings and update layout.
+  togglePreview: Show or hide the non-interactive selected-node preview.
+  commitEdit: Apply the active node draft.
+  cancelEdit: Discard the active draft.
+  fit: Fit visible nodes into the viewport.
+  schemas: Return the merged editing schemas.
+
+events:
+  select:
+    detail: Selected node or null.
+  change:
+    detail: Full state.data.
+  update:
+    detail: "{ data, reason, ...operationDetail }"
+  save:
+    detail: Mindmap document envelope.
+  loaded:
+    detail: Loaded document envelope.
+  saved:
+    detail: Server save result.
+  error:
+    detail: Transport Error.
+
+api:
+  load_request: "{ action:'get', path, version? }"
+  load_response: "{ ok:true, meta:{ path?, version?, type? }, data }"
+  save_request: "{ action:'set', path, data }; data is the complete Mindmap document envelope."
+  save_response: "{ ok, succeeded, failed }"
+
+slots:
+  toolbar: Replace the toolbar.
+  node: Replace every node body; context includes node and nodeIndex.
+  node-actions: Replace per-node overlay actions.
+  empty: Replace the no-nodes content.
+  editor: Replace the default AutoForm body; use state.editing.draft.
+
+interaction:
+  - Click a node to select it and double-click it to edit.
+  - Click blank canvas to clear selection. The map has one logical root; blank double-click does not create orphan nodes.
+  - Trackpad/two-axis wheel scrolling pans the canvas. Dragging empty space also pans it.
+  - Trackpad pinch and Ctrl/Command + wheel zoom around the pointer.
+  - Tab creates a child; Enter creates a sibling. Delete/Backspace asks before deleting; hold Ctrl/Command to bypass confirmation.
+  - Space opens a non-interactive content preview. While it is open, selecting another node updates the preview; press Space again, click blank canvas, or click outside the component to hide it.
+  - The preview uses a translucent info-colored tooltip style so it remains visually distinct from document nodes.
+  - Direction buttons update data.settings.direction. HTML layout attributes are only defaults for documents that omit settings.
+  - In the built-in editor, Enter commits a single-line field and Escape cancels, including before any field is clicked. Enter inside a textarea keeps its normal newline behavior.
+  - Default title and content rendering is line-clamped; full content remains available in the editor and Space preview.
+  - Node slot dimensions are measured and automatically fed back into tree layout and edge routing.
+
+rules:
+  - Mindmap represents a directed tree. Use GraphEditor for arbitrary connections and free node positions.
+  - No api means stateless operation; save emits an event and performs no HTTP request.
+  - extraSchemas is optional because title and content are built in.
+  - JSON formatVersion belongs to the saved document envelope and is unrelated to server history version.
+
+examples: |
+  <script>
+    const ideaMap = {
+      nodes: [{ id: 'root', title: 'Novel' }, { id: 'plot', title: 'Plot', content: 'Main conflict' }],
+      edges: [{ id: 'e1', from: 'root', to: 'plot' }],
+      view: {}
+    }
+  </script>
+  <Mindmap direction="right" style="height:520px" $.state.data="ideaMap"></Mindmap>
+  <Mindmap api="/documents" $.state.path="activePath" $.state.version="historyVersion"></Mindmap>
+
+related:
+  - ../../utilities/Editor.yaml
+  - ../../utilities/GraphDocument.yaml
+  - ../../utilities/GraphCanvas.yaml
+  - ../base/AutoForm.yaml
+
+tests:
+  - Mindmap.test.html

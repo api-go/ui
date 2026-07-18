@@ -1,0 +1,56 @@
+name: Chart
+purpose: Render a native Chart.js configuration without external script references or a second mapping API.
+
+state:
+  config: "Native Chart.js { type, data, options, plugins } configuration. Replace it to recreate the chart."
+
+properties:
+  instance: Current Chart.js instance.
+
+methods:
+  update: "update(config?, mode?) — replace config, or update the current instance when config is omitted."
+  resize: Resize the Chart.js instance.
+  destroy: Destroy the Chart.js instance and release its canvas.
+
+events:
+  chartclick:
+    detail: "{ event, elements, chart }"
+  charthover:
+    detail: "{ event, elements, chart }"
+
+configuration:
+  shape: "Use Chart.js names directly: type, data.labels, data.datasets, options.scales, options.interaction, and plugins."
+  version: Embedded Chart.js 4.5.1.
+
+rules:
+  - Bind the whole native configuration with $.state.config; there is no map, series, or axis translation layer.
+  - Set an explicit component or parent height when a fixed chart height is required.
+  - Chart.js callbacks and plugins are passed through; chartclick and charthover are additional component events.
+
+examples: |
+  <script>
+    const salesChart = {
+      type: 'bar',
+      data: {
+        labels: ['Q1', 'Q2'],
+        datasets: [
+          { type: 'bar', label: 'Revenue', data: [42, 58], yAxisID: 'revenue' },
+          { type: 'line', label: 'Growth %', data: [8, 15], yAxisID: 'growth' }
+        ]
+      },
+      options: {
+        interaction: { mode: 'index' },
+        scales: {
+          revenue: { position: 'left' },
+          growth: { position: 'right', grid: { drawOnChartArea: false } }
+        }
+      }
+    }
+  </script>
+  <Chart style="height:320px" $.state.config="salesChart" $onchartclick="console.log(event.detail.elements)"></Chart>
+
+related:
+  - ../../frameworks/State.yaml
+
+tests:
+  - Chart.test.html

@@ -48,9 +48,9 @@ Load the chosen URL in `<head>` without `async`, `defer`, or `type="module"`. A 
 ## Loading rules
 
 - Always write the `components` attribute with every public component used by the page.
-- Use `base`, `form`, or `data` to load a documented component category; individual names and category names can be mixed.
+- Use `base`, `form`, `data`, or `editor` to load a documented component category; individual names and category names can be mixed.
 - Do not list utilities or framework dependencies.
-- `ui.js` loads `frameworks/State.js` and `frameworks/Bootstrap.js` beside itself.
+- `ui.js` loads `frameworks/State.js` and `frameworks/Bootstrap.js` beside itself. Specialized utilities and embedded libraries are dependency-resolved before their components.
 - `npm run build` writes source modification versions into `ui.js`; `ui.min.js` loads matching adjacent `.min.js` files.
 
 ## Framework
@@ -79,11 +79,22 @@ Load the chosen URL in `<head>` without `async`, `defer`, or `type="module"`. A 
 ## Data components
 
 - [DataGrid](components/data/DataGrid.yaml): virtualized data table.
+- [Chart](components/data/Chart.yaml): native Chart.js configuration component.
+
+## Editor components
+
+- [Kanban](components/editor/Kanban.yaml): draggable Kanban document editor.
+- [Mindmap](components/editor/Mindmap.yaml): automatically laid-out logical tree editor.
+- [GraphEditor](components/editor/GraphEditor.yaml): free-position node and edge editor.
 
 ## Utilities
 
 - [HTTP](utilities/HTTP.yaml): HTTP requests and response handling.
 - [VirtualScroll](utilities/VirtualScroll.yaml): virtual scrolling behavior.
+- [Editor](utilities/Editor.yaml): editor registry, schema merging, and optional document transport.
+- [SortableAPI](utilities/SortableAPI.yaml): shared SortableJS lifecycle adapter.
+- [GraphDocument](utilities/GraphDocument.yaml): graph JSON and tree layout helpers.
+- [GraphCanvas](utilities/GraphCanvas.yaml): graph viewport pan and zoom controller.
 
 ## Optional
 

@@ -1,0 +1,37 @@
+name: GraphDocument
+purpose: Normalize, mutate, and automatically lay out reusable node-and-edge JSON documents.
+
+global:
+  GraphDocument:
+    methods:
+      id: Generate a prefixed ID.
+      normalize: Normalize nodes and edges, preserve unknown fields, accept source/target aliases, and convert nested trees.
+      children: Return direct child nodes for an ID.
+      descendants: Return descendant IDs.
+      addNode: Add a node and optional parent edge.
+      addEdge: Add a unique directed edge between existing nodes.
+      removeNode: Remove a node, attached edges, and optional descendant subtree.
+      removeEdge: Remove an edge by ID.
+      layoutTree: Compute visible node rectangles and routed edge paths for left or right tree layout.
+
+data_shape:
+  graph: "{ nodes:[Node], edges:[Edge], view:{} }"
+  node: "{ id, title, ...customFields }"
+  edge: "{ id, from, to, ...customFields }"
+
+rules:
+  - GraphDocument is a JSON utility and has no DOM or server dependency.
+  - Unknown node, edge, and top-level fields are preserved.
+  - Mindmap uses layoutTree; GraphEditor preserves explicit x and y coordinates.
+
+examples: |
+  const graph = GraphDocument.normalize({
+    id: 'root', text: 'Root', children: [{ id: 'child', text: 'Child' }]
+  })
+  const node = GraphDocument.addNode(graph, { title: 'Next' }, 'child')
+  const layout = GraphDocument.layoutTree(graph, { direction: 'right' })
+
+tests:
+  - GraphDocument.test.html
+  - ../components/editor/Mindmap.test.html
+  - ../components/editor/GraphEditor.test.html

@@ -1,0 +1,106 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>components.editor.Kanban tests</title>
+  <script src="../../ui.js" components="Kanban"></script>
+  <script>
+    const board = { title: 'Product launch', columns: [
+      { id: 'todo', title: 'Todo', items: [{ id: 'task-1', title: 'Write release notes', content: 'Summarize the new editor workflow', priority: 'high', untouched: 7 }, { id: 'task-2', title: 'Prepare screenshots', content: 'Capture the final responsive states' }] },
+      { id: 'doing', title: 'In progress', items: [{ id: 'task-3', title: 'Review interactions', content: 'Keyboard, trackpad and drag behavior' }] },
+      { id: 'done', title: 'Done', items: [] }
+    ] }
+    const boardExtras = { card: [
+      { name: 'title', label: 'Task title' },
+      { name: 'priority', label: 'Priority', type: 'select', options: ['low', 'normal', 'high'], default: 'normal' }
+    ] }
+    const customBoard = { columns: [{ id: 'custom', title: 'Custom', items: [{ id: 'custom-card', title: 'Styled', content: '', priority: 'low' }] }, { id: 'empty', title: 'Empty', items: [] }] }
+    const apiPath = 'boards/api.kanban'
+    const apiVersion = 3
+    const missingPath = 'boards/missing.kanban'
+  </script>
+</head>
+<body>
+  <Kanban id="board" style="height:420px" $.state.data="board" $.state.extraSchemas="boardExtras"></Kanban>
+  <div class="d-none">
+  <Kanban id="customBoard" style="height:320px" $.state.data="customBoard">
+    <button slot="toolbar" class="custom-toolbar">Custom tools</button>
+    <div slot="column-header" class="custom-column" $text="column.title + ':' + columnIndex"></div>
+    <div slot="card" class="custom-card" $text="card.title + ':' + card.priority"></div>
+    <div slot="empty-column" class="custom-empty">Nothing here</div>
+    <div slot="editor" class="custom-editor">Custom editor</div>
+  </Kanban>
+  <Kanban id="actionsBoard" style="height:280px" $.state.data="board"><button slot="card-actions" class="custom-actions">Action</button></Kanban>
+  <Kanban id="apiBoard" api="/__http__/document" $.state.path="apiPath" $.state.version="apiVersion" $onloaded="window.kanbanLoaded=event.detail" $onsaved="window.kanbanSaved=event.detail" style="height:260px"></Kanban>
+  <Kanban id="missingBoard" api="/__http__/document" $.state.path="missingPath" $onerror="window.kanbanError=event.detail" style="height:180px"></Kanban>
+  </div>
+  <button id="runAll" type="button">测试全部</button>
+  <pre id="result"></pre>
+  <script>
+    const tick = (ms = 80) => new Promise(resolve => setTimeout(resolve, ms))
+    const cases = ['data', 'visual-hierarchy', 'actions', 'empty-drop-target', 'doubleclick-edit', 'editor-keyboard', 'danger-confirm', 'dirty-save', 'default-schema', 'extraSchemas', 'form-schema-switch', 'unknown-fields', 'add-edit-remove', 'change-update-events', 'drag', 'readonly', 'slots', 'save', 'api-load', 'api-save', 'loaded-saved-error-events', 'registry', 'final-state']
+    const assert = (result, feature, condition, message) => { result.assertions++; if (condition) result.passed++; else { result.failed++; result.failures.push({ feature, message }) } }
+    window.runTest = async () => {
+      const result = { name: 'components.editor.Kanban', status: 'running', assertions: 0, passed: 0, failed: 0, failures: [], consoleErrors: [], coverage: { tested: [], total: cases, percent: 0 } }
+      await tick(150)
+      const component = document.querySelector('#board')
+      assert(result, 'data', component.querySelectorAll('.kanban-column').length === 3 && component.querySelectorAll('.kanban-card').length === 3, 'data renders columns and cards')
+      const firstColumn = component.querySelector('.kanban-column'), firstCard = component.querySelector('.kanban-card')
+      const columnColor = getComputedStyle(firstColumn).backgroundColor, cardColor = getComputedStyle(firstCard).backgroundColor
+      assert(result, 'visual-hierarchy', firstColumn.offsetHeight >= component.querySelector('.kanban-columns').clientHeight - 34 && columnColor !== cardColor, `columns fill the board and cards have a distinct surface (${firstColumn.offsetHeight}/${component.querySelector('.kanban-columns').clientHeight}px, ${columnColor}, ${cardColor})`)
+      assert(result, 'actions', component.querySelectorAll('.kanban-column-header [title*="Add card"]').length === 3 && component.querySelectorAll('.kanban-column-header .dropdown').length === 3 && !component.querySelector('.kanban-column-header .dropdown-menu')?.textContent.includes('Add column') && !component.querySelector('.kanban-card .bi-trash') && !component.textContent.includes('Nothing here'), 'column menus stay focused on edit/delete while risky card actions and empty text stay unobtrusive')
+      const emptyItems = component.querySelector('.kanban-items[data-column-id="done"]'), emptyMarker = emptyItems.querySelector('.kanban-empty')
+      assert(result, 'empty-drop-target', getComputedStyle(emptyMarker).position === 'absolute', 'empty-column decoration does not occupy a sortable item position')
+      const ghost = firstCard.cloneNode(true); ghost.classList.add('sortable-ghost'); emptyItems.insertBefore(ghost, emptyMarker)
+      assert(result, 'empty-drop-target', getComputedStyle(emptyMarker).display === 'none' && ghost.offsetTop <= 8, 'a dragged card occupies the top of an empty column without a phantom item')
+      ghost.remove()
+      assert(result, 'dirty-save', component.state.dirty === false && component.querySelector('.kanban-save')?.disabled, 'Save is disabled before the board changes')
+      firstCard.dispatchEvent(new MouseEvent('dblclick', { bubbles: true })); await tick(350)
+      assert(result, 'doubleclick-edit', component.state.editing?.kind === 'card' && !!component.querySelector('.kanban-delete-editing'), 'double-click opens the card form and keeps Delete inside the editor')
+      document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true })); await tick(350)
+      assert(result, 'editor-keyboard', !component.state.editing && !component.querySelector('.kanban-editor').classList.contains('show'), `Escape cancels the component editor before a field is clicked (editing=${!!component.state.editing}, show=${component.querySelector('.kanban-editor').classList.contains('show')})`)
+      const originalConfirm = Dialog.confirm; let dangerType; Dialog.confirm = async (message, options) => { dangerType = options?.type; return false }; await component.removeCard(component.state.data.columns[0].items[0], component.state.data.columns[0]); Dialog.confirm = originalConfirm
+      assert(result, 'danger-confirm', dangerType === 'danger' && component.state.data.columns[0].items.length === 2, 'destructive card operations request a danger confirmation before mutating data')
+      const schemas = component.schemas()
+      assert(result, 'default-schema', schemas.column.some(field => field.name === 'title') && schemas.card.some(field => field.name === 'content'), 'built-in fields require no configuration')
+      assert(result, 'extraSchemas', schemas.card.find(field => field.name === 'title').label === 'Task title' && schemas.card.some(field => field.name === 'priority'), 'extraSchemas merges by field name')
+      let changeDetail, updateDetail; component.addEventListener('change', event => { changeDetail = event.detail }, { once: true }); component.addEventListener('update', event => { updateDetail = event.detail }, { once: true })
+      component.editCard(component.state.data.columns[0].items[0], component.state.data.columns[0]); await tick(350)
+      const form = component.querySelector('Modal AutoForm')
+      assert(result, 'extraSchemas', form.querySelector('[name="priority"]') && form.querySelector('[name="title"]')?.closest('div')?.parentElement?.textContent.includes('Task title'), 'default AutoForm includes merged fields')
+      component.state.editing.draft.title = 'Revised'; component.querySelector('.kanban-editor input[name="title"]').dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true })); await tick(350)
+      assert(result, 'unknown-fields', component.state.data.columns[0].items[0].untouched === 7, 'editing preserves fields outside the schema')
+      assert(result, 'change-update-events', changeDetail === component.state.data && updateDetail.reason === 'edit-card' && updateDetail.data === component.state.data, 'change and update expose full data plus operation reason')
+      const initialColumns = component.state.data.columns.length
+      component.addColumn(); await tick(350)
+      assert(result, 'form-schema-switch', !!component.querySelector('.kanban-editor input[name="title"]') && !component.querySelector('.kanban-editor textarea[name="content"]'), 'switching from card to column replaces the AutoForm schema')
+      component.state.editing.draft.title = 'Later'; component.commitEdit(); await tick(350)
+      const added = component.state.data.columns.find(column => column.title === 'Later')
+      component.addCard(added); await tick(350); component.state.editing.draft.title = 'New task'; component.commitEdit(); await tick(350)
+      const newCard = added.items?.[0] || component.state.data.columns.find(column => column.id === added.id).items[0]
+      await component.removeCard(newCard, component.state.data.columns.find(column => column.id === added.id), { confirm: false }); await component.removeColumn(component.state.data.columns.find(column => column.id === added.id), { confirm: false }); await tick()
+      assert(result, 'add-edit-remove', component.state.data.columns.length === initialColumns && component.state.data.columns[0].items[0].title === 'Revised', 'editing methods add, edit, and remove entities')
+      const from = component.querySelector('.kanban-items[data-column-id="todo"]'), to = component.querySelector('.kanban-items[data-column-id="done"]')
+      SortableAPI.get(from).instance.option('onEnd')({ from, to, oldIndex: 0, newIndex: 0 }); await tick()
+      assert(result, 'drag', component.state.data.columns.find(column => column.id === 'done').items[0]?.id === 'task-1' && SortableAPI.get(to), 'SortableAPI drives cross-column data movement')
+      component.setAttribute('readonly', ''); component.readonly = true; const before = component.state.data.columns.length; component.addColumn()
+      assert(result, 'readonly', component.state.data.columns.length === before, 'readonly blocks editing methods')
+      const custom = document.querySelector('#customBoard')
+      assert(result, 'slots', custom.querySelector('.custom-toolbar') && custom.querySelectorAll('.custom-column').length === 2 && custom.querySelector('.custom-card')?.textContent === 'Styled:low' && custom.querySelector('.custom-empty') && custom.querySelector('.custom-editor') && document.querySelector('#actionsBoard .custom-actions'), 'all display and editor slots render in their contexts')
+      let savedDocument; component.removeAttribute('readonly'); component.readonly = false; component.addEventListener('save', event => { savedDocument = event.detail }, { once: true }); const localResult = await component.save()
+      assert(result, 'save', localResult === savedDocument && savedDocument.type === 'kanban' && savedDocument.formatVersion === 1, 'stateless save emits the complete document')
+      assert(result, 'dirty-save', component.state.dirty === false && component.querySelector('.kanban-save')?.disabled, 'successful save disables Save again')
+      const api = document.querySelector('#apiBoard'); await tick(120)
+      assert(result, 'api-load', api.state.data.columns[0]?.title === 'API Todo' && api.state.loadedVersion === 3, 'api plus path automatically loads the requested version')
+      const apiSaveResult = await api.save()
+      assert(result, 'api-save', apiSaveResult.succeeded === 1 && apiSaveResult.failed === 0 && api.state.loadedVersion === 3, 'api save returns set mutation counts without inventing a version absent from the response')
+      assert(result, 'loaded-saved-error-events', window.kanbanLoaded?.version === 3 && window.kanbanSaved?.succeeded === 1 && window.kanbanError instanceof Error, 'automatic get/set transport emits loaded, saved, and error detail')
+      assert(result, 'registry', Editor.resolve({ path: 'work/tasks.kanban' })?.component === 'Kanban' && Editor.api === undefined, 'editor registry resolves extensions without a global endpoint')
+      await tick(350); component.cancelEdit(); await tick(350)
+      assert(result, 'final-state', !document.querySelector('.modal.show') && !document.querySelector('.modal-backdrop'), 'the test leaves no editor or backdrop open')
+      result.coverage.tested = [...cases]; result.coverage.percent = 100; result.status = result.failed ? 'failed' : 'passed'; document.querySelector('#result').textContent = JSON.stringify(result, null, 2); return result
+    }
+    document.querySelector('#runAll').onclick = window.runTest
+  </script>
+</body>
+</html>

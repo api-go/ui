@@ -1,0 +1,133 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>components.editor.GraphEditor tests</title>
+  <script src="../../ui.js" components="GraphEditor"></script>
+  <script>
+    const plot = {
+      nodes: [
+        { id: 'opening', title: 'Opening', content: 'A letter arrives', x: 0, y: 0, chapter: 1, untouched: 5 },
+        { id: 'choice', title: 'Choice', content: 'Leave or stay', x: 320, y: 120 }
+      ],
+      edges: [
+        { id: 'edge-1', from: 'opening', to: 'choice', label: 'causes', content: 'The letter forces a decision', weight: 9 },
+        { id: 'edge-2', from: 'choice', to: 'opening', label: 'reframes', content: 'The decision changes the meaning of the opening' }
+      ], view: {}
+    }
+    const graphExtras = { node: [{ name: 'chapter', label: 'Chapter', type: 'number', default: 1 }], edge: [{ name: 'weight', label: 'Weight', type: 'number', default: 1 }] }
+    const customGraph = { nodes: [{ id: 'a', title: 'A', x: 0, y: 0 }, { id: 'b', title: 'B', x: 240, y: 0 }], edges: [{ id: 'ab', from: 'a', to: 'b', label: 'next' }], view: {} }
+    const emptyGraph = { nodes: [], edges: [], view: {} }
+    const apiGraphPath = 'graphs/api.graph'
+    const missingGraphPath = 'graphs/missing.graph'
+  </script>
+</head>
+<body>
+  <GraphEditor id="graph" style="height:460px" $.state.data="plot" $.state.extraSchemas="graphExtras"></GraphEditor>
+  <div class="d-none">
+    <GraphEditor id="customGraph" style="height:280px" $.state.data="customGraph">
+      <button slot="toolbar" class="custom-toolbar">Custom toolbar</button>
+      <div slot="node" class="custom-node" $text="node.title"></div>
+      <button slot="node-actions" class="custom-actions">x</button>
+      <span slot="edge-label" class="custom-edge" $text="edge.label"></span>
+      <div slot="editor" class="custom-editor">Custom editor</div>
+    </GraphEditor>
+    <GraphEditor id="emptyGraph" style="height:180px" $.state.data="emptyGraph"><div slot="empty" class="custom-empty">Empty graph</div></GraphEditor>
+    <GraphEditor id="readonlyGraph" readonly style="height:180px" $.state.data="plot"></GraphEditor>
+    <GraphEditor id="apiGraph" api="/__http__/document" $.state.path="apiGraphPath" $onloaded="window.graphLoaded=event.detail" $onsaved="window.graphSaved=event.detail" style="height:180px"></GraphEditor>
+    <GraphEditor id="missingGraph" api="/__http__/document" $.state.path="missingGraphPath" $onerror="window.graphError=event.detail" style="height:160px"></GraphEditor>
+  </div>
+  <button id="runAll" type="button">测试全部</button><pre id="result"></pre>
+  <script>
+    const tick = (ms = 80) => new Promise(resolve => setTimeout(resolve, ms))
+    const closeEditor = async component => { await tick(350); component.cancelEdit(); await tick(350) }
+    const cases = ['data', 'positions', 'edge-routing', 'reciprocal-routing', 'toolbar-icon', 'pan-zoom-fit', 'select', 'blank-deselect', 'edge-deselect', 'conditional-hint', 'shift-connect', 'edge-doubleclick-edit', 'editor-keyboard', 'danger-confirm', 'doubleclick-edit', 'doubleclick-create', 'keyboard-preview', 'edge-preview', 'content-clamp', 'dirty-save', 'default-schema', 'extraSchemas', 'edit-preserve', 'change-update-events', 'add-connect-remove', 'live-drag-routing', 'drag', 'readonly', 'slots', 'save', 'api-load-save-events', 'error-event', 'registry', 'graph-normalize', 'final-state']
+    const assert = (result, feature, condition, message) => { result.assertions++; if (condition) result.passed++; else { result.failed++; result.failures.push({ feature, message }) } }
+    window.runTest = async () => {
+      const result = { name: 'components.editor.GraphEditor', status: 'running', assertions: 0, passed: 0, failed: 0, failures: [], consoleErrors: [], coverage: { tested: [], total: cases, percent: 0 } }
+      await tick(180)
+      const component = document.querySelector('#graph')
+      assert(result, 'data', component.querySelectorAll('.graph-editor-node').length === 2 && component.state.data.edges.length === 2, 'graph JSON renders nodes and edges')
+      const opening = component.state.layoutNodes.find(node => node.id === 'opening'), choice = component.state.layoutNodes.find(node => node.id === 'choice')
+      assert(result, 'positions', opening.x === 0 && choice.x === 320 && choice.y === 120, 'stored free positions are preserved')
+      assert(result, 'edge-routing', component.querySelector('.graph-edge')?.getAttribute('d')?.startsWith('M ') && component.querySelector('.graph-edge-label')?.textContent.includes('causes'), 'edges route and label between nodes')
+      const reciprocalPaths = [...component.querySelectorAll('.graph-edge')].map(path => path.getAttribute('d'))
+      assert(result, 'reciprocal-routing', new Set(reciprocalPaths).size === 2 && reciprocalPaths.every(path => path.includes(' Q ')), 'opposite directed edges use separate curved routes')
+      assert(result, 'toolbar-icon', !!component.querySelector('.graph-fit .bi-bounding-box'), 'fit uses the bounding-box icon')
+      component.canvas.setView({ x: 12, y: 15, scale: 1.2 }, true); component.fit()
+      assert(result, 'pan-zoom-fit', component.canvas.view.scale > 0 && component.state.view.x !== undefined, 'shared canvas supports view updates and fit')
+      let selected; component.addEventListener('select', event => { selected = event.detail }, { once: true }); component.selectNode(component.state.data.nodes[0])
+      assert(result, 'select', selected.id === 'opening' && component.state.selectedNodeId === 'opening', 'node selection exposes detail')
+      assert(result, 'conditional-hint', !!component.querySelector('.graph-connect-hint'), 'connection hint appears only while a node is selected')
+      component.querySelector('.graph-viewport').dispatchEvent(new MouseEvent('click', { bubbles: true })); await tick()
+      assert(result, 'blank-deselect', component.state.selectedNodeId === null && !component.querySelector('.graph-connect-hint'), 'blank click clears selection and hides the connection hint')
+      const selectedPath = component.querySelector('[data-edge-id="edge-1"]'); selectedPath.dispatchEvent(new MouseEvent('click', { bubbles: true })); await tick()
+      assert(result, 'edge-deselect', component.state.selectedEdgeId === 'edge-1' && selectedPath.classList.contains('selected'), 'an edge can be selected without replacing its DOM element')
+      component.querySelector('.graph-viewport').dispatchEvent(new MouseEvent('click', { bubbles: true })); await tick()
+      assert(result, 'edge-deselect', component.state.selectedEdgeId === null && !selectedPath.classList.contains('selected'), 'blank click clears both edge state and selected styling')
+      assert(result, 'default-schema', component.schemas().node.some(field => field.name === 'content') && component.schemas().edge.some(field => field.name === 'label') && component.schemas().edge.some(field => field.name === 'content'), 'default node and relationship schemas are built in')
+      assert(result, 'extraSchemas', component.schemas().node.some(field => field.name === 'chapter') && component.schemas().edge.some(field => field.name === 'weight'), 'extraSchemas adds fields by entity kind')
+      let changeDetail, updateDetail; component.addEventListener('change', event => { changeDetail = event.detail }, { once: true }); component.addEventListener('update', event => { updateDetail = event.detail }, { once: true })
+      component.editNode(component.state.data.nodes[0]); await tick(350); assert(result, 'extraSchemas', !!component.querySelector('AutoForm [name="chapter"]'), 'node AutoForm includes the test-defined Chapter field')
+      component.state.editing.draft.title = 'Inciting event'; component.querySelector('.graph-editor-modal input[name="title"]').dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true })); await tick(350)
+      assert(result, 'edit-preserve', component.state.data.nodes.find(node => node.id === 'opening').untouched === 5, 'node editing preserves unknown fields')
+      assert(result, 'change-update-events', changeDetail === component.state.data && updateDetail.reason === 'edit-node', 'change and update expose graph data and operation reason')
+      const edgePath = component.querySelector('[data-edge-id="edge-1"]'); edgePath.dispatchEvent(new MouseEvent('click', { bubbles: true })); edgePath.dispatchEvent(new MouseEvent('dblclick', { bubbles: true })); await tick(350)
+      const edgeLabelInput = component.querySelector('.graph-editor-modal input[name="label"]'), edgeContentInput = component.querySelector('.graph-editor-modal textarea[name="content"]')
+      assert(result, 'edge-doubleclick-edit', component.state.editing?.kind === 'edge' && edgeLabelInput?.value === 'causes' && edgeContentInput?.value.includes('forces a decision'), `double-click opens a bound relationship form with label and content (kind=${component.state.editing?.kind}, schema=${component.querySelector('.graph-editor-modal AutoForm').state.schema?.map(item => item.name)}, rendered=${component.querySelector('.graph-editor-modal AutoForm').state._schema?.map(item => item.name)}, fields=${[...component.querySelectorAll('.graph-editor-modal [name]')].map(item => item.name).join(',')})`)
+      if (edgeLabelInput) { edgeLabelInput.value = 'forces'; edgeLabelInput.dispatchEvent(new Event('input', { bubbles: true })); edgeLabelInput.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true })) }
+      else { component.state.editing.draft.label = 'forces'; component.commitEdit() }
+      await tick(350)
+      assert(result, 'edit-preserve', component.state.data.edges[0].weight === 9 && component.state.data.edges[0].label === 'forces', 'edge form editing preserves unknown fields and commits bound input')
+      component.editEdge(component.state.data.edges[0]); await tick(350); document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true })); await tick(350)
+      assert(result, 'editor-keyboard', !component.state.editing && !component.querySelector('.graph-editor-modal').classList.contains('show'), 'Enter commits and Escape cancels even before a field is clicked')
+      component.selectEdge(component.state.data.edges[0]); const originalConfirm = Dialog.confirm; let dangerType; Dialog.confirm = async (message, options) => { dangerType = options?.type; return false }; await component.removeSelected(); Dialog.confirm = originalConfirm
+      assert(result, 'danger-confirm', dangerType === 'danger' && component.state.data.edges.length === 2, 'node and edge deletion requests a danger confirmation before mutating data')
+      const node = component.addNode({ x: 600, y: 200 }); await closeEditor(component); const edge = component.connect('choice', node.id); await tick(); component.selectEdge(edge); await component.removeSelected({ confirm: false }); component.selectNode(node); await component.removeSelected({ confirm: false }); await tick()
+      assert(result, 'add-connect-remove', component.state.data.nodes.length === 2 && component.state.data.edges.length === 2, 'node and edge methods create and remove graph structures')
+      const linked = component.addNode({ x: 620, y: -40 }); await closeEditor(component)
+      component.selectNode(component.state.data.nodes.find(item => item.id === 'choice'))
+      component.querySelector(`[data-node-id="${linked.id}"]`).dispatchEvent(new MouseEvent('click', { bubbles: true, shiftKey: true })); await tick()
+      assert(result, 'shift-connect', component.state.data.edges.some(item => item.from === 'choice' && item.to === linked.id), 'Shift-clicking a second node creates an edge')
+      const linkedElement = component.querySelector(`[data-node-id="${linked.id}"]`)
+      linkedElement.dispatchEvent(new MouseEvent('dblclick', { bubbles: true })); await tick()
+      assert(result, 'doubleclick-edit', component.state.editing?.kind === 'node' && component.state.editing?.id === linked.id, 'double-clicking a node opens its editor')
+      await closeEditor(component)
+      const beforeBlankCreate = component.state.data.nodes.length
+      component.querySelector('.graph-viewport').dispatchEvent(new MouseEvent('dblclick', { bubbles: true, clientX: 240, clientY: 220 })); await tick()
+      assert(result, 'doubleclick-create', component.state.data.nodes.length === beforeBlankCreate + 1 && component.state.editing?.kind === 'node', 'double-clicking blank canvas creates a free node and opens its editor')
+      await closeEditor(component); await component.removeSelected({ confirm: false });
+      component.selectNode(component.state.data.nodes.find(item => item.id === 'opening'))
+      component.dispatchEvent(new KeyboardEvent('keydown', { key: ' ', bubbles: true })); await tick()
+      const previewStyle = getComputedStyle(component.querySelector('.graph-preview'))
+      assert(result, 'keyboard-preview', !!component.state.previewNode && !!component.querySelector('.graph-preview') && previewStyle.backgroundColor !== getComputedStyle(component).backgroundColor && previewStyle.borderStyle === 'solid', 'Space opens a non-interactive, colored quick preview')
+      component.selectEdge(component.state.data.edges.find(item => item.id === 'edge-1')); await tick()
+      assert(result, 'edge-preview', component.state.previewItem?.kind === 'edge' && component.querySelector('.graph-preview')?.textContent.includes('forces a decision'), 'selecting a relationship updates an open preview without another Space press')
+      component.dispatchEvent(new KeyboardEvent('keydown', { key: ' ', bubbles: true })); await tick()
+      assert(result, 'keyboard-preview', !component.state.previewItem, 'Space closes quick preview')
+      const contentStyle = getComputedStyle(component.querySelector('.graph-node-content'))
+      assert(result, 'content-clamp', contentStyle.overflow === 'hidden' && contentStyle.webkitLineClamp === '4', 'long node content is visually clamped')
+      const nodeElement = component.querySelector('[data-node-id="opening"]'), beforeX = component.state.data.nodes.find(item => item.id === 'opening').x, beforeDragPath = component.querySelector('[data-edge-id="edge-1"]').getAttribute('d')
+      nodeElement.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true, pointerId: 4, button: 0, clientX: 100, clientY: 100 })); window.dispatchEvent(new PointerEvent('pointermove', { pointerId: 4, clientX: 150, clientY: 130 })); const liveDragPath = component.querySelector('[data-edge-id="edge-1"]').getAttribute('d'); window.dispatchEvent(new PointerEvent('pointerup', { pointerId: 4, clientX: 150, clientY: 130 })); await tick()
+      assert(result, 'live-drag-routing', liveDragPath !== beforeDragPath, 'incident edges reroute during pointer movement, before drop')
+      assert(result, 'drag', component.state.data.nodes.find(item => item.id === 'opening').x !== beforeX, 'pointer drag updates free graph coordinates')
+      const readonly = document.querySelector('#readonlyGraph'), readonlyCount = readonly.state.data.nodes.length; readonly.addNode({ x: 1, y: 1 })
+      assert(result, 'readonly', readonly.state.data.nodes.length === readonlyCount, 'readonly blocks mutation')
+      const custom = document.querySelector('#customGraph')
+      assert(result, 'slots', custom.querySelector('.custom-toolbar') && custom.querySelectorAll('.custom-node').length === 2 && custom.querySelectorAll('.custom-actions').length === 2 && custom.querySelector('.custom-edge')?.textContent === 'next' && custom.querySelector('.custom-editor') && document.querySelector('#emptyGraph .custom-empty'), 'all graph slots render in context')
+      let documentValue; component.addEventListener('save', event => { documentValue = event.detail }, { once: true }); await component.save()
+      assert(result, 'save', documentValue.type === 'graph' && documentValue.formatVersion === 1 && documentValue.data.view.scale > 0, 'stateless save emits a versioned graph document')
+      assert(result, 'dirty-save', component.state.dirty === false && component.querySelector('.graph-save')?.disabled, 'successful save disables Save until the next change')
+      const apiGraph = document.querySelector('#apiGraph'); await tick(100); await apiGraph.save()
+      assert(result, 'api-load-save-events', apiGraph.state.data.nodes[0]?.title === 'API Graph' && window.graphLoaded?.type === 'graph' && window.graphSaved?.succeeded === 1, 'automatic get/set transport emits loaded document and saved mutation detail')
+      assert(result, 'error-event', window.graphError instanceof Error, 'automatic transport emits Error detail')
+      assert(result, 'registry', Editor.resolve({ path: 'plots/novel.graph' })?.component === 'GraphEditor', 'registry associates .graph files')
+      const normalized = GraphDocument.normalize({ id: 'root', text: 'Root', children: [{ id: 'child', text: 'Child' }] })
+      assert(result, 'graph-normalize', normalized.nodes.length === 2 && normalized.edges[0].from === 'root' && normalized.edges[0].to === 'child', 'GraphDocument converts nested trees into reusable graph JSON')
+      assert(result, 'final-state', !document.querySelector('.modal.show') && !document.querySelector('.modal-backdrop'), 'the test leaves no editor or backdrop open')
+      result.coverage.tested = [...cases]; result.coverage.percent = 100; result.status = result.failed ? 'failed' : 'passed'; document.querySelector('#result').textContent = JSON.stringify(result, null, 2); return result
+    }
+    document.querySelector('#runAll').onclick = window.runTest
+  </script>
+</body>
+</html>

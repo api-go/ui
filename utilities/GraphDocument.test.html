@@ -1,0 +1,31 @@
+<!doctype html>
+<html>
+<head><meta charset="utf-8"><title>utilities.GraphDocument tests</title><script src="../ui.js" components="GraphDocument"></script></head>
+<body><button id="runAll">测试全部</button><pre id="result"></pre>
+<script>
+  const cases = ['id', 'normalize-tree', 'normalize-aliases', 'unique-ids', 'children-descendants', 'add-node-edge', 'remove-edge', 'remove-node', 'layout-right-left', 'collapsed-layout']
+  const assert = (result, feature, condition, message) => { result.assertions++; if (condition) result.passed++; else { result.failed++; result.failures.push({ feature, message }) } }
+  window.runTest = async () => {
+    const result = { name: 'utilities.GraphDocument', status: 'running', assertions: 0, passed: 0, failed: 0, failures: [], consoleErrors: [], coverage: { tested: [], total: cases, percent: 0 } }
+    assert(result, 'id', GraphDocument.id('node').startsWith('node-'), 'id uses the requested prefix')
+    const graph = GraphDocument.normalize({ id: 'root', text: 'Root', custom: 1, children: [{ id: 'child', text: 'Child', children: [{ id: 'leaf', text: 'Leaf' }] }] })
+    assert(result, 'normalize-tree', graph.nodes.length === 3 && graph.edges.length === 2 && graph.nodes[0].custom === 1, 'nested trees convert without losing fields')
+    const aliases = GraphDocument.normalize({ nodes: [{ id: 'a' }, { id: 'b' }], edges: [{ id: 'ab', source: 'a', target: 'b' }] })
+    assert(result, 'normalize-aliases', aliases.edges[0].from === 'a' && aliases.edges[0].to === 'b', 'source and target aliases normalize')
+    const duplicate = GraphDocument.normalize({ nodes: [{ id: 'a' }, { id: 'a' }], edges: [{ id: 'e', from: 'a', to: 'a' }, { id: 'e', from: 'a', to: 'a' }] })
+    assert(result, 'unique-ids', new Set(duplicate.nodes.map(node => node.id)).size === duplicate.nodes.length && new Set(duplicate.edges.map(edge => edge.id)).size === duplicate.edges.length, 'normalized IDs are unique')
+    assert(result, 'children-descendants', GraphDocument.children(graph, 'root')[0].id === 'child' && GraphDocument.descendants(graph, 'root').has('leaf'), 'tree relationships are queryable')
+    const next = GraphDocument.addNode(graph, { title: 'Next' }, 'leaf'), edge = GraphDocument.addEdge(graph, 'root', next.id)
+    assert(result, 'add-node-edge', graph.nodes.includes(next) && graph.edges.includes(edge), 'nodes and directed edges can be added')
+    GraphDocument.removeEdge(graph, edge.id)
+    assert(result, 'remove-edge', !graph.edges.some(item => item.id === edge.id), 'removeEdge removes only its edge')
+    GraphDocument.removeNode(graph, 'child', { cascade: true })
+    assert(result, 'remove-node', graph.nodes.length === 1 && graph.nodes[0].id === 'root' && graph.edges.length === 0, 'cascade removes a subtree and attached edges')
+    const layoutGraph = GraphDocument.normalize({ id: 'root', children: [{ id: 'child' }] }), right = GraphDocument.layoutTree(layoutGraph), left = GraphDocument.layoutTree(layoutGraph, { direction: 'left' })
+    assert(result, 'layout-right-left', right.nodes.find(node => node.id === 'child').x > 0 && left.nodes.find(node => node.id === 'child').x < 0 && right.edges[0].path.startsWith('M '), 'tree layout supports both directions and edge paths')
+    layoutGraph.nodes[0].collapsed = true; const collapsed = GraphDocument.layoutTree(layoutGraph)
+    assert(result, 'collapsed-layout', collapsed.nodes.length === 1 && collapsed.edges.length === 0, 'collapsed descendants are excluded')
+    result.coverage.tested = [...cases]; result.coverage.percent = 100; result.status = result.failed ? 'failed' : 'passed'; document.querySelector('#result').textContent = JSON.stringify(result, null, 2); return result
+  }
+  document.querySelector('#runAll').onclick = window.runTest
+</script></body></html>

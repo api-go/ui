@@ -1,0 +1,41 @@
+name: SortableAPI
+purpose: Provide reusable drag-sort lifecycle control over the embedded SortableJS library without exposing a UI component.
+
+global:
+  SortableAPI:
+    methods:
+      create: "create(element, options) returns a controller and replaces any prior controller for the same element."
+      get: Return the controller for an element or null.
+      destroy: Destroy the controller attached to an element.
+
+controller:
+  properties:
+    element: Managed element.
+    instance: Underlying SortableJS instance for advanced options.
+  methods:
+    option: Read or write a SortableJS option.
+    enable: Enable drag sorting.
+    disable: Disable drag sorting.
+    destroy: Remove listeners and release the element.
+
+embedded:
+  library: SortableJS 1.15.7 under the MIT license.
+
+rules:
+  - SortableAPI owns only generic drag lifecycle; components own state mutations and operation events.
+  - There is intentionally no Sortable component.
+  - Components declare SortableAPI as a dependency; users do not declare the utility or library.
+
+examples: |
+  const sortable = SortableAPI.create(listElement, {
+    animation: 150,
+    group: 'cards',
+    onEnd: event => moveCard(event.oldIndex, event.newIndex)
+  })
+  sortable.disable()
+  sortable.enable()
+  sortable.destroy()
+
+tests:
+  - SortableAPI.test.html
+  - ../components/editor/Kanban.test.html

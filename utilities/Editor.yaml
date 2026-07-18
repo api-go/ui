@@ -1,0 +1,51 @@
+name: Editor
+purpose: Register file editors, resolve document types, merge editing schemas, and provide opt-in per-component document transport.
+
+global:
+  Editor:
+    methods:
+      register: "register({ name, component, extensions?, types?, mimeTypes?, default? })"
+      unregister: Remove a registered editor by name.
+      get: Return a registered definition by name.
+      list: Return all registered definitions.
+      resolve: "resolve({ path?, type?, mime? }) using type, extension, MIME, then default precedence."
+      createDocument: "createDocument(type, data, extra?) creates { type, formatVersion:1, ...extra, data }."
+      mergeSchemas: Merge extra schemas into defaults by entity kind and field name.
+      applyDefaults: Apply schema default values only to undefined fields.
+      load: POST a get action and normalize response meta plus data into a document envelope.
+      save: POST a set action with the document envelope in data.
+      connect: Attach path/version/load/save behavior to a component without inheritance.
+      clone: Clone JSON document data.
+
+transport:
+  endpoint: Always supplied by the component api attribute; Editor has no global api setting.
+  load_request: "{ action:'get', path, version? }"
+  load_response: "{ ok:true, meta:{ path?, version?, type? }, data }"
+  save_request: "{ action:'set', path, data }; data is the complete document envelope."
+  save_response: "{ ok, succeeded, failed }; the set response does not need to return a version."
+
+schema_merge:
+  behavior: Extra fields append; an extra field with the same name overrides built-in properties and merges setting; hidden:true removes the result.
+
+rules:
+  - Server history version changes on save; document formatVersion changes only when the stored JSON shape becomes incompatible.
+  - A missing component api always means stateless behavior and no automatic HTTP request.
+  - Editor is a utility facade, not a base class, custom element, or application-wide service locator.
+  - Components register their own extension associations only when their source is loaded.
+
+examples: |
+  Editor.register({ name: 'Kanban', component: 'Kanban', extensions: ['kanban'], types: ['kanban'] })
+  const definition = Editor.resolve({ path: 'projects/tasks.kanban' })
+  const schemas = Editor.mergeSchemas(
+    { card: [{ name: 'title', type: 'text' }] },
+    { card: [{ name: 'priority', type: 'select', options: ['low', 'high'] }] }
+  )
+
+related:
+  - HTTP.yaml
+
+tests:
+  - Editor.test.html
+  - ../components/editor/Kanban.test.html
+  - ../components/editor/Mindmap.test.html
+  - ../components/editor/GraphEditor.test.html

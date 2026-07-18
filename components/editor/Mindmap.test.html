@@ -1,0 +1,114 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>components.editor.Mindmap tests</title>
+  <script src="../../ui.js" components="Mindmap"></script>
+  <script>
+    const mapData = {
+      nodes: [
+        { id: 'root', title: 'Novel', content: 'A mystery about memory and identity' },
+        { id: 'plot', title: 'Main plot', content: 'The protagonist receives a letter written by their future self', mood: 'tense', untouched: 9 },
+        { id: 'character', title: 'Characters', content: 'Protagonist, mentor and unreliable witness' },
+        { id: 'setting', title: 'Setting', content: 'A coastal town cut off by a storm' }
+      ],
+      edges: [
+        { id: 'edge-1', from: 'root', to: 'plot' },
+        { id: 'edge-2', from: 'root', to: 'character' },
+        { id: 'edge-3', from: 'root', to: 'setting' }
+      ], view: {}
+    }
+    const mapExtras = { node: [{ name: 'mood', label: 'Mood', type: 'select', options: ['calm', 'tense'], default: 'calm' }] }
+    const customMap = { nodes: [{ id: 'custom-root', title: 'Custom' }], edges: [], view: {} }
+    const emptyMap = { nodes: [], edges: [], view: {} }
+    const apiMapPath = 'maps/api.mindmap'
+    const missingMapPath = 'maps/missing.mindmap'
+  </script>
+</head>
+<body>
+  <Mindmap id="map" style="height:440px" $.state.data="mapData" $.state.extraSchemas="mapExtras"></Mindmap>
+  <div class="d-none">
+    <Mindmap id="leftMap" direction="left" style="height:260px" $.state.data="mapData"></Mindmap>
+    <Mindmap id="customMap" style="height:260px" $.state.data="customMap">
+      <button slot="toolbar" class="custom-toolbar">Custom toolbar</button>
+      <div slot="node" class="custom-node" $text="node.title"></div>
+      <button slot="node-actions" class="custom-actions">+</button>
+      <div slot="editor" class="custom-editor">Editor</div>
+    </Mindmap>
+    <Mindmap id="emptyMap" style="height:200px" $.state.data="emptyMap"><div slot="empty" class="custom-empty">Empty map</div></Mindmap>
+    <Mindmap id="apiMap" api="/__http__/document" $.state.path="apiMapPath" $onloaded="window.mindmapLoaded=event.detail" $onsaved="window.mindmapSaved=event.detail" style="height:220px"></Mindmap>
+    <Mindmap id="missingMap" api="/__http__/document" $.state.path="missingMapPath" $onerror="window.mindmapError=event.detail" style="height:180px"></Mindmap>
+  </div>
+  <button id="runAll" type="button">测试全部</button><pre id="result"></pre>
+  <script>
+    const tick = (ms = 80) => new Promise(resolve => setTimeout(resolve, ms))
+    const closeEditor = async component => { await tick(350); component.cancelEdit(); await tick(350) }
+    const cases = ['data', 'layout', 'direction', 'direction-persist', 'toolbar-icons', 'pan-zoom-fit', 'select', 'blank-deselect', 'keyboard', 'editor-keyboard', 'danger-confirm', 'preview', 'content-clamp', 'dirty-save', 'default-schema', 'extraSchemas', 'edit-preserve', 'change-update-events', 'add-remove', 'root-protection', 'collapse', 'slots', 'save', 'api-load-save-events', 'error-event', 'registry', 'final-state']
+    const assert = (result, feature, condition, message) => { result.assertions++; if (condition) result.passed++; else { result.failed++; result.failures.push({ feature, message }) } }
+    window.runTest = async () => {
+      const result = { name: 'components.editor.Mindmap', status: 'running', assertions: 0, passed: 0, failed: 0, failures: [], consoleErrors: [], coverage: { tested: [], total: cases, percent: 0 } }
+      await tick(180)
+      const component = document.querySelector('#map')
+      assert(result, 'data', component.querySelectorAll('.mindmap-node').length === 4 && component.state.data.edges.length === 3, 'nodes and edges render from graph JSON')
+      assert(result, 'layout', component.querySelector('.mindmap-edge')?.getAttribute('d')?.startsWith('M ') && component.state.layoutNodes[1].x > component.state.layoutNodes[0].x, 'automatic layout positions and connects nodes')
+      const left = document.querySelector('#leftMap')
+      assert(result, 'direction', left.state.layoutNodes.find(node => node.id === 'plot').x < left.state.layoutNodes.find(node => node.id === 'root').x, 'left direction reverses expansion')
+      component.setDirection('left'); await tick()
+      assert(result, 'direction-persist', component.state.data.settings.direction === 'left' && component.state.dirty && component.state.layoutNodes.find(node => node.id === 'plot').x < component.state.layoutNodes.find(node => node.id === 'root').x, 'direction is document data and changes layout')
+      component.setDirection('right'); await tick()
+      assert(result, 'toolbar-icons', component.querySelectorAll('.mindmap-direction .bi-diagram-3').length === 2 && !!component.querySelector('.mindmap-fit .bi-bounding-box'), 'direction uses hierarchy icons and fit uses the bounding-box icon')
+      const beforeScale = component.canvas.view.scale; component.canvas.setView({ scale: beforeScale + .2 }, true); component.fit()
+      assert(result, 'pan-zoom-fit', component.canvas.view.scale > 0 && component.state.view.scale > 0, 'GraphCanvas exposes view control and fit')
+      let selected; component.addEventListener('select', event => { selected = event.detail }, { once: true }); component.selectNode(component.state.data.nodes[1])
+      assert(result, 'select', selected.id === 'plot' && component.state.selectedNodeId === 'plot', 'select updates state and emits node detail')
+      component.querySelector('.graph-viewport').dispatchEvent(new MouseEvent('click', { bubbles: true })); await tick()
+      assert(result, 'blank-deselect', component.state.selectedNodeId === null, 'clicking blank canvas clears selection')
+      component.selectNode(component.state.data.nodes.find(node => node.id === 'plot'))
+      component.dispatchEvent(new KeyboardEvent('keydown', { key: ' ', bubbles: true })); await tick()
+      let previewStyle = getComputedStyle(component.querySelector('.mindmap-preview'))
+      assert(result, 'preview', !!component.state.previewNode && component.querySelector('.mindmap-preview')?.getAttribute('role') === 'tooltip' && previewStyle.backgroundColor !== getComputedStyle(component).backgroundColor && previewStyle.borderStyle === 'solid', 'Space opens a visually distinct, colored tooltip preview')
+      component.selectNode(component.state.data.nodes.find(node => node.id === 'character')); await tick()
+      assert(result, 'preview', component.state.previewNode?.id === 'character' && !!component.querySelector('.mindmap-preview'), 'selecting another node updates an open preview instead of closing it')
+      component.dispatchEvent(new KeyboardEvent('keydown', { key: ' ', bubbles: true })); await tick()
+      assert(result, 'preview', !component.state.previewNode, 'Space closes quick preview')
+      const beforeKeyboard = component.state.data.nodes.length
+      component.dispatchEvent(new KeyboardEvent('keydown', { key: 'Tab', bubbles: true })); await closeEditor(component)
+      assert(result, 'keyboard', component.state.data.nodes.length === beforeKeyboard + 1, 'Tab creates a child node')
+      const keyboardNode = component.state.data.nodes.at(-1); await component.removeNode(keyboardNode, { confirm: false }); await tick()
+      const contentStyle = getComputedStyle(component.querySelector('.mindmap-node-content'))
+      assert(result, 'content-clamp', contentStyle.overflow === 'hidden' && contentStyle.webkitLineClamp === '3', 'long node content is visually clamped')
+      assert(result, 'dirty-save', component.state.dirty && !component.querySelector('.mindmap-save')?.disabled, 'Save becomes available after document changes')
+      assert(result, 'default-schema', component.schemas().node.some(field => field.name === 'title') && component.schemas().node.some(field => field.name === 'content'), 'default node fields need no configuration')
+      assert(result, 'extraSchemas', component.schemas().node.some(field => field.name === 'mood'), 'extraSchemas adds optional fields')
+      let changeDetail, updateDetail; component.addEventListener('change', event => { changeDetail = event.detail }, { once: true }); component.addEventListener('update', event => { updateDetail = event.detail }, { once: true })
+      component.editNode(component.state.data.nodes.find(node => node.id === 'plot')); await tick(350)
+      assert(result, 'extraSchemas', !!component.querySelector('AutoForm [name="mood"]'), 'AutoForm renders the merged schema')
+      component.state.editing.draft.title = 'Turning point'; component.querySelector('.mindmap-editor input[name="title"]').dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true })); await tick(350)
+      assert(result, 'edit-preserve', component.state.data.nodes.find(node => node.id === 'plot').untouched === 9 && component.state.data.nodes.find(node => node.id === 'plot').title === 'Turning point', 'editing preserves unknown fields')
+      component.editNode(component.state.data.nodes.find(node => node.id === 'plot')); await tick(350); document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true })); await tick(350)
+      assert(result, 'editor-keyboard', !component.state.editing && !component.querySelector('.mindmap-editor').classList.contains('show'), 'Enter commits and Escape cancels even before a field is clicked')
+      const originalConfirm = Dialog.confirm; let dangerType; Dialog.confirm = async (message, options) => { dangerType = options?.type; return false }; await component.removeNode(component.state.data.nodes.find(node => node.id === 'plot')); Dialog.confirm = originalConfirm
+      assert(result, 'danger-confirm', dangerType === 'danger' && component.state.data.nodes.some(node => node.id === 'plot'), 'node deletion requests a danger confirmation before mutating data')
+      assert(result, 'change-update-events', changeDetail === component.state.data && updateDetail.reason === 'edit-node', 'change and update expose graph data and reason')
+      const child = component.addChild(component.state.data.nodes.find(node => node.id === 'plot')); await closeEditor(component); const count = component.state.data.nodes.length; await component.removeNode(child, { confirm: false }); await tick()
+      assert(result, 'add-remove', count === 5 && component.state.data.nodes.length === 4, 'addChild and removeNode mutate a subtree')
+      const root = component.state.data.nodes.find(node => node.id === 'root'); component.toggleNode(root); await tick(); const collapsedCount = component.querySelectorAll('.mindmap-node').length; component.toggleNode(root); await tick()
+      assert(result, 'root-protection', await component.removeNode(root, { confirm: false }) === false && component.state.data.nodes.some(node => node.id === 'root'), 'the unique root cannot be deleted')
+      assert(result, 'collapse', collapsedCount === 1 && component.querySelectorAll('.mindmap-node').length === 4, 'toggleNode hides and restores descendants')
+      const custom = document.querySelector('#customMap')
+      assert(result, 'slots', custom.querySelector('.custom-toolbar') && custom.querySelector('.custom-node')?.textContent === 'Custom' && custom.querySelector('.custom-actions') && custom.querySelector('.custom-editor') && document.querySelector('#emptyMap .custom-empty'), 'all Mindmap slots render')
+      let saveDocument; component.addEventListener('save', event => { saveDocument = event.detail }, { once: true }); await component.save()
+      assert(result, 'save', saveDocument.type === 'mindmap' && saveDocument.formatVersion === 1 && saveDocument.data.view.scale > 0, 'stateless save includes format and viewport')
+      assert(result, 'dirty-save', component.state.dirty === false && component.querySelector('.mindmap-save')?.disabled, 'successful save disables Save again')
+      const apiMap = document.querySelector('#apiMap'); await tick(120)
+      await apiMap.save()
+      assert(result, 'api-load-save-events', apiMap.state.data.nodes[0]?.title === 'API Root' && window.mindmapLoaded?.type === 'mindmap' && window.mindmapSaved?.succeeded === 1, 'api path loads through get and save emits the set mutation result')
+      assert(result, 'error-event', window.mindmapError instanceof Error, 'automatic transport emits Error detail')
+      assert(result, 'registry', Editor.resolve({ path: 'ideas/story.mindmap' })?.component === 'Mindmap', 'registry associates .mindmap files')
+      assert(result, 'final-state', !document.querySelector('.modal.show') && !document.querySelector('.modal-backdrop'), 'the test leaves no editor or backdrop open')
+      result.coverage.tested = [...cases]; result.coverage.percent = 100; result.status = result.failed ? 'failed' : 'passed'; document.querySelector('#result').textContent = JSON.stringify(result, null, 2); return result
+    }
+    document.querySelector('#runAll').onclick = window.runTest
+  </script>
+</body>
+</html>

@@ -1,0 +1,87 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>components.data.Chart tests</title>
+  <script src="../../ui.js" components="Chart"></script>
+  <script>
+    const barChartConfig = {
+      type: 'bar',
+      data: { labels: ['Jan', 'Feb', 'Mar', 'Apr'], datasets: [{ label: 'Orders', data: [12, 19, 11, 24] }] },
+      options: { animation: false, interaction: { mode: 'index', intersect: false } }
+    }
+    const lineChartConfig = {
+      type: 'line',
+      data: { labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri'], datasets: [{ label: 'Visitors', data: [120, 180, 155, 240, 280], tension: .35, fill: true }] },
+      options: { animation: false }
+    }
+    const mixedChartConfig = {
+      type: 'bar',
+      data: {
+        labels: ['Q1', 'Q2', 'Q3', 'Q4'],
+        datasets: [
+          { type: 'bar', label: 'Revenue', data: [42, 58, 64, 81], yAxisID: 'revenue' },
+          { type: 'line', label: 'Growth %', data: [8, 15, 11, 22], yAxisID: 'growth', tension: .3 }
+        ]
+      },
+      options: {
+        animation: false,
+        interaction: { mode: 'index', intersect: false },
+        scales: {
+          revenue: { type: 'linear', position: 'left', title: { display: true, text: 'Revenue' } },
+          growth: { type: 'linear', position: 'right', grid: { drawOnChartArea: false }, title: { display: true, text: 'Growth %' } }
+        }
+      }
+    }
+    const doughnutChartConfig = {
+      type: 'doughnut',
+      data: { labels: ['Product', 'Service', 'Other'], datasets: [{ data: [55, 30, 15] }] },
+      options: { animation: false, cutout: '58%' }
+    }
+  </script>
+</head>
+<body>
+  <div class="container-fluid py-3">
+    <div class="row g-3">
+      <div class="col-12 col-xl-6"><div class="card h-100"><div class="card-header fw-semibold">Bar</div><div class="card-body" style="height:320px"><Chart id="barChart" $.state.config="barChartConfig"></Chart></div></div></div>
+      <div class="col-12 col-xl-6"><div class="card h-100"><div class="card-header fw-semibold">Line</div><div class="card-body" style="height:320px"><Chart id="lineChart" $.state.config="lineChartConfig"></Chart></div></div></div>
+      <div class="col-12 col-xl-8"><div class="card h-100"><div class="card-header fw-semibold">Mixed · dual Y axes</div><div class="card-body" style="height:340px"><Chart id="chart" $.state.config="mixedChartConfig"></Chart></div></div></div>
+      <div class="col-12 col-xl-4"><div class="card h-100"><div class="card-header fw-semibold">Doughnut</div><div class="card-body" style="height:340px"><Chart id="doughnutChart" $.state.config="doughnutChartConfig"></Chart></div></div></div>
+    </div>
+  </div>
+  <button id="runAll" type="button">测试全部</button>
+  <pre id="result"></pre>
+  <script>
+    const tick = () => new Promise(resolve => setTimeout(resolve, 80))
+    const cases = ['showcase', 'config', 'embedded-version', 'instance', 'update', 'resize', 'chartclick', 'charthover', 'destroy']
+    const assert = (result, feature, condition, message) => { result.assertions++; if (condition) result.passed++; else { result.failed++; result.failures.push({ feature, message }) } }
+    window.runTest = async () => {
+      const result = { name: 'components.data.Chart', status: 'running', assertions: 0, passed: 0, failed: 0, failures: [], consoleErrors: [], coverage: { tested: [], total: cases, percent: 0 } }
+      await tick()
+      const component = document.querySelector('#chart')
+      assert(result, 'showcase', document.querySelector('#barChart').instance.config.type === 'bar' && document.querySelector('#lineChart').instance.config.type === 'line' && document.querySelector('#doughnutChart').instance.config.type === 'doughnut', 'bar, line, and doughnut examples render together')
+      assert(result, 'config', component.instance?.config.type === 'bar' && component.instance.data.datasets[1].type === 'line' && component.instance.options.scales.revenue.position === 'left' && component.instance.options.scales.growth.position === 'right', 'mixed chart preserves dual-axis native Chart.js config')
+      assert(result, 'embedded-version', globalThis.Chart.version === '4.5.1', 'embedded Chart.js version is 4.5.1')
+      assert(result, 'instance', component.instance instanceof globalThis.Chart && component.querySelector('canvas').width > 0, 'instance renders to the internal canvas')
+      const next = { ...barChartConfig, data: { labels: ['Mar'], datasets: [{ label: 'Sales', data: [25] }] } }
+      component.update(next); await tick()
+      assert(result, 'update', component.instance.data.labels[0] === 'Mar', 'update(config) replaces the native config')
+      component.resize()
+      assert(result, 'resize', component.instance.width > 0, 'resize delegates to Chart.js')
+      let clickDetail, hoverDetail
+      component.addEventListener('chartclick', event => { clickDetail = event.detail }, { once: true })
+      component.addEventListener('charthover', event => { hoverDetail = event.detail }, { once: true })
+      component.instance.options.onClick({ type: 'click' }, [], component.instance)
+      component.instance.options.onHover({ type: 'mousemove' }, [], component.instance)
+      await tick()
+      assert(result, 'chartclick', clickDetail?.chart === component.instance && Array.isArray(clickDetail.elements), 'chartclick exposes Chart.js interaction detail')
+      assert(result, 'charthover', hoverDetail?.chart === component.instance && Array.isArray(hoverDetail.elements), 'charthover exposes Chart.js interaction detail')
+      component.destroy()
+      assert(result, 'destroy', component.instance === null, 'destroy releases the instance')
+      component.update(mixedChartConfig)
+      result.coverage.tested = [...cases]; result.coverage.percent = 100; result.status = result.failed ? 'failed' : 'passed'; document.querySelector('#result').textContent = JSON.stringify(result, null, 2); return result
+    }
+    document.querySelector('#runAll').onclick = window.runTest
+  </script>
+</body>
+</html>

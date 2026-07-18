@@ -1,0 +1,33 @@
+<!doctype html>
+<html>
+<head><meta charset="utf-8"><title>utilities.Editor tests</title><script src="../ui.js" components="Editor"></script></head>
+<body><button id="runAll">测试全部</button><pre id="result"></pre>
+<script>
+  const cases = ['register-get-list-unregister', 'resolve-precedence', 'document-format', 'schema-merge-defaults', 'clone', 'get-load', 'set-save', 'connect-stateless']
+  const assert = (result, feature, condition, message) => { result.assertions++; if (condition) result.passed++; else { result.failed++; result.failures.push({ feature, message }) } }
+  window.runTest = async () => {
+    const result = { name: 'utilities.Editor', status: 'running', assertions: 0, passed: 0, failed: 0, failures: [], consoleErrors: [], coverage: { tested: [], total: cases, percent: 0 } }
+    Editor.register({ name: 'Fallback', component: 'CodeEditor', extensions: ['txt'], types: ['text'], mimeTypes: ['text/plain'], default: true })
+    Editor.register({ name: 'Json', component: 'CodeEditor', extensions: ['json'], types: ['json'], mimeTypes: ['application/json'] })
+    assert(result, 'register-get-list-unregister', Editor.get('Json').component === 'CodeEditor' && Editor.list().some(item => item.name === 'Fallback') && Editor.unregister('Json') && !Editor.get('Json'), 'registry CRUD is deterministic')
+    Editor.register({ name: 'Json', component: 'CodeEditor', extensions: ['json'], types: ['json'], mimeTypes: ['application/json'] })
+    assert(result, 'resolve-precedence', Editor.resolve({ path: 'a.txt', type: 'json', mime: 'text/plain' }).name === 'Json' && Editor.resolve({ path: 'a.json', mime: 'text/plain' }).name === 'Json' && Editor.resolve({ path: 'a.unknown', mime: 'text/plain' }).name === 'Fallback', 'resolve uses type then extension then MIME')
+    const documentValue = Editor.createDocument('graph', { nodes: [] }, { title: 'Plot' })
+    assert(result, 'document-format', documentValue.type === 'graph' && documentValue.formatVersion === 1 && documentValue.title === 'Plot', 'document format is explicit')
+    const schemas = Editor.mergeSchemas({ node: [{ name: 'title', label: 'Title', setting: { required: true } }, { name: 'content' }] }, { node: [{ name: 'title', label: 'Name', setting: { maxlength: 10 } }, { name: 'content', hidden: true }, { name: 'kind', default: 'scene' }] })
+    const data = Editor.applyDefaults({}, schemas.node)
+    assert(result, 'schema-merge-defaults', schemas.node.length === 2 && schemas.node[0].label === 'Name' && schemas.node[0].setting.required && schemas.node[0].setting.maxlength === 10 && data.kind === 'scene', 'extra schemas merge, hide, and apply defaults')
+    const source = { nested: { value: 1 } }, copy = Editor.clone(source); copy.nested.value = 2
+    assert(result, 'clone', source.nested.value === 1, 'clone isolates JSON data')
+    const loaded = await Editor.load({ api: '/__http__/document', path: 'boards/api.kanban', version: 3, type: 'kanban' })
+    assert(result, 'get-load', loaded.type === 'kanban' && loaded.version === 3 && loaded.meta.type === 'json' && loaded.data.columns[0].title === 'API Todo', 'load sends get and combines response meta with response data')
+    const savedDocument = Editor.createDocument('kanban', { columns: [] })
+    const saved = await Editor.save({ api: '/__http__/document', path: 'boards/editor-test.kanban', data: savedDocument })
+    const reloaded = await Editor.load({ api: '/__http__/document', path: 'boards/editor-test.kanban', type: 'kanban' })
+    assert(result, 'set-save', saved.ok && saved.succeeded === 1 && reloaded.version === 2 && reloaded.type === 'kanban' && reloaded.data.columns.length === 0, 'save sends set with the document in data and returns mutation counts')
+    const element = document.createElement('div'); element.state = NewState({ data: { value: 1 }, path: 'local.test' }); Editor.connect(element, { type: 'test', defaultData: {} }); let emitted; element.addEventListener('save', event => { emitted = event.detail }); const local = await element.save()
+    assert(result, 'connect-stateless', local === emitted && local.data.value === 1 && !element.api, 'connect emits stateless save without HTTP')
+    result.coverage.tested = [...cases]; result.coverage.percent = 100; result.status = result.failed ? 'failed' : 'passed'; document.querySelector('#result').textContent = JSON.stringify(result, null, 2); return result
+  }
+  document.querySelector('#runAll').onclick = window.runTest
+</script></body></html>

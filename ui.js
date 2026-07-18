@@ -1,6 +1,6 @@
 (() => {
   // Updated by `npm run build`. Source files stay directly executable.
-  const build = { version: 'mrpt6n5q', files: {"frameworks/Bootstrap.js":"mrpt6n5q","frameworks/State.js":"mrpt6n5p","utilities/HTTP.js":"mrg6t8zm","utilities/MouseMover.js":"mrg6t8zm","utilities/VirtualScroll.js":"mrg6t8zn","components/base/API.js":"mrj8lfwz","components/base/AutoForm.js":"mrj10yku","components/base/Dialog.js":"mrh7tjfb","components/base/List.js":"mrge46xl","components/base/Modal.js":"mrj1zcg3","components/base/Nav.js":"mrj6haqp","components/base/Resizer.js":"mrghfzrh","components/base/Toast.js":"mrghiycy","components/data/DataGrid.js":"mrj8lxpb","components/form/ColorPicker.js":"mrgn837c","components/form/DatePicker.js":"mrgn837c","components/form/IconPicker.js":"mrgoatz5","components/form/TagsInput.js":"mrgn837b"} };
+  const build = { version: 'mrqi85fs', files: {"frameworks/Bootstrap.js":"mrqi85fs","frameworks/State.js":"mrqi85fs","libraries/ChartJS.js":"mrpzd5sa","libraries/SortableJS.js":"mrpzd5sd","utilities/Disposer.js":"mrq2ulte","utilities/Editor.js":"mrq6k3ck","utilities/GraphCanvas.js":"mrq29nba","utilities/GraphDocument.js":"mrq07eih","utilities/HTTP.js":"mrg6t8zm","utilities/MouseMover.js":"mrg6t8zm","utilities/SortableAPI.js":"mrpzifgt","utilities/VirtualScroll.js":"mrg6t8zn","components/base/API.js":"mrj8lfwz","components/base/AutoForm.js":"mrj10yku","components/base/Dialog.js":"mrq52jn2","components/base/List.js":"mrge46xl","components/base/Modal.js":"mrj1zcg3","components/base/Nav.js":"mrj6haqp","components/base/Resizer.js":"mrghfzrh","components/base/Toast.js":"mrghiycy","components/data/Chart.js":"mrq2ulte","components/data/DataGrid.js":"mrj8lxpb","components/editor/GraphEditor.js":"mrq583td","components/editor/Kanban.js":"mrq583td","components/editor/Mindmap.js":"mrq583td","components/form/ColorPicker.js":"mrgn837c","components/form/DatePicker.js":"mrgn837c","components/form/IconPicker.js":"mrgoatz5","components/form/TagsInput.js":"mrgn837b"} };
   const script = document.currentScript;
   if (!script || document.readyState !== 'loading') {
     throw new Error('ui.js must be loaded by a normal <script> while the document is parsing');
@@ -11,9 +11,16 @@
     .filter(Boolean);
 
   const modules = {
+    ChartJS: { path: 'libraries/ChartJS.js' },
+    SortableJS: { path: 'libraries/SortableJS.js' },
     HTTP: { path: 'utilities/HTTP.js' },
     VirtualScroll: { path: 'utilities/VirtualScroll.js' },
     MouseMover: { path: 'utilities/MouseMover.js' },
+    Disposer: { path: 'utilities/Disposer.js' },
+    Editor: { path: 'utilities/Editor.js', needs: ['HTTP'] },
+    SortableAPI: { path: 'utilities/SortableAPI.js', needs: ['SortableJS'] },
+    GraphDocument: { path: 'utilities/GraphDocument.js' },
+    GraphCanvas: { path: 'utilities/GraphCanvas.js' },
     API: { path: 'components/base/API.js', needs: ['Toast'] },
     AutoForm: { path: 'components/base/AutoForm.js', needs: ['Toast'] },
     List: { path: 'components/base/List.js', needs: ['VirtualScroll'] },
@@ -23,6 +30,10 @@
     Nav: { path: 'components/base/Nav.js' },
     Resizer: { path: 'components/base/Resizer.js' },
     DataGrid: { path: 'components/data/DataGrid.js', needs: ['AutoForm', 'Dialog', 'Resizer', 'DatePicker', 'ColorPicker', 'IconPicker', 'TagsInput'] },
+    Chart: { path: 'components/data/Chart.js', needs: ['ChartJS', 'Disposer'] },
+    Kanban: { path: 'components/editor/Kanban.js', needs: ['Editor', 'SortableAPI', 'Disposer', 'AutoForm', 'Modal', 'Dialog'] },
+    Mindmap: { path: 'components/editor/Mindmap.js', needs: ['Editor', 'GraphDocument', 'GraphCanvas', 'Disposer', 'AutoForm', 'Modal', 'Dialog'] },
+    GraphEditor: { path: 'components/editor/GraphEditor.js', needs: ['Editor', 'GraphDocument', 'GraphCanvas', 'Disposer', 'AutoForm', 'Modal', 'Dialog'] },
     DatePicker: { path: 'components/form/DatePicker.js', needs: ['AutoForm'] },
     ColorPicker: { path: 'components/form/ColorPicker.js', needs: ['AutoForm'] },
     IconPicker: { path: 'components/form/IconPicker.js', needs: ['AutoForm'] },
@@ -32,7 +43,8 @@
   const groups = {
     base: ['API', 'AutoForm', 'List', 'Modal', 'Dialog', 'Toast', 'Nav', 'Resizer'],
     form: ['DatePicker', 'ColorPicker', 'IconPicker', 'TagsInput'],
-    data: ['DataGrid']
+    data: ['DataGrid', 'Chart'],
+    editor: ['Kanban', 'Mindmap', 'GraphEditor']
   };
   const qualified = Object.fromEntries(Object.entries(groups).flatMap(([group, names]) => names.map(name => [`${group}.${name}`, name])));
   const requested = requestedNames.flatMap(name => groups[name] || [qualified[name] || name]);
@@ -49,7 +61,7 @@
     return url.href;
   };
   const writeScript = path => document.write(`<script src="${sourceUrl(path)}"><\/script>`);
-  // Frameworks and utilities are always available to every component.
+  // Frameworks and compatibility utilities are unconditional; specialized dependencies are resolved below.
   if (!globalThis.Component) writeScript('frameworks/State.js');
   if (!globalThis.bootstrap) writeScript('frameworks/Bootstrap.js');
   ['HTTP', 'VirtualScroll', 'MouseMover']

@@ -1,0 +1,44 @@
+name: GraphCanvas
+purpose: Provide reusable graph viewport pan, pointer-centered zoom, coordinate conversion, fit, and cleanup.
+
+global:
+  GraphCanvas:
+    methods:
+      create: "create(container, scene, options?) returns a viewport controller."
+
+options:
+  view: "Initial { x, y, scale }."
+  minScale: Minimum zoom scale, default 0.2.
+  maxScale: Maximum zoom scale, default 4.
+  onChange: Callback receiving view after user or emitting programmatic changes.
+
+controller:
+  properties:
+    view: Read-only copy of the current transform.
+  methods:
+    setView: Merge a transform and optionally emit onChange.
+    toWorld: Convert client coordinates to scene coordinates.
+    fit: Fit node rectangles into the viewport.
+    destroy: Remove pointer and wheel listeners.
+
+interaction:
+  - Pointer-drag empty viewport space to pan.
+  - Trackpad or wheel deltas pan horizontally and vertically.
+  - Pinch gestures and Ctrl/Cmd plus wheel zoom around the pointer.
+  - Controls and data-graph-node elements are excluded from background panning.
+
+rules:
+  - GraphCanvas controls only viewport transforms; components render and mutate nodes and edges.
+  - Users do not declare this utility in components.
+
+examples: |
+  const canvas = GraphCanvas.create(viewport, scene, {
+    view: { x: 0, y: 0, scale: 1 },
+    onChange: view => document.view = view
+  })
+  canvas.fit(nodes)
+
+tests:
+  - GraphCanvas.test.html
+  - ../components/editor/Mindmap.test.html
+  - ../components/editor/GraphEditor.test.html

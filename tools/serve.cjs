@@ -11,6 +11,12 @@ const types = {
   '.json': 'application/json',
   '.yaml': 'text/yaml'
 };
+const documentStore = new Map([
+  ['boards/api.kanban', { type: 'kanban', formatVersion: 1, data: { columns: [{ id: 'api-todo', title: 'API Todo', items: [] }] } }],
+  ['maps/api.mindmap', { type: 'mindmap', formatVersion: 1, data: { nodes: [{ id: 'api-root', title: 'API Root' }], edges: [], view: {} } }],
+  ['graphs/api.graph', { type: 'graph', formatVersion: 1, data: { nodes: [{ id: 'api-node', title: 'API Graph', x: 0, y: 0 }], edges: [], view: {} } }]
+]);
+const documentVersions = new Map([['boards/api.kanban', 3], ['maps/api.mindmap', 1], ['graphs/api.graph', 1]]);
 
 createServer((request, response) => {
   const pathname = decodeURIComponent(new URL(request.url, `http://${request.headers.host}`).pathname);
@@ -34,6 +40,29 @@ createServer((request, response) => {
       const chunks = [];
       request.on('data', chunk => chunks.push(chunk));
       request.on('end', () => send(200, { 'Content-Type': 'application/json' }, JSON.stringify({ contentType: request.headers['content-type'] || '', body: Buffer.concat(chunks).toString() })));
+      return;
+    }
+    if (pathname === '/__http__/document') {
+      const chunks = [];
+      request.on('data', chunk => chunks.push(chunk));
+      request.on('end', () => {
+        const input = JSON.parse(Buffer.concat(chunks).toString() || '{}');
+        if (input.action === 'get') {
+          const data = documentStore.get(input.path);
+          if (!data) return send(200, { 'Content-Type': 'application/json' }, JSON.stringify({ ok: false }));
+          const version = input.version == null || input.version === '' ? documentVersions.get(input.path) || 1 : Number(input.version);
+          return send(200, { 'Content-Type': 'application/json' }, JSON.stringify({ ok: true, meta: { path: input.path, version, type: 'json' }, data }));
+        }
+        if (input.action === 'set') {
+          const isObject = input.data !== null && typeof input.data === 'object';
+          if (typeof input.data !== 'string' && !isObject) return send(200, { 'Content-Type': 'application/json' }, JSON.stringify({ ok: false, error: 'data must be a string or object' }));
+          documentStore.set(input.path, input.data);
+          const version = (documentVersions.get(input.path) || 1) + 1;
+          documentVersions.set(input.path, version);
+          return send(200, { 'Content-Type': 'application/json' }, JSON.stringify({ ok: true, succeeded: 1, failed: 0 }));
+        }
+        return send(200, { 'Content-Type': 'application/json' }, JSON.stringify({ error: 'unknown document action' }));
+      });
       return;
     }
     return send(404, { 'Content-Type': 'application/json' }, JSON.stringify({ error: 'not found' }));

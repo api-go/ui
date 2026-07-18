@@ -1,6 +1,6 @@
 name: Dialog
 
-purpose: Modal-based alert and confirmation dialog.
+purpose: Modal-based alert and confirmation dialog with keyboard controls.
 
 methods:
   Dialog.show: Show a custom dialog and resolve with its button index.
@@ -11,11 +11,16 @@ state:
   title: Dialog title.
   message: Dialog body text.
   buttons: Button labels.
-  type: Bootstrap contextual type.
+  type: Bootstrap contextual type for the dialog and final action button. Earlier buttons use secondary styling.
+
+keyboard:
+  Enter: Activate the focused footer button, or the final action button when focus is elsewhere.
+  Escape: Close the dialog and resolve as cancelled, including before the user clicks a control.
 
 examples:
   alert: "Dialog.alert('Saved successfully')"
-  confirm: "Dialog.confirm('Delete this record?').then(ok => { if (ok) remove() })"
+  confirm: "Dialog.confirm('Continue?').then(ok => { if (ok) proceed() })"
+  destructive: "Dialog.confirm('Delete this record?', { type: 'danger' }).then(ok => { if (ok) remove() })"
 
 tests:
   - Dialog.test.html

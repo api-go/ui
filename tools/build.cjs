@@ -4,7 +4,7 @@ const terser = require('terser');
 const { validateDocs } = require('./validate-docs.cjs');
 
 const root = join(__dirname, '..');
-const publicDirs = ['frameworks', 'utilities', 'components'];
+const publicDirs = ['frameworks', 'libraries', 'utilities', 'components'];
 
 const frameworks = {
   Bootstrap: join(root, '..', 'bootstrap', 'dist', 'bootstrap.js'),

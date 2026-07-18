@@ -10,6 +10,7 @@
   },
   "files": [
     "frameworks",
+    "libraries",
     "components",
     "utilities",
     "ui.js",

@@ -1,0 +1,29 @@
+<!doctype html>
+<html>
+<head><meta charset="utf-8"><title>utilities.GraphCanvas tests</title><script src="../ui.js" components="GraphCanvas"></script><style>#viewport{position:relative;width:400px;height:300px;overflow:hidden}#scene{position:absolute}</style></head>
+<body><div id="viewport"><div id="scene"></div></div><button id="runAll">测试全部</button><pre id="result"></pre>
+<script>
+  const cases = ['create-normalize', 'setView-onChange', 'toWorld', 'fit', 'wheel-pan', 'ctrl-wheel-zoom', 'pointer-pan', 'destroy']
+  const assert = (result, feature, condition, message) => { result.assertions++; if (condition) result.passed++; else { result.failed++; result.failures.push({ feature, message }) } }
+  window.runTest = async () => {
+    const result = { name: 'utilities.GraphCanvas', status: 'running', assertions: 0, passed: 0, failed: 0, failures: [], consoleErrors: [], coverage: { tested: [], total: cases, percent: 0 } }, viewport = document.querySelector('#viewport'), scene = document.querySelector('#scene'); let changed
+    const canvas = GraphCanvas.create(viewport, scene, { view: { x: 'bad', y: 20, scale: 99 }, onChange: value => { changed = value } })
+    assert(result, 'create-normalize', canvas.view.x === 0 && canvas.view.y === 20 && canvas.view.scale === 4 && scene.style.transform.includes('scale(4)'), 'initial view is numeric and clamped')
+    canvas.setView({ x: 40, y: 30, scale: 2 }, true)
+    assert(result, 'setView-onChange', changed.x === 40 && changed.scale === 2, 'setView emits normalized view')
+    const point = canvas.toWorld(viewport.getBoundingClientRect().left + 140, viewport.getBoundingClientRect().top + 130)
+    assert(result, 'toWorld', point.x === 50 && point.y === 50, 'client coordinates convert to world coordinates')
+    canvas.fit([{ x: 0, y: 0, width: 100, height: 50 }], 20)
+    assert(result, 'fit', canvas.view.scale > 0 && Number.isFinite(canvas.view.x), 'fit computes a valid transform')
+    const wheelY = canvas.view.y; viewport.dispatchEvent(new WheelEvent('wheel', { bubbles: true, cancelable: true, deltaX: 12, deltaY: 10, clientX: 100, clientY: 100 }))
+    assert(result, 'wheel-pan', canvas.view.y === wheelY - 10, 'ordinary wheel and trackpad deltas pan the viewport')
+    const scale = canvas.view.scale; viewport.dispatchEvent(new WheelEvent('wheel', { bubbles: true, cancelable: true, ctrlKey: true, deltaY: 10, clientX: 100, clientY: 100 }))
+    assert(result, 'ctrl-wheel-zoom', canvas.view.scale < scale, 'pinch or Ctrl-wheel zooms')
+    const beforeX = canvas.view.x; viewport.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true, pointerId: 2, button: 0, clientX: 10, clientY: 10 })); viewport.dispatchEvent(new PointerEvent('pointermove', { bubbles: true, pointerId: 2, clientX: 30, clientY: 20 })); viewport.dispatchEvent(new PointerEvent('pointerup', { bubbles: true, pointerId: 2, clientX: 30, clientY: 20 }))
+    assert(result, 'pointer-pan', canvas.view.x > beforeX, 'background pointer drag pans')
+    canvas.destroy(); const frozen = canvas.view.x; viewport.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true, pointerId: 3, button: 0, clientX: 0, clientY: 0 })); viewport.dispatchEvent(new PointerEvent('pointermove', { bubbles: true, pointerId: 3, clientX: 100, clientY: 0 }))
+    assert(result, 'destroy', canvas.view.x === frozen, 'destroy removes viewport listeners')
+    result.coverage.tested = [...cases]; result.coverage.percent = 100; result.status = result.failed ? 'failed' : 'passed'; document.querySelector('#result').textContent = JSON.stringify(result, null, 2); return result
+  }
+  document.querySelector('#runAll').onclick = window.runTest
+</script></body></html>

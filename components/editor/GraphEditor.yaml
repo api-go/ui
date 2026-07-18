@@ -1,0 +1,120 @@
+name: GraphEditor
+purpose: Create free-position node-and-edge documents for story plots, flows, and arbitrary relationships.
+
+attributes:
+  api: Optional endpoint for automatic document load and save.
+  path: Static path; state.path is the reactive form.
+  version: Optional load-only history version.
+  readonly: Disable graph mutations and node dragging.
+  node-width: Initial node width before custom slot measurement.
+  node-height: Initial node height before custom slot measurement.
+
+state:
+  data: "{ nodes:[{ id, title, content, x, y }], edges:[{ id, from, to, label, content }], view:{ x, y, scale } }"
+  path: Document path that triggers automatic load when api exists.
+  version: Historical load version; never sent by save.
+  extraSchemas: "Optional { node: Field[], edge: Field[] } merged with built-in editing schemas."
+  selectedNodeId: Selected node ID.
+  selectedEdgeId: Selected edge ID.
+  previewItem: Selected node or edge shown by the temporary Space-key preview.
+  previewNode: Selected preview node when previewItem.kind is node; retained for node-preview compatibility.
+  dirty: True after a local mutation; successful save resets it.
+  editing: Active node or edge draft and schema.
+  loading: Automatic load state.
+  saving: Automatic save state.
+  loadedVersion: Version returned by the last get. A set response without version does not change it.
+  error: Last transport error.
+
+default_schemas:
+  node: [title, content]
+  edge: [label, content]
+
+methods:
+  load: Load the configured path through api.
+  save: Emit or persist a graph document including viewport state.
+  addNode: Add a free-position node at a supplied point or viewport center.
+  connect: Create a directed edge between two node IDs or node objects.
+  selectNode: Select a node; Shift-click behavior calls connect.
+  selectEdge: Select an edge.
+  editNode: Edit node fields with AutoForm or the editor slot.
+  editEdge: Edit edge fields with AutoForm or the editor slot.
+  commitEdit: Apply the active draft.
+  cancelEdit: Discard the active draft.
+  removeSelected: Ask for confirmation, then remove the selected node plus attached edges or the selected edge. Ctrl/Command+Delete bypasses confirmation.
+  startNodeDrag: Move a node in graph coordinates.
+  fit: Fit all nodes into the viewport.
+  schemas: Return merged node and edge schemas.
+
+events:
+  select:
+    detail: Selected node, edge, or null.
+  change:
+    detail: Full state.data after a graph mutation.
+  update:
+    detail: "{ data, reason, ...operationDetail }"
+  save:
+    detail: Graph document envelope.
+  loaded:
+    detail: Loaded document envelope.
+  saved:
+    detail: Server save result.
+  error:
+    detail: Transport Error.
+
+api:
+  load_request: "{ action:'get', path, version? }"
+  load_response: "{ ok:true, meta:{ path?, version?, type? }, data }"
+  save_request: "{ action:'set', path, data }; data is the complete GraphEditor document envelope."
+  save_response: "{ ok, succeeded, failed }"
+
+slots:
+  toolbar: Replace the toolbar.
+  node: Replace every node body; context includes node and nodeIndex.
+  node-actions: Replace per-node actions.
+  edge-label: Replace every edge label; context includes edge and edgeIndex.
+  empty: Replace the no-nodes content.
+  editor: Replace the default AutoForm editor body.
+
+interaction:
+  - Drag nodes to place plot points freely; connected paths reroute during movement rather than waiting for drop.
+  - Select one node, then Shift-click another to create a directed edge.
+  - The Shift-click connection hint appears only while a node is selected.
+  - Double-click a node, edge path, or edge label to edit it. Double-click blank canvas to create and edit a free node.
+  - Click blank canvas to clear selection.
+  - Trackpad/two-axis wheel scrolling pans the canvas; dragging empty space also pans it.
+  - Trackpad pinch and Ctrl/Command + wheel zoom around the pointer.
+  - Delete/Backspace opens a danger-styled confirmation; hold Ctrl/Command to bypass confirmation.
+  - Space opens a translucent info-colored tooltip preview of the selected node or relationship. While it is open, selecting another node or edge updates it; edge preview includes its content or endpoint summary.
+  - Reciprocal directed edges are routed on opposite curves rather than overlapping.
+  - In the built-in editor, Enter commits a single-line field and Escape cancels, including before any field is clicked. Enter inside a textarea keeps its normal newline behavior.
+  - Default node text is line-clamped while the editor and preview retain full content.
+
+rules:
+  - GraphEditor allows arbitrary connections; it is the appropriate editor for a novel plot graph rather than a strict Mindmap tree.
+  - extraSchemas is optional. Built-in node title/content and edge label/content fields work without configuration. Chapter in the test page is an extra schema example, not a built-in field.
+  - GraphEditor is implemented with the local GraphCanvas and GraphDocument utilities; it does not depend on a third-party graph editor.
+  - Unknown custom fields survive default AutoForm editing.
+  - No api means no automatic HTTP activity.
+
+examples: |
+  <script>
+    const plot = {
+      nodes: [
+        { id: 'opening', title: 'Opening', content: 'The letter arrives', x: 0, y: 0 },
+        { id: 'choice', title: 'Choice', content: 'Leave or stay', x: 280, y: 120 }
+      ],
+      edges: [{ id: 'leads-to', from: 'opening', to: 'choice', label: 'causes', content: 'The letter forces the choice' }],
+      view: {}
+    }
+  </script>
+  <GraphEditor style="height:560px" $.state.data="plot"></GraphEditor>
+  <GraphEditor api="/documents" $.state.path="activeGraphPath"></GraphEditor>
+
+related:
+  - ../../utilities/Editor.yaml
+  - ../../utilities/GraphDocument.yaml
+  - ../../utilities/GraphCanvas.yaml
+  - ../base/AutoForm.yaml
+
+tests:
+  - GraphEditor.test.html

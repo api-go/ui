@@ -1,0 +1,24 @@
+<!doctype html>
+<html>
+<head><meta charset="utf-8"><title>utilities.SortableAPI tests</title><script src="../ui.js" components="SortableAPI"></script></head>
+<body><div id="list"><div>A</div><div>B</div></div><button id="runAll">测试全部</button><pre id="result"></pre>
+<script>
+  const cases = ['embedded-version', 'create-get', 'option', 'disable-enable', 'replace', 'destroy']
+  const assert = (result, feature, condition, message) => { result.assertions++; if (condition) result.passed++; else { result.failed++; result.failures.push({ feature, message }) } }
+  window.runTest = async () => {
+    const result = { name: 'utilities.SortableAPI', status: 'running', assertions: 0, passed: 0, failed: 0, failures: [], consoleErrors: [], coverage: { tested: [], total: cases, percent: 0 } }, list = document.querySelector('#list')
+    assert(result, 'embedded-version', Sortable.version === '1.15.7', 'embedded SortableJS version is pinned')
+    const first = SortableAPI.create(list, { animation: 100 })
+    assert(result, 'create-get', SortableAPI.get(list) === first && first.instance && first.element === list, 'create stores the controller')
+    first.option('animation', 150)
+    assert(result, 'option', first.option('animation') === 150, 'option reads and writes SortableJS options')
+    first.disable(); const disabled = first.option('disabled'); first.enable()
+    assert(result, 'disable-enable', disabled === true && first.option('disabled') === false, 'controller toggles dragging')
+    const second = SortableAPI.create(list, { animation: 0 })
+    assert(result, 'replace', second !== first && SortableAPI.get(list) === second, 'creating again replaces the old controller')
+    SortableAPI.destroy(list)
+    assert(result, 'destroy', SortableAPI.get(list) === null, 'destroy releases the element')
+    result.coverage.tested = [...cases]; result.coverage.percent = 100; result.status = result.failed ? 'failed' : 'passed'; document.querySelector('#result').textContent = JSON.stringify(result, null, 2); return result
+  }
+  document.querySelector('#runAll').onclick = window.runTest
+</script></body></html>

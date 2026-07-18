@@ -1,0 +1,98 @@
+name: Kanban
+purpose: Edit, reorder, load, and save Kanban JSON documents with zero-config default fields and extensible slots.
+
+attributes:
+  api: Optional HTTP endpoint for automatic load and save.
+  path: Static document path; state.path is preferred for reactive paths.
+  version: Optional load-only historical version.
+  readonly: Disable editing and drag operations.
+
+state:
+  data: "{ columns: [{ id, title, items: [{ id, title, content }] }] }"
+  path: Document path. With api configured, changing it automatically loads the document.
+  version: Historical version used only by load; save never sends it.
+  extraSchemas: "Optional { column: Field[], card: Field[] }; fields merge into built-in schemas by name. hidden:true removes a built-in field from the form."
+  editing: Current editor context containing kind, draft, schema, and identifiers.
+  dirty: True after a local edit or drag; successful save resets it to false.
+  loading: Whether automatic load is active.
+  saving: Whether automatic save is active.
+  loadedVersion: Version returned by the last get. A set response without version does not change it.
+  error: Last transport error message.
+
+default_schemas:
+  column: [title]
+  card: [title, content]
+
+methods:
+  load: Load state.path through api; without api it returns current state.data.
+  save: Emit save and, when api is configured, persist the document.
+  addColumn: Open the default column editor and append the new column. Reorder columns by dragging.
+  addCard: Open the default card editor for a column.
+  editColumn: Edit a column using AutoForm or the editor slot.
+  editCard: Edit a card using AutoForm or the editor slot.
+  commitEdit: Apply the active draft.
+  cancelEdit: Discard the active draft.
+  removeColumn: Ask for confirmation, then remove a column and its cards. Pass { confirm:false } only for an already-confirmed workflow.
+  removeCard: Ask for confirmation, then remove a card. Pass { confirm:false } only for an already-confirmed workflow.
+  deleteEditing: Delete the entity currently open in the editor after confirmation.
+  schemas: Return built-in schemas merged with state.extraSchemas.
+
+events:
+  change:
+    detail: Full state.data after a local edit or drag.
+  update:
+    detail: "{ data, reason, ...operationDetail }"
+  save:
+    detail: "{ type:'kanban', formatVersion:1, path, data }"
+    behavior: Cancelable. Without api this is the complete stateless save integration.
+  loaded:
+    detail: Loaded document envelope.
+  saved:
+    detail: Server result after save.
+  error:
+    detail: Error instance from automatic transport.
+
+api:
+  transport: POST to the component api attribute.
+  load_request: "{ action:'get', path, version? }"
+  load_response: "{ ok:true, meta:{ path?, version?, type? }, data }"
+  save_request: "{ action:'set', path, data }; data is the complete Kanban document envelope and version is intentionally omitted."
+  save_response: "{ ok, succeeded, failed }"
+
+slots:
+  toolbar: Replace the toolbar. Slot context is the Kanban component.
+  column-header: Replace each column header; context includes column and columnIndex.
+  card: Replace each card body; context includes card, cardIndex, column, and columnIndex.
+  card-actions: Replace the default right-side actions inside the default card body.
+  empty-column: Replace the empty-column message; context includes column.
+  editor: Replace the default AutoForm body. Use state.editing.draft and commitEdit/cancelEdit.
+
+rules:
+  - The default schema is always available; extraSchemas is only needed to add, customize, or hide fields.
+  - Unknown data fields are preserved even when they are not present in an editing schema.
+  - No endpoint is implicit and there is no global Editor.api.
+  - Double-click a card to edit it. Drag cards within or between columns and drag column headers to reorder columns.
+  - Add card is a frequent action in each column header. The board menu adds columns; column menus only edit or delete; card deletion is only exposed in the edit form.
+  - Save is disabled until data changes. Empty-column slot content is an overlay, not a sortable child, so an incoming card starts at the top without a phantom placeholder.
+  - Destructive card and column operations use the shared danger-styled Dialog confirmation.
+  - In the built-in editor, Enter commits a single-line field and Escape cancels, including before any field is clicked. Enter inside a textarea keeps its normal newline behavior.
+  - A custom slot replaces display content but the component retains structural drag and layout wrappers.
+
+examples: |
+  <script>
+    const board = { columns: [{ id: 'todo', title: 'Todo', items: [{ id: 'a', title: 'Draft', content: 'Write an outline', priority: 'high' }] }] }
+    const boardExtras = { card: [{ name: 'priority', label: 'Priority', type: 'select', options: ['low', 'normal', 'high'], default: 'normal' }] }
+  </script>
+  <Kanban style="height:520px" $.state.data="board" $.state.extraSchemas="boardExtras" $onsave="send(event.detail)">
+    <span slot="card" $text="card.title + ' · ' + card.priority"></span>
+  </Kanban>
+  <Kanban api="/documents" $.state.path="currentPath" $.state.version="historyVersion"></Kanban>
+
+related:
+  - ../../utilities/Editor.yaml
+  - ../../utilities/SortableAPI.yaml
+  - ../base/AutoForm.yaml
+  - ../base/Modal.yaml
+
+tests:
+  - Kanban.test.html

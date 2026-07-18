@@ -1,4 +1,5 @@
 name: DataGrid
+purpose: Manage editable, virtualized data-API tables while preserving server field definitions.
 
 attributes:
   editable:
@@ -7,8 +8,6 @@ attributes:
   api:
     type: string
     behavior: POST endpoint for the data-table action protocol. Requires state.table.
-
-purpose: Editable data-API table manager. It consumes the field definitions returned by the data API and keeps them unchanged for save events.
 
 state:
   table: Table name sent as request.name when api is configured.
@@ -98,20 +97,21 @@ rules:
   - Treat underscore-prefixed state fields as internal read-only diagnostics.
   - Custom field editors must be registered in AutoForm before use.
 
-example: |
-  <script>
-  const orderFields = [
-    { id: 'f-name', tableID: 'orders', name: 'name', type: 'v100', isIndex: true, memo: '', settings: { type: 'text' } },
-    { id: 'f-total', tableID: 'orders', name: 'total', type: 'ff', isIndex: false, memo: '', settings: { type: 'number', prefix: '$', decimals: 2 } },
-    { id: 'f-status', tableID: 'orders', name: 'status', type: 'v30', isIndex: false, memo: '', settings: { type: 'select', options: ['draft', 'paid'] } }
-  ]
-  const orders = [{ name: 'Ada', total: 42, status: 'paid', paid: true, tags: ['priority'], due: '2026-07-12' }]
-  const saveRows = rows => console.log(rows)
-  </script>
-  <div style="height: 480px">
-    <DataGrid id="orders" editable $.state.fields="orderFields" $.state.list="orders" $onsave="saveRows(event.detail.list)"></DataGrid>
-  </div>
-  <DataGrid editable api="/admin/table" $.state.table="Hash.table"></DataGrid>
+examples:
+  local_and_api: |
+    <script>
+      const orderFields = [
+        { id: 'f-name', tableID: 'orders', name: 'name', type: 'v100', isIndex: true, memo: '', settings: { type: 'text' } },
+        { id: 'f-total', tableID: 'orders', name: 'total', type: 'ff', isIndex: false, memo: '', settings: { type: 'number', prefix: '$', decimals: 2 } },
+        { id: 'f-status', tableID: 'orders', name: 'status', type: 'v30', isIndex: false, memo: '', settings: { type: 'select', options: ['draft', 'paid'] } }
+      ]
+      const orders = [{ name: 'Ada', total: 42, status: 'paid', paid: true, tags: ['priority'], due: '2026-07-12' }]
+      const saveRows = rows => console.log(rows)
+    </script>
+    <div style="height: 480px">
+      <DataGrid id="orders" editable $.state.fields="orderFields" $.state.list="orders" $onsave="saveRows(event.detail.list)"></DataGrid>
+    </div>
+    <DataGrid editable api="/admin/table" $.state.table="Hash.table"></DataGrid>
 
 tests:
   - DataGrid.test.html

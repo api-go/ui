@@ -16,4 +16,4 @@ Load `ui.js` in `<head>` as a normal script. Do not use `async`, `defer`, or `ty
 
 `npm run build` does not bundle source files or create a `dist` directory. It first copies `../state/dist/state.js` and `../bootstrap/dist/bootstrap.js` into `frameworks/`, then writes their source-file modification-time cache versions into `ui.js` and produces adjacent `.min.js` files. Loading `ui.min.js` automatically loads the matching minified framework, utility, and component files. The UI package version remains independent of its framework packages.
 
-For AI-oriented API documentation, start with [AI.yaml](AI.yaml).
+For AI-assisted development, give the agent this single entry URL: [https://apigo.cc/web/ui/ai/llms.txt](https://apigo.cc/web/ui/ai/llms.txt). It is a task-oriented index: the agent reads it first, then opens only the linked framework, utility, and component documents required by the current task. The repository copy is [llms.txt](llms.txt).

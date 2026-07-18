@@ -3,21 +3,26 @@ purpose: Enter a list of unique string tags; Enter, comma, or space commits a ta
 
 attributes:
   placeholder: string; input placeholder (the built-in default is localized)
+
 properties:
   value: array of strings; current unique tags
 
-example: |
-  <script>
-    const tags = ['admin', 'editor']
-    const user = { tags: ['admin', 'editor'] }
-    const userSchema = [{ name: 'tags', label: 'Tags', type: 'TagsInput' }]
-  </script>
+examples:
+  standalone_and_form: |
+    <script>
+      const tags = ['admin', 'editor']
+      const user = { tags: ['admin', 'editor'] }
+      const userSchema = [{ name: 'tags', label: 'Tags', type: 'TagsInput' }]
+    </script>
 
-  <TagsInput placeholder="Add a tag" $.state.value="tags"></TagsInput>
-  <AutoForm $.state.data="user" $.state.schema="userSchema"></AutoForm>
+    <TagsInput placeholder="Add a tag" $.state.value="tags"></TagsInput>
+    <AutoForm $.state.data="user" $.state.schema="userSchema"></AutoForm>
 
 events:
   change: detail is the complete updated string array
 
 related:
-  - ../AutoForm.yaml
+  - ../base/AutoForm.yaml
+
+tests:
+  - TagsInput.test.html

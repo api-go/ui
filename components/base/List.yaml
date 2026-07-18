@@ -1,7 +1,8 @@
 name: List
+purpose: Render flat, grouped, tree, or virtualized item lists with declarative selection and slots.
 
 attributes:
-  mode: [normal|group|tree]
+  mode: [normal, group, tree]
   fast: "boolean — virtual scrolling"
   collapsible: "boolean — collapsible tree nodes"
   auto-select: "boolean — clicked item id -> selectedItem"

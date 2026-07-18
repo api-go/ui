@@ -17,8 +17,13 @@ rules:
   - Treat this as an internal UI utility unless implementing a virtualized component.
   - Call update after each rendered row can be measured.
 
-example: |
-  const virtual = VirtualScroll({ itemHeight: 40 })
-  virtual.reset(rows, container)
-  virtual.init(rows, () => refresh())
-  const view = virtual.calc(container, rows)
+examples:
+  basic: |
+    const virtual = VirtualScroll({ itemHeight: 40 })
+    virtual.reset(rows, container)
+    virtual.init(rows, () => refresh())
+    const view = virtual.calc(container, rows)
+
+tests:
+  - ../components/base/List.test.html
+  - ../components/data/DataGrid.test.html

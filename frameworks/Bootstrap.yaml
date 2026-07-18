@@ -1,4 +1,5 @@
 name: Bootstrap
+purpose: Provide Bootstrap 5 styles, icons, JavaScript APIs, and reactive theme configuration.
 
 provided:
   css: 'Bootstrap.js injects Bootstrap 5 CSS and Bootstrap Icons; do not add another Bootstrap stylesheet or runtime.'
@@ -15,10 +16,14 @@ rules:
   - Use Bootstrap classes and Icons directly in component markup.
   - Do not load a second Bootstrap CSS file or runtime.
 
-examples: |
-  Bootstrap.config({ primary: '#6f42c1' })
-  Bootstrap.config({ bindDarkMode: [LocalStorage, 'darkMode'] })
-  bootstrap.Modal.getOrCreateInstance(document.querySelector('#settings')).show()
+examples:
+  theme: |
+    <script>
+      Bootstrap.config({ primary: '#6f42c1' })
+      Bootstrap.config({ bindDarkMode: [LocalStorage, 'darkMode'] })
+    </script>
+  native_api: |
+    <button $onclick="bootstrap.Modal.getOrCreateInstance(document.querySelector('#settings')).show()">Settings</button>
 
 tests:
-  - apigo.cc/web/bootstrap/test/
+  - https://apigo.cc/web/bootstrap/raw/branch/main/test/bootstrap.spec.js

@@ -1,4 +1,5 @@
 name: State
+purpose: Provide reactive state, declarative DOM directives, and the custom component runtime.
 
 globals:
   State: 'Reactive in-memory application state.'
@@ -48,19 +49,22 @@ component:
     - Keep required public behavior declarative; do not expose internal DOM as an application contract.
     - A bindable component listens for bind and writes event.detail into its state.
 
-examples: |
-  <script>
-    const users = [{ id: 'ada', name: 'Ada' }]
-  </script>
-  <div $text>Hello ${users[0].name}</div>
-  <List $.state.list="users"></List>
-  <button $onclick="State.dark = !State.dark">Toggle</button>
-
-  Component.register('Counter', container => {
-    container.state.value = 0
-    container.addEventListener('bind', event => { container.state.value = event.detail })
-  }, Util.makeDom('<button $text="this.state.value" $onclick="this.state.value++"></button>'))
-  <!-- <Counter $bind="State.count"></Counter> -->
+examples:
+  bindings: |
+    <script>
+      const users = [{ id: 'ada', name: 'Ada' }]
+    </script>
+    <div $text>Hello ${users[0].name}</div>
+    <List $.state.list="users"></List>
+    <button $onclick="State.dark = !State.dark">Toggle</button>
+  component: |
+    <script>
+      Component.register('Counter', container => {
+        container.state.value = 0
+        container.addEventListener('bind', event => { container.state.value = event.detail })
+      }, Util.makeDom('<button $text="this.state.value" $onclick="this.state.value++"></button>'))
+    </script>
+    <Counter $bind="State.count"></Counter>
 
 tests:
-  - apigo.cc/web/state/test/
+  - https://apigo.cc/web/state/raw/branch/main/test/all.spec.js

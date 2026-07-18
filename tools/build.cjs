@@ -1,6 +1,7 @@
 const { copyFile, readdir, readFile, stat, writeFile } = require('node:fs/promises');
 const { join, relative, sep } = require('node:path');
 const terser = require('terser');
+const { validateDocs } = require('./validate-docs.cjs');
 
 const root = join(__dirname, '..');
 const publicDirs = ['frameworks', 'utilities', 'components'];
@@ -20,6 +21,19 @@ const filesBelow = async directory => {
 };
 
 (async () => {
+  const packageMetadata = JSON.parse(await readFile(join(root, 'package.json'), 'utf8'));
+  const llmsFile = join(root, 'llms.txt');
+  const llmsSource = await readFile(llmsFile, 'utf8');
+  const versionLine = /^Version: \S+$/m;
+  const cdnVersion = /(@apigo\.cc\/ui@)[^/"\s]+(?=\/ui(?:\.min)?\.js)/g;
+  if (!versionLine.test(llmsSource) || !cdnVersion.test(llmsSource)) throw new Error('llms.txt version markers are missing');
+  cdnVersion.lastIndex = 0;
+  const builtLlms = llmsSource
+    .replace(versionLine, `Version: ${packageMetadata.version}`)
+    .replace(cdnVersion, `$1${packageMetadata.version}`);
+  await writeFile(llmsFile, builtLlms);
+  await validateDocs();
+
   await Promise.all(Object.entries(frameworks).map(([name, source]) => copyFile(source, join(root, 'frameworks', `${name}.js`))));
   const sources = (await Promise.all(publicDirs.map(dir => filesBelow(join(root, dir))))).flat();
   const sourceStats = await Promise.all(sources.map(async file => {

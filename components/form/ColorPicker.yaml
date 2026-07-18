@@ -25,4 +25,7 @@ rules:
   - Use $bind for a standalone reactive value; use AutoForm schema type ColorPicker for generated forms.
 
 related:
-  - ../AutoForm.yaml
+  - ../base/AutoForm.yaml
+
+tests:
+  - ColorPicker.test.html

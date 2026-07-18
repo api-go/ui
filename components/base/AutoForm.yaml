@@ -46,8 +46,10 @@ examples:
     </script>
     <AutoForm $.state.data="profile" $.state.schema="profileSchema"></AutoForm>
   database_fields: |
-    const fields = [{ id: 'f-role', tableID: 'users', name: 'Role', type: 'v30', settings: { type: 'select', options: ['Admin', 'User'] } }]
-    const user = { Role: 'Admin' }
+    <script>
+      const fields = [{ id: 'f-role', tableID: 'users', name: 'Role', type: 'v30', settings: { type: 'select', options: ['Admin', 'User'] } }]
+      const user = { Role: 'Admin' }
+    </script>
     <AutoForm $.state.data="user" $.state.schema="fields"></AutoForm>
   submit_api: |
     <script>
@@ -62,11 +64,11 @@ examples:
     </AutoForm>
 
 related:
-  - ../API.yaml
-  - DatePicker.yaml
-  - ColorPicker.yaml
-  - IconPicker.yaml
-  - TagsInput.yaml
+  - API.yaml
+  - ../form/DatePicker.yaml
+  - ../form/ColorPicker.yaml
+  - ../form/IconPicker.yaml
+  - ../form/TagsInput.yaml
 
 tests:
   - AutoForm.test.html

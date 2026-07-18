@@ -1,4 +1,5 @@
 name: Nav
+purpose: Render horizontal or vertical navigation from declarative brand and item data.
 
 attributes:
   vertical:
@@ -24,23 +25,27 @@ events:
 
 item_shape: "{ type, name?, label?, icon?, items?, bind?, class?, width? }"
 
-example: |
-  <script>
-    const navBrand = { image: '/res/apiGo.min.svg' }
-    const navItems = [
-      { type: 'button', name: 'home', label: 'Home', icon: 'house' },
-      { type: 'dropdown', name: 'admin', label: 'Admin', icon: 'shield', items: [
-        { type: 'label', label: 'Manage' },
-        { type: 'button', name: 'users', label: 'Users', icon: 'people' },
-        { type: 'switch', name: 'alerts', label: 'Alerts', bind: { alerts: true } }
-      ] },
-      { type: 'fill' },
-      { type: 'button', name: 'settings', label: 'Settings', icon: 'gear' }
-    ]
-  </script>
-  <Nav class="border-end" $.state.brand="navBrand" $.state.list="navItems" $bind="Hash.nav" vertical></Nav>
+examples:
+  basic: |
+    <script>
+      const navBrand = { image: '/res/apiGo.min.svg' }
+      const navItems = [
+        { type: 'button', name: 'home', label: 'Home', icon: 'house' },
+        { type: 'dropdown', name: 'admin', label: 'Admin', icon: 'shield', items: [
+          { type: 'label', label: 'Manage' },
+          { type: 'button', name: 'users', label: 'Users', icon: 'people' },
+          { type: 'switch', name: 'alerts', label: 'Alerts', bind: { alerts: true } }
+        ] },
+        { type: 'fill' },
+        { type: 'button', name: 'settings', label: 'Settings', icon: 'gear' }
+      ]
+    </script>
+    <Nav class="border-end" $.state.brand="navBrand" $.state.list="navItems" $bind="Hash.nav" vertical></Nav>
 
 rules:
   - Bind `$bind="Hash.nav"` when the selected navigation item must survive a page refresh.
   - Use nav for actions such as Logout: `$onnav="if(event.detail.name==='logout') logout()"`. Use change only for selected-page state.
   - Use the same `navItems` data for horizontal and vertical navigation when comparing layouts.
+
+tests:
+  - Nav.test.html

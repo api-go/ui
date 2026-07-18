@@ -1,4 +1,5 @@
 name: Resizer
+purpose: Resize a sibling or assigned target element by dragging a horizontal or vertical handle.
 
 attributes:
   vertical: Resize height instead of width.
@@ -22,12 +23,13 @@ events:
 rules:
   - MouseMover is an internal dependency and is loaded automatically.
 
-example: |
-  <div id="sidebar" style="width:240px"></div>
-  <Resizer min="160" max="480" $bind="State.sidebarWidth" $onchange="State.sidebarWidth = event.detail"></Resizer>
+examples:
+  horizontal_and_vertical: |
+    <div id="sidebar" style="width:240px"></div>
+    <Resizer min="160" max="480" $bind="State.sidebarWidth" $onchange="State.sidebarWidth = event.detail"></Resizer>
 
-  <div id="bottomPanel" style="height:240px"></div>
-  <Resizer vertical min="120" max="480" $.target="bottomPanel"></Resizer>
+    <div id="bottomPanel" style="height:240px"></div>
+    <Resizer vertical min="120" max="480" $.target="bottomPanel"></Resizer>
 
 tests:
   - Resizer.test.html

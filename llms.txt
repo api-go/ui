@@ -1,0 +1,91 @@
+# @apigo.cc/ui
+
+> Build-free native JavaScript UI framework. This file is the authoritative AI entry point and documentation index.
+
+Version: 1.0.1
+
+Choose one version-pinned npm CDN. `ui.js` loads all adjacent framework, utility, and component files from the same origin.
+
+- jsDelivr (primary): `https://cdn.jsdelivr.net/npm/@apigo.cc/ui@1.0.1/ui.js`
+- UNPKG (alternative): `https://unpkg.com/@apigo.cc/ui@1.0.1/ui.js`
+- JSDMirror (China-optimized alternative): `https://cdn.jsdmirror.com/npm/@apigo.cc/ui@1.0.1/ui.js`
+
+Load the chosen URL in `<head>` without `async`, `defer`, or `type="module"`. A minimal complete page is:
+
+```html
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <script src="https://cdn.jsdelivr.net/npm/@apigo.cc/ui@1.0.1/ui.js" components="List"></script>
+  <script>
+    const users = [{ id: 'ada', label: 'Ada', summary: 'Admin' }]
+  </script>
+</head>
+<body>
+  <List $.state.list="users"></List>
+</body>
+</html>
+```
+
+## Retrieval rules
+
+- Read this file first, then open only the framework, utility, and component documents required by the current task.
+- Resolve every relative link from the URL of this file. Linked YAML files are authoritative API contracts.
+- Do not preload every linked document. Follow `related` and `tests` references only when they are relevant to the task.
+- Preserve declarative bindings when extending a component.
+- Do not change framework internals unless framework changes are requested.
+- Add or update a regression test for every public behavior change.
+- Before declaring a public API complete, compare its YAML attributes, properties, methods, events, slots, state fields, options, and rules against named test assertions and examples. Every documented item needs coverage; examples must visibly demonstrate the core behavior declaratively.
+- In an ordered value list, the first value is the default.
+- Treat each component test as a concise declarative usage sample: prepare immutable top-level `const` data before DOM parsing, then bind it directly, for example `$.state.list="users"`. Add State or window bridge assignments only when shared mutable state is required.
+- Prefer framework directives (`$if`, `$bind`, `$onclick`, slots) and Bootstrap classes over imperative page setup or custom CSS. Keep test actions limited to assertions and interaction verification.
+- Test pages use full-height flex layouts: the component area fills remaining space and result output is a bounded, internally scrollable region.
+- The outer test console keeps the selected test active and represents pass/fail with a visible status badge; detailed output belongs inside the selected test page.
+- Public source and YAML use the same PascalCase basename, for example `components/base/List.js` and `components/base/List.yaml`.
+
+## Loading rules
+
+- Always write the `components` attribute with every public component used by the page.
+- Use `base`, `form`, or `data` to load a documented component category; individual names and category names can be mixed.
+- Do not list utilities or framework dependencies.
+- `ui.js` loads `frameworks/State.js` and `frameworks/Bootstrap.js` beside itself.
+- `npm run build` writes source modification versions into `ui.js`; `ui.min.js` loads matching adjacent `.min.js` files.
+
+## Framework
+
+- [State and declarative directives](frameworks/State.yaml): reactive state, bindings, expressions, components, slots, and lifecycle.
+- [Bootstrap integration](frameworks/Bootstrap.yaml): Bootstrap loading and framework integration rules.
+
+## Base components
+
+- [API](components/base/API.yaml): declarative HTTP API element.
+- [AutoForm](components/base/AutoForm.yaml): schema-driven forms and submission.
+- [List](components/base/List.yaml): declarative list rendering and selection.
+- [Modal](components/base/Modal.yaml): modal container.
+- [Dialog](components/base/Dialog.yaml): message and confirmation dialogs.
+- [Toast](components/base/Toast.yaml): transient notifications.
+- [Nav](components/base/Nav.yaml): declarative navigation.
+- [Resizer](components/base/Resizer.yaml): resizable layout regions.
+
+## Form components
+
+- [DatePicker](components/form/DatePicker.yaml): date and date-range input.
+- [ColorPicker](components/form/ColorPicker.yaml): color input.
+- [IconPicker](components/form/IconPicker.yaml): icon selection.
+- [TagsInput](components/form/TagsInput.yaml): editable tag collections.
+
+## Data components
+
+- [DataGrid](components/data/DataGrid.yaml): virtualized data table.
+
+## Utilities
+
+- [HTTP](utilities/HTTP.yaml): HTTP requests and response handling.
+- [VirtualScroll](utilities/VirtualScroll.yaml): virtual scrolling behavior.
+
+## Optional
+
+- [README](README.md): package loading and build overview.
+- [Changelog](CHANGELOG.md): read only when upgrading or investigating version differences.

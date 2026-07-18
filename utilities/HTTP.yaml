@@ -1,4 +1,5 @@
 name: HTTP
+purpose: Send browser HTTP requests with JSON, form, upload, timeout, and retained-header handling.
 
 methods:
   request:

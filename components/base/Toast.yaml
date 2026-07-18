@@ -1,4 +1,5 @@
 name: Toast
+purpose: Show transient notifications and lightweight asynchronous confirmations.
 
 methods:
   show: 'Toast.show(message, options) -> Promise<Toast element>'

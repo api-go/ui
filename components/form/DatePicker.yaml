@@ -35,4 +35,7 @@ rules:
   - In AutoForm, declare setting.rangeEnd on the start field; the end field does not need its own schema item.
 
 related:
-  - ../AutoForm.yaml
+  - ../base/AutoForm.yaml
+
+tests:
+  - DatePicker.test.html

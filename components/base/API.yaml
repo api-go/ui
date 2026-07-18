@@ -1,4 +1,5 @@
 name: API
+purpose: Bind HTTP request configuration and response state to a declarative page element.
 
 attributes:
   auto:
@@ -46,12 +47,16 @@ examples:
     <List $.state.list="usersApi.result.list"></List>
   do: |
     <script>
-      const response = await usersApi.do({ url: '/api/users', method: 'GET', noui: true })
-      if (response.ok) console.log(response.result)
+      const loadUsers = async () => {
+        const response = await usersApi.do({ url: '/api/users', method: 'GET', noui: true })
+        if (response.ok) console.log(response.result)
+      }
+    </script>
+    <API id="usersApi"></API>
+    <button $onclick="loadUsers()">Load users</button>
   post_default: |
     <API auto .request.url="/admin/table" .request.data.action="tables"></API>
     <!-- data is present, so this request uses POST unless method is explicitly set -->
-    </script>
 
 tests:
   - API.test.html

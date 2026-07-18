@@ -17,5 +17,5 @@ examples:
   alert: "Dialog.alert('Saved successfully')"
   confirm: "Dialog.confirm('Delete this record?').then(ok => { if (ok) remove() })"
 
-example: |
-  Dialog.confirm('Delete this record?').then(ok => { if (ok) remove() })
+tests:
+  - Dialog.test.html

@@ -2,6 +2,7 @@ const { copyFile, readdir, readFile, stat, writeFile } = require('node:fs/promis
 const { join, relative, sep } = require('node:path');
 const terser = require('terser');
 const { validateDocs } = require('./validate-docs.cjs');
+const { buildCodeMirror } = require('./build-codemirror.cjs');
 
 const root = join(__dirname, '..');
 const publicDirs = ['frameworks', 'libraries', 'utilities', 'components'];
@@ -34,6 +35,7 @@ const filesBelow = async directory => {
   await writeFile(llmsFile, builtLlms);
   await validateDocs();
 
+  await buildCodeMirror();
   await Promise.all(Object.entries(frameworks).map(([name, source]) => copyFile(source, join(root, 'frameworks', `${name}.js`))));
   const sources = (await Promise.all(publicDirs.map(dir => filesBelow(join(root, dir))))).flat();
   const sourceStats = await Promise.all(sources.map(async file => {

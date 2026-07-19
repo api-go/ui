@@ -20,7 +20,7 @@ properties:
 
 schema:
   item: "{name, type, label?, setting?, options?, placeholder?, if?}"
-  types: "text|password|email|number|date|datetime|file|select|checkbox|radio|switch|textarea|label|divider|DatePicker|ColorPicker|IconPicker|TagsInput"
+  types: "text|password|email|number|date|datetime|file|select|checkbox|radio|switch|textarea|label|divider|DatePicker|ColorPicker|IconPicker|TagsInput|code"
   options: "select/checkbox/radio options: ['A', {value:'b', label:'B'}]"
   setting: "attributes copied to the control; DatePicker rangeEnd is an example"
   if: 'JavaScript expression evaluated by `$$if`; use component data through `this.data`, for example `this.data.role === "admin"`.'
@@ -69,6 +69,7 @@ related:
   - ../form/ColorPicker.yaml
   - ../form/IconPicker.yaml
   - ../form/TagsInput.yaml
+  - ../editor/CodeEditor.yaml
 
 tests:
   - AutoForm.test.html

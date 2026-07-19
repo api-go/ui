@@ -14,4 +14,4 @@
 
 AI 辅助开发时，只需把统一入口 [https://apigo.cc/web/ui/ai/llms.txt](https://apigo.cc/web/ui/ai/llms.txt) 交给 AI。它会先读取这份按任务加载的索引，再只读取当前任务需要的 framework、utility 和 component YAML。仓库内入口文件为 [llms.txt](llms.txt)；文档与源码同目录，组件示例直接写在对应 YAML 中。
 
-`npm run build` 不会打包源码，也不会生成 `dist`。它会先将 `../state/dist/state.js` 和 `../bootstrap/dist/bootstrap.js` 复制到 `frameworks/`，再把所有源码文件的最后修改时间缓存版本写入 `ui.js`，并在源码旁生成 `.min.js`。加载 `ui.min.js` 时，入口会自动改为加载对应的 framework、library、utility 和 component 的 `.min.js`。UI 包的版本独立于前置框架包。
+`npm run build` 不会生成 `dist`。它会构建 CodeMirror 浏览器核心及可按需加载的语言包，将 `../state/dist/state.js` 和 `../bootstrap/dist/bootstrap.js` 复制到 `frameworks/`，再把所有源码文件的最后修改时间缓存版本写入 `ui.js`，并在源码旁生成 `.min.js`。加载 `ui.min.js` 时，入口会自动改为加载对应的 framework、library、utility 和 component 的 `.min.js`。UI 包的版本独立于前置框架包。

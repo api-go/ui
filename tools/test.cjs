@@ -10,7 +10,7 @@ const aliases = { DataGrid: 'components/data/DataGrid.test.html', 'data.DataGrid
 const requested = process.argv[2];
 const pages = requested
   ? [aliases[requested] || `components/${requested.replace('.', '/')}.test.html`]
-  : ['utilities/Editor.test.html', 'utilities/SortableAPI.test.html', 'utilities/GraphDocument.test.html', 'utilities/GraphCanvas.test.html', 'components/base/API.test.html', 'components/base/AutoForm.test.html', 'components/base/Modal.test.html', 'components/base/Nav.test.html', 'components/data/DataGrid.test.html', 'components/data/Chart.test.html', 'components/editor/Kanban.test.html', 'components/editor/Mindmap.test.html', 'components/editor/GraphEditor.test.html'];
+  : ['utilities/Editor.test.html', 'utilities/SortableAPI.test.html', 'utilities/GraphDocument.test.html', 'utilities/GraphCanvas.test.html', 'components/base/API.test.html', 'components/base/AutoForm.test.html', 'components/base/Modal.test.html', 'components/base/Nav.test.html', 'components/data/DataGrid.test.html', 'components/data/Chart.test.html', 'components/editor/Kanban.test.html', 'components/editor/Mindmap.test.html', 'components/editor/GraphEditor.test.html', 'components/editor/CodeEditor.test.html'];
 
 const getPort = () => new Promise((resolve, reject) => {
   const server = net.createServer();

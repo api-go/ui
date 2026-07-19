@@ -1,0 +1,76 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>components.editor.CodeEditor tests</title>
+  <script src="../../ui.js" components="CodeEditor"></script>
+  <script>
+    const formData = { config: '{"enabled":true}' }
+    const formSchema = [{ name: 'config', label: 'Config', type: 'code', setting: { lang: 'json', style: 'height:180px' } }]
+  </script>
+</head>
+<body>
+  <CodeEditor id="javascript" path="src/app.js" value="function run(){&#10;console.log('ok')&#10;}"></CodeEditor>
+  <div style="position:absolute;left:-10000px;top:0;width:800px">
+    <CodeEditor id="json" path="config/app.json" value="{&quot;enabled&quot;:true}"></CodeEditor>
+    <CodeEditor id="yaml" path="config/app.yml" value="enabled: true"></CodeEditor>
+    <CodeEditor id="python" path="scripts/task.py" value="def run():&#10;  return True"></CodeEditor>
+    <CodeEditor id="html" path="pages/index.htm" value="&lt;main&gt;Hello&lt;/main&gt;"></CodeEditor>
+    <CodeEditor id="css" path="styles/app.css" value="body { color: red; }"></CodeEditor>
+    <CodeEditor id="explicit" path="scripts/task.py" lang="css" readonly theme="dark" value="body{}"></CodeEditor>
+    <CodeEditor id="documentEditor" path="scripts/local.py" value="print('local')"></CodeEditor>
+    <AutoForm id="form" nobutton $.state.data="formData" $.state.schema="formSchema"></AutoForm>
+  </div>
+  <button id="runAll" type="button">测试全部</button><pre id="result"></pre>
+  <script>
+    const cases = ['languages', 'highlight', 'path-detection', 'lang-precedence', 'value', 'ready-view-focus', 'readonly-theme', 'change-input', 'diagnostics', 'reindent', 'autoform-code', 'editor-document', 'registry', 'on-demand-bundles']
+    const assert = (result, feature, condition, message) => { result.assertions++; if (condition) result.passed++; else { result.failed++; result.failures.push({ feature, message }) } }
+    const tick = (ms = 80) => new Promise(resolve => setTimeout(resolve, ms))
+    window.runTest = async () => {
+      const result = { name: 'components.editor.CodeEditor', status: 'running', assertions: 0, passed: 0, failed: 0, failures: [], consoleErrors: [], coverage: { tested: [], total: cases, percent: 0 } }
+      const editors = [...document.querySelectorAll('CodeEditor')]
+      await Promise.all(editors.map(editor => editor.ready))
+      const languages = ['javascript', 'json', 'yaml', 'python', 'html', 'css']
+      assert(result, 'languages', languages.every(name => document.querySelector(`#${name}`).language === name), 'all six normalized languages initialize')
+      await tick()
+      const unhighlighted = languages.filter(name => !document.querySelector(`#${name} .cm-content span[class]`))
+      assert(result, 'highlight', !unhighlighted.length, `all six language parsers produce highlighted tokens; missing=${unhighlighted.join(',')}`)
+      assert(result, 'path-detection', CodeMirror.languageFromPath('A/FILE.YAML?version=2') === 'yaml' && CodeMirror.languageFromPath('task.py') === 'python', 'extensions are detected case-insensitively')
+      const explicit = document.querySelector('#explicit')
+      const json = document.querySelector('#json')
+      assert(result, 'lang-precedence', explicit.language === 'css', 'explicit lang overrides the path extension')
+      const javascript = document.querySelector('#javascript')
+      assert(result, 'value', javascript.value.includes("console.log('ok')") && javascript.getAttribute('value').includes('function'), 'value exposes source text without rewriting the initial attribute')
+      javascript.focus(); await tick()
+      assert(result, 'ready-view-focus', javascript.view && javascript.ready instanceof Promise && javascript.view.hasFocus, `ready exposes EditorView and focus focuses it; active=${document.activeElement?.className}`)
+      const darkColor = getComputedStyle(explicit.view.dom).backgroundColor, lightColor = getComputedStyle(json.view.dom).backgroundColor
+      assert(result, 'readonly-theme', explicit.view.state.readOnly && darkColor !== lightColor, `readonly and dark theme configure the view; readonly=${explicit.view.state.readOnly}, colors=${darkColor}/${lightColor}`)
+      let changeDetail, inputCount = 0
+      javascript.addEventListener('change', event => { changeDetail = event.detail }, { once: true })
+      javascript.addEventListener('input', () => { inputCount++ }, { once: true })
+      javascript.view.dispatch({ changes: { from: javascript.value.length, insert: '\n// changed' } })
+      assert(result, 'change-input', changeDetail.endsWith('// changed') && inputCount === 1, 'interactive edits emit string change detail and a bubbling input event')
+      json.value = '{"enabled":}'
+      await tick(260)
+      assert(result, 'diagnostics', json.validate().length > 0 && json.diagnostics.length > 0 && CodeMirror.diagnosticCount(json.view.state) > 0, 'parser errors update diagnostics and the lint state')
+      javascript.value = "function run(){\nconsole.log('ok')\n}"
+      javascript.reindent()
+      assert(result, 'reindent', javascript.value.split('\n')[1].startsWith('  '), 'reindent applies language indentation to the complete document')
+      const formEditor = document.querySelector('#form CodeEditor')
+      formEditor.view.dispatch({ changes: { from: 0, to: formEditor.value.length, insert: '{"enabled":false}' } })
+      await tick()
+      assert(result, 'autoform-code', formEditor.language === 'json' && document.querySelector('#form').data.config === '{"enabled":false}' && !formEditor.documentMode, 'AutoForm type code binds a string CodeEditor without document mode')
+      const documentEditor = document.querySelector('#documentEditor')
+      documentEditor.view.dispatch({ changes: { from: documentEditor.value.length, insert: '\nprint(2)' } })
+      let saveDetail; documentEditor.addEventListener('save', event => { saveDetail = event.detail }, { once: true })
+      const saved = await documentEditor.save()
+      assert(result, 'editor-document', documentEditor.documentMode && saved === saveDetail && saved.type === 'code' && saved.data.endsWith('print(2)'), 'path enables stateless Editor document load/save behavior with string data')
+      assert(result, 'registry', ['js', 'json', 'yaml', 'py', 'html', 'css'].every(extension => Editor.resolve({ path: `file.${extension}` })?.component === 'CodeEditor'), 'Editor registry resolves every supported extension')
+      const resources = performance.getEntriesByType('resource').map(entry => new URL(entry.name).pathname)
+      assert(result, 'on-demand-bundles', languages.every(name => resources.some(path => path.endsWith(`/libraries/CodeMirror${{ javascript: 'JavaScript', json: 'JSON', yaml: 'YAML', python: 'Python', html: 'HTML', css: 'CSS' }[name]}.js`))), 'each requested language loads its independent classic-script bundle')
+      result.coverage.tested = [...cases]; result.coverage.percent = 100; result.status = result.failed ? 'failed' : 'passed'; document.querySelector('#result').textContent = JSON.stringify(result, null, 2); return result
+    }
+    document.querySelector('#runAll').onclick = window.runTest
+  </script>
+</body>
+</html>

@@ -1,6 +1,6 @@
 (() => {
   // Updated by `npm run build`. Source files stay directly executable.
-  const build = { version: 'mrqi85fs', files: {"frameworks/Bootstrap.js":"mrqi85fs","frameworks/State.js":"mrqi85fs","libraries/ChartJS.js":"mrpzd5sa","libraries/SortableJS.js":"mrpzd5sd","utilities/Disposer.js":"mrq2ulte","utilities/Editor.js":"mrq6k3ck","utilities/GraphCanvas.js":"mrq29nba","utilities/GraphDocument.js":"mrq07eih","utilities/HTTP.js":"mrg6t8zm","utilities/MouseMover.js":"mrg6t8zm","utilities/SortableAPI.js":"mrpzifgt","utilities/VirtualScroll.js":"mrg6t8zn","components/base/API.js":"mrj8lfwz","components/base/AutoForm.js":"mrj10yku","components/base/Dialog.js":"mrq52jn2","components/base/List.js":"mrge46xl","components/base/Modal.js":"mrj1zcg3","components/base/Nav.js":"mrj6haqp","components/base/Resizer.js":"mrghfzrh","components/base/Toast.js":"mrghiycy","components/data/Chart.js":"mrq2ulte","components/data/DataGrid.js":"mrj8lxpb","components/editor/GraphEditor.js":"mrq583td","components/editor/Kanban.js":"mrq583td","components/editor/Mindmap.js":"mrq583td","components/form/ColorPicker.js":"mrgn837c","components/form/DatePicker.js":"mrgn837c","components/form/IconPicker.js":"mrgoatz5","components/form/TagsInput.js":"mrgn837b"} };
+  const build = { version: 'mrr2a9yk', files: {"frameworks/Bootstrap.js":"mrr2a9yk","frameworks/State.js":"mrr2a9yk","libraries/ChartJS.js":"mrpzd5sa","libraries/CodeMirror.js":"mrr2a9wt","libraries/CodeMirrorCSS.js":"mrr2a9xz","libraries/CodeMirrorHTML.js":"mrr2a9yj","libraries/CodeMirrorJSON.js":"mrr2a9xz","libraries/CodeMirrorJavaScript.js":"mrr2a9xz","libraries/CodeMirrorPython.js":"mrr2a9y0","libraries/CodeMirrorYAML.js":"mrr2a9xz","libraries/SortableJS.js":"mrpzd5sd","utilities/Disposer.js":"mrq2ulte","utilities/Editor.js":"mrq6k3ck","utilities/GraphCanvas.js":"mrq29nba","utilities/GraphDocument.js":"mrq07eih","utilities/HTTP.js":"mrg6t8zm","utilities/MouseMover.js":"mrg6t8zm","utilities/SortableAPI.js":"mrpzifgt","utilities/VirtualScroll.js":"mrg6t8zn","components/base/API.js":"mrj8lfwz","components/base/AutoForm.js":"mrj10yku","components/base/Dialog.js":"mrq52jn2","components/base/List.js":"mrge46xl","components/base/Modal.js":"mrj1zcg3","components/base/Nav.js":"mrj6haqp","components/base/Resizer.js":"mrghfzrh","components/base/Toast.js":"mrghiycy","components/data/Chart.js":"mrq2ulte","components/data/DataGrid.js":"mrj8lxpb","components/editor/CodeEditor.js":"mrr2a0tc","components/editor/GraphEditor.js":"mrq583td","components/editor/Kanban.js":"mrq583td","components/editor/Mindmap.js":"mrq583td","components/form/ColorPicker.js":"mrgn837c","components/form/DatePicker.js":"mrgn837c","components/form/IconPicker.js":"mrgoatz5","components/form/TagsInput.js":"mrgn837b"} };
   const script = document.currentScript;
   if (!script || document.readyState !== 'loading') {
     throw new Error('ui.js must be loaded by a normal <script> while the document is parsing');
@@ -13,6 +13,7 @@
   const modules = {
     ChartJS: { path: 'libraries/ChartJS.js' },
     SortableJS: { path: 'libraries/SortableJS.js' },
+    CodeMirror: { path: 'libraries/CodeMirror.js' },
     HTTP: { path: 'utilities/HTTP.js' },
     VirtualScroll: { path: 'utilities/VirtualScroll.js' },
     MouseMover: { path: 'utilities/MouseMover.js' },
@@ -34,6 +35,7 @@
     Kanban: { path: 'components/editor/Kanban.js', needs: ['Editor', 'SortableAPI', 'Disposer', 'AutoForm', 'Modal', 'Dialog'] },
     Mindmap: { path: 'components/editor/Mindmap.js', needs: ['Editor', 'GraphDocument', 'GraphCanvas', 'Disposer', 'AutoForm', 'Modal', 'Dialog'] },
     GraphEditor: { path: 'components/editor/GraphEditor.js', needs: ['Editor', 'GraphDocument', 'GraphCanvas', 'Disposer', 'AutoForm', 'Modal', 'Dialog'] },
+    CodeEditor: { path: 'components/editor/CodeEditor.js', needs: ['CodeMirror', 'Editor', 'Disposer', 'AutoForm'] },
     DatePicker: { path: 'components/form/DatePicker.js', needs: ['AutoForm'] },
     ColorPicker: { path: 'components/form/ColorPicker.js', needs: ['AutoForm'] },
     IconPicker: { path: 'components/form/IconPicker.js', needs: ['AutoForm'] },
@@ -44,7 +46,7 @@
     base: ['API', 'AutoForm', 'List', 'Modal', 'Dialog', 'Toast', 'Nav', 'Resizer'],
     form: ['DatePicker', 'ColorPicker', 'IconPicker', 'TagsInput'],
     data: ['DataGrid', 'Chart'],
-    editor: ['Kanban', 'Mindmap', 'GraphEditor']
+    editor: ['Kanban', 'Mindmap', 'GraphEditor', 'CodeEditor']
   };
   const qualified = Object.fromEntries(Object.entries(groups).flatMap(([group, names]) => names.map(name => [`${group}.${name}`, name])));
   const requested = requestedNames.flatMap(name => groups[name] || [qualified[name] || name]);

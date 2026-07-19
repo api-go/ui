@@ -1,0 +1,77 @@
+name: CodeEditor
+purpose: Edit source text with syntax highlighting, syntax diagnostics, reindentation, AutoForm binding, and optional Editor document transport.
+
+attributes:
+  lang: "javascript|js|json|yaml|yml|python|py|html|css; overrides path extension detection."
+  path: File path used for language detection and optional Editor document transport.
+  api: Optional Editor document endpoint; requires path for automatic loading and saving.
+  version: Optional document history version passed to Editor transport.
+  value: Initial source string.
+  theme: "light|dark; defaults to light."
+  readonly: boolean
+
+properties:
+  value: Current source string; compatible with $bind and AutoForm type code.
+  language: Normalized active language name.
+  view: CodeMirror EditorView after ready resolves.
+  ready: Promise resolving to the component after its on-demand language bundle loads.
+  diagnostics: Current syntax diagnostics.
+  documentMode: True when path, api, or version enables Editor document behavior.
+
+methods:
+  reindent: Reindent the complete document using the active language indentation rules and return value.
+  validate: Return current parser syntax diagnostics and update diagnostics.
+  focus: Focus the CodeMirror editing surface.
+  load: Added by Editor in document mode; load source text from api and path.
+  save: Added by Editor in document mode; save a code document envelope.
+
+events:
+  ready: "detail=CodeEditor after the language bundle and view are ready."
+  input: Bubbles after an interactive document change for $bind compatibility.
+  change: "detail=source string after an interactive document change or reindent."
+  diagnostics: "detail=array of parser syntax diagnostics whenever the result changes."
+  loaded: In document mode, detail is the loaded Editor document envelope.
+  save: In document mode, cancelable with detail equal to the outgoing document envelope.
+  saved: In document mode, detail is the save response.
+  error: "detail=Error from language loading or Editor transport."
+
+languages:
+  javascript: ".js|.mjs|.cjs; aliases js and javascript."
+  json: .json
+  yaml: ".yaml|.yml; aliases yaml and yml."
+  python: ".py; aliases py and python."
+  html: ".html|.htm; aliases html and htm."
+  css: .css
+
+validation:
+  scope: Parser-level syntax errors only; no code execution, semantic lint, type checking, or full formatter.
+  timing: Diagnostics refresh after editing becomes idle; validate performs an immediate read of the current syntax tree.
+
+reindent:
+  scope: Leading indentation is recalculated from the active language syntax tree; source tokens are not rewritten.
+
+rules:
+  - Explicit lang takes precedence over path extension; JavaScript is the fallback.
+  - The shared CodeMirror core loads once and each language bundle loads only when first requested.
+  - AutoForm mode is a plain string control and does not enable Editor transport.
+  - Editor document mode is enabled only by path, api, state.path, or version and stores source text in state.data.
+
+examples:
+  direct: |
+    <CodeEditor path="scripts/app.js" value="function run(){\nconsole.log('ok')\n}"></CodeEditor>
+    <button $onclick="document.querySelector('CodeEditor').reindent()">Reindent</button>
+  autoform: |
+    <script>
+      const formData = { config: '{"enabled":true}' }
+      const formSchema = [{ name: 'config', label: 'Configuration', type: 'code', setting: { lang: 'json', style: 'height:220px' } }]
+    </script>
+    <AutoForm $.state.data="formData" $.state.schema="formSchema"></AutoForm>
+  editor_document: |
+    <CodeEditor api="/documents" path="scripts/task.py"></CodeEditor>
+
+related:
+  - ../../utilities/Editor.yaml
+  - ../base/AutoForm.yaml
+
+tests:
+  - CodeEditor.test.html

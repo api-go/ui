@@ -1,0 +1,41 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>components.View tests</title>
+  <script src="../../ui.js" components="View"></script>
+  <script>const viewTestState = NewState({ visible: false })</script>
+  <script>window.existingViewScriptRuns = (window.existingViewScriptRuns || 0) + 1</script>
+</head>
+<body>
+  <View id="lazyView" file="View.fixtures/parent.html" $if="viewTestState.visible"></View>
+  <button id="runAll" type="button">Test all</button>
+  <pre id="result"></pre>
+  <script>
+    const tick = () => new Promise(resolve => setTimeout(resolve, 30))
+    const cases = ['lazy', 'relative-file', 'parent-file', 'script-once', 'duplicate-script', 'style-once', 'ready', 'load-idempotent']
+    const assert = (testResult, feature, condition, message) => { testResult.assertions++; if (condition) testResult.passed++; else { testResult.failed++; testResult.failures.push({ feature, message }) } }
+    window.runTest = async () => {
+      const testResult = { name: 'components.View', status: 'running', assertions: 0, passed: 0, failed: 0, failures: [], consoleErrors: [], coverage: { tested: [], total: cases, percent: 0 } }
+      assert(testResult, 'lazy', !document.querySelector('#parentContent'), 'a View under false $if is not loaded')
+      viewTestState.visible = true
+      await new Promise(resolve => {
+        const wait = () => document.querySelector('#childContent') && document.querySelector('#sharedContent') ? resolve() : setTimeout(wait, 10)
+        wait()
+      })
+      const view = document.querySelector('#lazyView')
+      assert(testResult, 'relative-file', document.querySelector('#childContent')?.textContent === 'child', 'child file resolves relative to parent View')
+      assert(testResult, 'parent-file', document.querySelector('#sharedContent')?.textContent === 'shared', '../ file resolves relative to parent View')
+      assert(testResult, 'script-once', window.parentViewRuns === 1 && window.childViewRuns === 1, 'parent and child scripts execute once')
+      assert(testResult, 'duplicate-script', window.existingViewScriptRuns === 1, 'an identical existing inline script is not executed again')
+      assert(testResult, 'style-once', view.querySelectorAll('style[data-view-test]').length === 1, 'fragment style is inserted once')
+      assert(testResult, 'ready', view.fileURL.endsWith('/components/base/View.fixtures/parent.html'), 'ready View exposes its resolved file URL')
+      const firstLoad = view.load(); const secondLoad = view.load()
+      viewTestState.visible = false; await tick(); viewTestState.visible = true; await tick()
+      assert(testResult, 'load-idempotent', firstLoad === secondLoad && window.parentViewRuns === 1 && window.childViewRuns === 1 && view.querySelectorAll('style[data-view-test]').length === 1, 'load and $if re-entry do not repeat scripts or styles')
+      testResult.coverage.tested = [...cases]; testResult.coverage.percent = 100; testResult.status = testResult.failed ? 'failed' : 'passed'; document.querySelector('#result').textContent = JSON.stringify(testResult, null, 2); window.testResult = testResult; return testResult
+    }
+    document.querySelector('#runAll').onclick = window.runTest
+  </script>
+</body>
+</html>

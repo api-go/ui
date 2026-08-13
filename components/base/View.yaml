@@ -1,0 +1,42 @@
+name: View
+purpose: Load an HTML fragment once and initialize its markup, styles, scripts, and nested views.
+
+attributes:
+  file:
+    type: string
+    required: true
+    behavior: HTML fragment URL. Relative paths resolve against the nearest parent View file, or document.baseURI for a top-level View.
+
+properties:
+  fileURL: Fully resolved URL of the loaded fragment.
+
+methods:
+  load:
+    signature: view.load()
+    behavior: Load the fragment once per View instance and return the same promise on later calls.
+
+events:
+  ready:
+    detail: Resolved file URL after markup is inserted and all scripts finish.
+  error:
+    detail: Loading or script error.
+
+rules:
+  - Fragment script elements execute once, in document order, after all fragment nodes are inserted.
+  - An inline script identical to one already present in the document is not executed again.
+  - External script src values resolve relative to the fragment file.
+  - Fragment style elements remain inside the View and are not duplicated when the same View instance is moved by $if.
+  - A View under $if loads only when first rendered. Re-rendering the same instance does not reload or re-execute scripts.
+  - Inline scripts use normal browser global script semantics; View does not create a private scope.
+
+examples:
+  lazy: |
+    <View file="views/Table.html" $if="Hash.nav==='table'"></View>
+  nested: |
+    <!-- Inside views/Table.html, this resolves beside that file. -->
+    <View file="parts/Toolbar.html"></View>
+    <!-- Parent directories are supported. -->
+    <View file="../Shared.html"></View>
+
+tests:
+  - View.test.html

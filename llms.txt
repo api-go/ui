@@ -68,6 +68,7 @@ Load the chosen URL in `<head>` without `async`, `defer`, or `type="module"`. A 
 - [Toast](components/base/Toast.yaml): transient notifications.
 - [Nav](components/base/Nav.yaml): declarative navigation.
 - [Resizer](components/base/Resizer.yaml): resizable layout regions.
+- [View](components/base/View.yaml): lazily load modular HTML fragments with relative nested paths.
 
 ## Form components
 

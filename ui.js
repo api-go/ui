@@ -1,6 +1,6 @@
 (() => {
   // Updated by `npm run build`. Source files stay directly executable.
-  const build = { version: 'msret2ty', files: {"frameworks/Bootstrap.js":"msret2ty","frameworks/State.js":"msret2ty","libraries/ChartJS.js":"mrpzd5sa","libraries/CodeMirror.js":"msret2o3","libraries/CodeMirrorCSS.js":"msret2s6","libraries/CodeMirrorHTML.js":"msret2t8","libraries/CodeMirrorJSON.js":"msret2s6","libraries/CodeMirrorJavaScript.js":"msret2s6","libraries/CodeMirrorMarkdown.js":"msret2tx","libraries/CodeMirrorPython.js":"msret2s6","libraries/CodeMirrorYAML.js":"msret2s6","libraries/Markdown.js":"msret2s6","libraries/SortableJS.js":"mrpzd5sd","utilities/Disposer.js":"mrq2ulte","utilities/Editor.js":"mrq6k3ck","utilities/GraphCanvas.js":"mrq29nba","utilities/GraphDocument.js":"mrq07eih","utilities/HTTP.js":"mrg6t8zm","utilities/MouseMover.js":"mrg6t8zm","utilities/SortableAPI.js":"mrpzifgt","utilities/VirtualScroll.js":"mrg6t8zn","components/base/API.js":"mrj8lfwz","components/base/AutoForm.js":"mspp2fta","components/base/Dialog.js":"msq3vwm8","components/base/List.js":"mspp1kgn","components/base/Modal.js":"msq3vwk0","components/base/Nav.js":"mrj6haqp","components/base/Resizer.js":"mrghfzrh","components/base/Toast.js":"mrghiycy","components/data/Chart.js":"mrq2ulte","components/data/DataGrid.js":"msreq2jc","components/editor/CodeEditor.js":"mrr56ooc","components/editor/GraphEditor.js":"msq4ge4g","components/editor/Kanban.js":"mrq583td","components/editor/MarkdownViewer.js":"mrr4y9d8","components/editor/Mindmap.js":"msq4ge2p","components/form/ColorPicker.js":"mrgn837c","components/form/DatePicker.js":"mrgn837c","components/form/IconPicker.js":"mrgoatz5","components/form/TagsInput.js":"mspppjxw"} };
+  const build = { version: 'msrixxa0', files: {"frameworks/Bootstrap.js":"msrixxa0","frameworks/State.js":"msrixxa0","libraries/ChartJS.js":"mrpzd5sa","libraries/CodeMirror.js":"msrixx4i","libraries/CodeMirrorCSS.js":"msrixx8n","libraries/CodeMirrorHTML.js":"msrixx99","libraries/CodeMirrorJSON.js":"msrixx8n","libraries/CodeMirrorJavaScript.js":"msrixx8o","libraries/CodeMirrorMarkdown.js":"msrixx9z","libraries/CodeMirrorPython.js":"msrixx8n","libraries/CodeMirrorYAML.js":"msrixx8o","libraries/Markdown.js":"msrixx8n","libraries/SortableJS.js":"mrpzd5sd","utilities/Disposer.js":"mrq2ulte","utilities/Editor.js":"mrq6k3ck","utilities/GraphCanvas.js":"mrq29nba","utilities/GraphDocument.js":"mrq07eih","utilities/HTTP.js":"mrg6t8zm","utilities/MouseMover.js":"mrg6t8zm","utilities/SortableAPI.js":"mrpzifgt","utilities/VirtualScroll.js":"mrg6t8zn","components/base/API.js":"mrj8lfwz","components/base/AutoForm.js":"mspp2fta","components/base/Dialog.js":"msq3vwm8","components/base/List.js":"mspp1kgn","components/base/Modal.js":"msq3vwk0","components/base/Nav.js":"mrj6haqp","components/base/Resizer.js":"mrghfzrh","components/base/Toast.js":"mrghiycy","components/base/View.js":"msriwz5m","components/data/Chart.js":"mrq2ulte","components/data/DataGrid.js":"msrf19k4","components/editor/CodeEditor.js":"mrr56ooc","components/editor/GraphEditor.js":"msq4ge4g","components/editor/Kanban.js":"mrq583td","components/editor/MarkdownViewer.js":"mrr4y9d8","components/editor/Mindmap.js":"msq4ge2p","components/form/ColorPicker.js":"mrgn837c","components/form/DatePicker.js":"mrgn837c","components/form/IconPicker.js":"mrgoatz5","components/form/TagsInput.js":"mspppjxw"} };
   const script = document.currentScript;
   if (!script || document.readyState !== 'loading') {
     throw new Error('ui.js must be loaded by a normal <script> while the document is parsing');
@@ -31,6 +31,7 @@
     Toast: { path: 'components/base/Toast.js' },
     Nav: { path: 'components/base/Nav.js' },
     Resizer: { path: 'components/base/Resizer.js' },
+    View: { path: 'components/base/View.js' },
     DataGrid: { path: 'components/data/DataGrid.js', needs: ['AutoForm', 'Dialog', 'Resizer', 'DatePicker', 'ColorPicker', 'IconPicker', 'TagsInput'] },
     Chart: { path: 'components/data/Chart.js', needs: ['ChartJS', 'Disposer'] },
     Kanban: { path: 'components/editor/Kanban.js', needs: ['Editor', 'SortableAPI', 'Disposer', 'AutoForm', 'Modal', 'Dialog'] },
@@ -45,7 +46,7 @@
   };
 
   const groups = {
-    base: ['API', 'AutoForm', 'List', 'Modal', 'Dialog', 'Toast', 'Nav', 'Resizer'],
+    base: ['API', 'AutoForm', 'List', 'Modal', 'Dialog', 'Toast', 'Nav', 'Resizer', 'View'],
     form: ['DatePicker', 'ColorPicker', 'IconPicker', 'TagsInput'],
     data: ['DataGrid', 'Chart'],
     editor: ['Kanban', 'Mindmap', 'GraphEditor', 'CodeEditor', 'MarkdownViewer']

@@ -1,0 +1,6 @@
+<style data-view-test>#parentContent { display: block; }</style>
+<div id="parentContent">parent</div>
+<View file="child.html"></View>
+<View file="../View.fixtures-shared.html"></View>
+<script>window.parentViewRuns = (window.parentViewRuns || 0) + 1</script>
+<script>window.existingViewScriptRuns = (window.existingViewScriptRuns || 0) + 1</script>

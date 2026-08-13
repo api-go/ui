@@ -212,7 +212,7 @@ globalThis.Component.register('Mindmap', container => {
               <div class="flex-grow-1 min-w-0"><div class="mindmap-node-title fw-semibold" $text="node.title"></div><div $if="node.content" class="mindmap-node-content small text-muted" $text="node.content"></div></div>
             </div>
             <div slot-id="node-actions" class="mindmap-node-actions position-absolute d-flex gap-1">
-              <button $if="GraphDocument.children(this.state.data,node.id).length" type="button" class="btn btn-sm btn-light border rounded-circle p-0" title="{#Collapse#}" $onclick="event.stopPropagation();this.toggleNode(node)"><i $class="'bi '+(node.collapsed?'bi-chevron-right':'bi-chevron-down')"></i></button>
+              <button $if="GraphDocument.children(this.state.data,node.id).length" type="button" class="btn btn-sm btn-outline-secondary rounded-circle p-0" title="{#Collapse#}" $onclick="event.stopPropagation();this.toggleNode(node)"><i $class="'bi '+(node.collapsed?'bi-chevron-right':'bi-chevron-down')"></i></button>
             </div>
           </article>
         </template>

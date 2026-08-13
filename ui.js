@@ -1,6 +1,6 @@
 (() => {
   // Updated by `npm run build`. Source files stay directly executable.
-  const build = { version: 'mrr2a9yk', files: {"frameworks/Bootstrap.js":"mrr2a9yk","frameworks/State.js":"mrr2a9yk","libraries/ChartJS.js":"mrpzd5sa","libraries/CodeMirror.js":"mrr2a9wt","libraries/CodeMirrorCSS.js":"mrr2a9xz","libraries/CodeMirrorHTML.js":"mrr2a9yj","libraries/CodeMirrorJSON.js":"mrr2a9xz","libraries/CodeMirrorJavaScript.js":"mrr2a9xz","libraries/CodeMirrorPython.js":"mrr2a9y0","libraries/CodeMirrorYAML.js":"mrr2a9xz","libraries/SortableJS.js":"mrpzd5sd","utilities/Disposer.js":"mrq2ulte","utilities/Editor.js":"mrq6k3ck","utilities/GraphCanvas.js":"mrq29nba","utilities/GraphDocument.js":"mrq07eih","utilities/HTTP.js":"mrg6t8zm","utilities/MouseMover.js":"mrg6t8zm","utilities/SortableAPI.js":"mrpzifgt","utilities/VirtualScroll.js":"mrg6t8zn","components/base/API.js":"mrj8lfwz","components/base/AutoForm.js":"mrj10yku","components/base/Dialog.js":"mrq52jn2","components/base/List.js":"mrge46xl","components/base/Modal.js":"mrj1zcg3","components/base/Nav.js":"mrj6haqp","components/base/Resizer.js":"mrghfzrh","components/base/Toast.js":"mrghiycy","components/data/Chart.js":"mrq2ulte","components/data/DataGrid.js":"mrj8lxpb","components/editor/CodeEditor.js":"mrr2a0tc","components/editor/GraphEditor.js":"mrq583td","components/editor/Kanban.js":"mrq583td","components/editor/Mindmap.js":"mrq583td","components/form/ColorPicker.js":"mrgn837c","components/form/DatePicker.js":"mrgn837c","components/form/IconPicker.js":"mrgoatz5","components/form/TagsInput.js":"mrgn837b"} };
+  const build = { version: 'msrerr3e', files: {"frameworks/Bootstrap.js":"msrerr3e","frameworks/State.js":"msrerr3d","libraries/ChartJS.js":"mrpzd5sa","libraries/CodeMirror.js":"msrerqy2","libraries/CodeMirrorCSS.js":"msrerqzx","libraries/CodeMirrorHTML.js":"msrerr2k","libraries/CodeMirrorJSON.js":"msrerqzx","libraries/CodeMirrorJavaScript.js":"msrerr1x","libraries/CodeMirrorMarkdown.js":"msrerr3d","libraries/CodeMirrorPython.js":"msrerqzx","libraries/CodeMirrorYAML.js":"msrerqzx","libraries/Markdown.js":"msrerr1y","libraries/SortableJS.js":"mrpzd5sd","utilities/Disposer.js":"mrq2ulte","utilities/Editor.js":"mrq6k3ck","utilities/GraphCanvas.js":"mrq29nba","utilities/GraphDocument.js":"mrq07eih","utilities/HTTP.js":"mrg6t8zm","utilities/MouseMover.js":"mrg6t8zm","utilities/SortableAPI.js":"mrpzifgt","utilities/VirtualScroll.js":"mrg6t8zn","components/base/API.js":"mrj8lfwz","components/base/AutoForm.js":"mspp2fta","components/base/Dialog.js":"msq3vwm8","components/base/List.js":"mspp1kgn","components/base/Modal.js":"msq3vwk0","components/base/Nav.js":"mrj6haqp","components/base/Resizer.js":"mrghfzrh","components/base/Toast.js":"mrghiycy","components/data/Chart.js":"mrq2ulte","components/data/DataGrid.js":"msreq2jc","components/editor/CodeEditor.js":"mrr56ooc","components/editor/GraphEditor.js":"msq4ge4g","components/editor/Kanban.js":"mrq583td","components/editor/MarkdownViewer.js":"mrr4y9d8","components/editor/Mindmap.js":"msq4ge2p","components/form/ColorPicker.js":"mrgn837c","components/form/DatePicker.js":"mrgn837c","components/form/IconPicker.js":"mrgoatz5","components/form/TagsInput.js":"mspppjxw"} };
   const script = document.currentScript;
   if (!script || document.readyState !== 'loading') {
     throw new Error('ui.js must be loaded by a normal <script> while the document is parsing');
@@ -14,6 +14,7 @@
     ChartJS: { path: 'libraries/ChartJS.js' },
     SortableJS: { path: 'libraries/SortableJS.js' },
     CodeMirror: { path: 'libraries/CodeMirror.js' },
+    Markdown: { path: 'libraries/Markdown.js' },
     HTTP: { path: 'utilities/HTTP.js' },
     VirtualScroll: { path: 'utilities/VirtualScroll.js' },
     MouseMover: { path: 'utilities/MouseMover.js' },
@@ -36,6 +37,7 @@
     Mindmap: { path: 'components/editor/Mindmap.js', needs: ['Editor', 'GraphDocument', 'GraphCanvas', 'Disposer', 'AutoForm', 'Modal', 'Dialog'] },
     GraphEditor: { path: 'components/editor/GraphEditor.js', needs: ['Editor', 'GraphDocument', 'GraphCanvas', 'Disposer', 'AutoForm', 'Modal', 'Dialog'] },
     CodeEditor: { path: 'components/editor/CodeEditor.js', needs: ['CodeMirror', 'Editor', 'Disposer', 'AutoForm'] },
+    MarkdownViewer: { path: 'components/editor/MarkdownViewer.js', needs: ['Markdown', 'Disposer'] },
     DatePicker: { path: 'components/form/DatePicker.js', needs: ['AutoForm'] },
     ColorPicker: { path: 'components/form/ColorPicker.js', needs: ['AutoForm'] },
     IconPicker: { path: 'components/form/IconPicker.js', needs: ['AutoForm'] },
@@ -46,7 +48,7 @@
     base: ['API', 'AutoForm', 'List', 'Modal', 'Dialog', 'Toast', 'Nav', 'Resizer'],
     form: ['DatePicker', 'ColorPicker', 'IconPicker', 'TagsInput'],
     data: ['DataGrid', 'Chart'],
-    editor: ['Kanban', 'Mindmap', 'GraphEditor', 'CodeEditor']
+    editor: ['Kanban', 'Mindmap', 'GraphEditor', 'CodeEditor', 'MarkdownViewer']
   };
   const qualified = Object.fromEntries(Object.entries(groups).flatMap(([group, names]) => names.map(name => [`${group}.${name}`, name])));
   const requested = requestedNames.flatMap(name => groups[name] || [qualified[name] || name]);
@@ -62,6 +64,20 @@
     if (version) url.searchParams.set('v', version);
     return url.href;
   };
+  const loadingAssets = new Map();
+  const loadAsset = path => {
+    if (loadingAssets.has(path)) return loadingAssets.get(path);
+    const task = new Promise((resolve, reject) => {
+      const asset = document.createElement('script');
+      asset.src = sourceUrl(path);
+      asset.onload = () => resolve(asset);
+      asset.onerror = () => reject(new Error(`Failed to load UI asset: ${path}`));
+      document.head.appendChild(asset);
+    }).catch(error => { loadingAssets.delete(path); throw error; });
+    loadingAssets.set(path, task);
+    return task;
+  };
+  globalThis.__ApigoUIRuntime = { sourceUrl, loadAsset };
   const writeScript = path => document.write(`<script src="${sourceUrl(path)}"><\/script>`);
   // Frameworks and compatibility utilities are unconditional; specialized dependencies are resolved below.
   if (!globalThis.Component) writeScript('frameworks/State.js');

@@ -117,6 +117,38 @@ const getDefaultDbType = (editorType, decimals = 0) => {
 	return editorType === 'number' ? (Number(decimals) > 0 ? 'ff' : 'bi') : (typeInfo?.typeForDB || 'v100');
 };
 
+const DB_TYPE_OPTIONS = [
+	['i', 'Integer'], ['ui', 'Unsigned Integer'], ['bi', 'Big Integer'], ['ubi', 'Unsigned Big Integer'], ['ti', 'Tiny Integer'],
+	['v', 'Text (VARCHAR)'], ['c', 'Fixed Text (CHAR)'], ['t', 'Long Text'], ['dt', 'Date & Time'], ['d', 'Date'], ['tm', 'Time'],
+	['f', 'Float'], ['ff', 'Double'], ['b', 'Boolean'], ['bb', 'Binary (BLOB)']
+];
+
+globalThis.Component.register('DBTypeInput', container => {
+	const select = container.querySelector('select'), lengthInput = container.querySelector('input');
+	container.state.options = DB_TYPE_OPTIONS.map(([value, label]) => ({ value, label }));
+	const parse = value => {
+		const match = String(value || 'v').match(/^(v|c)(\d+)?$/);
+		container.state.family = match ? match[1] : String(value || 'v');
+		container.state.length = match?.[2] || '';
+	};
+	const compose = () => {
+		const family = container.state.family || 'v';
+		const length = Math.max(1, Math.trunc(Number(container.state.length) || 0));
+		container.value = (family === 'v' || family === 'c') && length ? family + length : family;
+		container.dispatchEvent(new Event('change', { bubbles: true }));
+	};
+	container.addEventListener('bind', event => parse(event.detail));
+	select?.addEventListener('change', () => setTimeout(compose));
+	lengthInput?.addEventListener('input', () => setTimeout(compose));
+	parse(container.value);
+}, globalThis.Util.makeDom(/*html*/`
+	<div class="input-group">
+		<select class="form-select" $bind="this.state.family"><option $each="this.state.options || []" as="opt" $value="opt.value" $text="opt.label"></option></select>
+		<input $if="this.state.family === 'v' || this.state.family === 'c'" class="form-control text-end" style="max-width:110px" type="number" min="1" step="1" placeholder="Length" $bind="this.state.length">
+	</div>
+`));
+globalThis.AutoForm?.register('DBTypeInput', 'dbtype');
+
 // Managers Factory Functions (Internalized)
 const createPerfMonitor = () => {
 	let enabled = !!globalThis.__DT_PERF_MODE__;
@@ -173,9 +205,12 @@ const createScrollManager = (container, state, onRenderedListChange) => {
 		reset: (list) => {
 			state._listStartIndex = 0;
 			const validList = Array.isArray(list) ? list : [];
-			vs.reset(validList, scrollEl || container);
+			const initialList = vs.reset(validList, scrollEl || container);
+			Object.assign(state, { prevHeight: 0, postHeight: 0, _renderedList: initialList });
 			// Async bindings evaluate to undefined before their API response arrives.
-			if (Array.isArray(list) && state.list === list) vs.init(list, () => refresh(true));
+			// State arrays may be exposed through a proxy, so reference equality with
+			// the watcher value is not a reliable test that the list is current.
+			if (Array.isArray(list)) vs.init(validList, () => refresh(true));
 		},
 		refresh, onScroll: () => refresh(false)
 	};
@@ -231,6 +266,12 @@ const createSelectionManager = (container, state) => {
 		multiSelections.forEach(s => { minRow = Math.min(minRow, s.minRow); maxRow = Math.max(maxRow, s.maxRow); minCol = Math.min(minCol, s.minCol); maxCol = Math.max(maxCol, s.maxCol); });
 		return { minRow, maxRow, minCol, maxCol };
 	};
+	const getSelectedRows = () => {
+		const indexes = new Set();
+		const add = bounds => { if (bounds) for (let row = bounds.minRow; row <= bounds.maxRow; row++) indexes.add(row); };
+		add(activeBounds); multiSelections.forEach(add);
+		return [...indexes].sort((a, b) => a - b).map(index => state.list[index]).filter(Boolean);
+	};
 	const copy = async () => {
 		const bounds = getSelectionBounds(); if (!bounds) return;
 		const text = state.list.slice(bounds.minRow, bounds.maxRow + 1).map(row => {
@@ -273,7 +314,7 @@ const createSelectionManager = (container, state) => {
 			if (anyRowChanged) state.list = [...state.list];
 		} catch (err) { console.error('Paste Error:', err); }
 	};
-	return { applySelectionUI, clearAllActive, startSelect, updateSelect, endSelect, getSelectionBounds, copy, paste };
+	return { applySelectionUI, clearAllActive, startSelect, updateSelect, endSelect, getSelectionBounds, getSelectedRows, copy, paste };
 };
 
 // Component Registration
@@ -281,7 +322,9 @@ globalThis.Component.register('DataGrid', container => {
 	if (!container.state) container.state = globalThis.NewState({})
 	const state = container.state
 	container.editable = container.hasAttribute('editable')
+	container.readonly = container.hasAttribute('readonly')
 	container.getDataKey = getDataKey
+	container.getEditorType = getEditorType
 	container.apiUrl = container.getAttribute('api') || ''
 
 	Object.assign(state, {
@@ -293,11 +336,19 @@ globalThis.Component.register('DataGrid', container => {
 		filterConfig: {},
 		activeFieldId: null, activeField: null, activeModes: [],
 		_columnStats: {}, _internalUpdate: false, _appliedHash: '', _fieldsDirty: false, _masterCellNodes: null,
-		isDirty: false, isBulkEdit: null, advancedMode: false, table: state.table || '', apiLoading: false, total: 0,
-		editable: container.editable
+		isDirty: false, isBulkEdit: null, advancedMode: false, fieldAdvanced: false, rowFormIndex: -1, table: state.table || '', apiLoading: false, total: 0,
+		editable: container.editable, readonly: container.readonly, showAdvanced: !container.hasAttribute('no-advanced'), rowFormMin: 0, rowFormMax: -1
 	})
 
-	const getDisplayFields = () => state.advancedMode ? [...state.fields, ...SYSTEM_FIELDS] : state.fields;
+	const getDisplayFields = () => {
+		const fields = state.fields.map(field => field.name === 'priority' && field.type === 'ff'
+			? { ...field, rowOrder: true, settings: { ...(field.settings || {}), label: '', width: 42 } }
+			: field);
+		if (state.advancedMode) fields.push(...SYSTEM_FIELDS);
+		const pinRank = field => (field.settings?.pinned || field.pinned) === 'left' ? 0 : (field.settings?.pinned || field.pinned) === 'right' ? 2 : 1;
+		fields.sort((a, b) => pinRank(a) - pinRank(b));
+		return fields;
+	};
 	const requestApi = async (action, payload = {}) => {
 		if (!container.apiUrl || !state.table) return null;
 		state.apiLoading = true;
@@ -325,31 +376,179 @@ globalThis.Component.register('DataGrid', container => {
 		const sortField = state.sortConfig.fieldId && getDisplayFields().find(item => item.id === state.sortConfig.fieldId);
 		return { filter, sort: sortField ? [`${sortField.name} ${state.sortConfig.direction === 'desc' ? 'DESC' : 'ASC'}`] : [] };
 	};
+	container.getQuery = () => buildQuery();
 	container.load = async ({ fields = false } = {}) => {
 		if (!container.apiUrl || !state.table) return;
 		try {
 			if (fields) {
 				const response = await requestApi('fields');
 				state.fields = Array.isArray(response.fields) ? response.fields : [];
+				state.fullAccess = !!response.fullAccess;
+				// Table metadata exists before its first field creates the physical
+				// table. Keep that valid empty state editable without querying it.
+				if (state.fields.length === 0) {
+					state._internalUpdate = true; state.list = []; state._originalList = []; state.total = 0; state._internalUpdate = false; state.isDirty = false;
+					return;
+				}
 			}
 			const response = await requestApi('query', { ...buildQuery(), offset: 0, limit: 1000 });
 			const list = Array.isArray(response.data) ? response.data : (Array.isArray(response.list) ? response.list : []);
-			state._internalUpdate = true; state.list = list; state._originalList = [...list]; state.total = Number(response.count ?? list.length); state._internalUpdate = false; state.isDirty = false;
+			state._internalUpdate = true; state.list = list; state._originalList = globalThis.Util.clone(list); state.total = Number(response.count ?? list.length); state._internalUpdate = false; state.isDirty = false;
 		} catch (_) { /* requestApi already reports the error */ }
 	};
 
 	const perf = createPerfMonitor();
 	state.perf = perf.stats;
 	const selection = createSelectionManager(container, state);
+	container.getSelectedRows = () => selection.getSelectedRows();
+	container.hasRowChanges = () => JSON.stringify(state.list || []) !== JSON.stringify(state._originalList || []);
+	container.validateRows = (rows = state.list) => {
+		const errors = [];
+		for (let rowIndex = 0; rowIndex < rows.length; rowIndex++) {
+			for (const field of state.fields) {
+				if (field.system) continue;
+				const settings = field.settings || {}, attrs = settings.attrs || {};
+				const value = rows[rowIndex]?.[getDataKey(field)];
+				const empty = value === undefined || value === null || value === '';
+				if ((settings.required || attrs.required) && empty) errors.push({ row: rowIndex, field: field.name, message: `Row ${rowIndex + 1}: ${field.name} is required` });
+				const pattern = settings.pattern || attrs.pattern;
+				if (!empty && pattern) {
+					try { if (!new RegExp(pattern).test(String(value))) errors.push({ row: rowIndex, field: field.name, message: `Row ${rowIndex + 1}: ${field.name} has an invalid format` }); }
+					catch (_) { errors.push({ row: rowIndex, field: field.name, message: `${field.name} has an invalid validation pattern` }); }
+				}
+			}
+		}
+		return { ok: errors.length === 0, errors, invalidRows: [...new Set(errors.map(error => error.row))] };
+	};
 	const scroll = createScrollManager(container, state, () => setTimeout(() => selection.applySelectionUI(), 50));
 
 	const menuNode = container.querySelector('.dt-column-menu');
 	if (menuNode) menuNode._thisObj = container;
 
 	container.onColumnResizing = (field, e) => container.style.setProperty(`--w-${field.id}`, e.detail.newSize + 'px');
-	container.onColumnResize = (field, e) => {
+	container.onColumnResize = async (field, e) => {
 		const idx = state.fields.findIndex(f => f.id === field.id);
-		if (idx !== -1) { state.fields[idx].width = e.detail.newSize; state.fields = [...state.fields]; }
+		if (idx !== -1) {
+			const updated = { ...state.fields[idx], settings: { ...(state.fields[idx].settings || {}), width: e.detail.newSize } };
+			if (container.apiUrl) {
+				try { await requestApi('setField', { fields: [updated] }); } catch (_) { return; }
+			}
+			state.fields[idx] = updated; state.fields = [...state.fields];
+			container.dispatchEvent(new CustomEvent('resizefield', { detail: updated }));
+		}
+	};
+	container.clearDragPreview = () => {
+		const preview = state.dragPreview;
+		if (preview?.parentNode) preview.parentNode.removeChild(preview);
+		state.dragPreview = null;
+	};
+	container.createDragPreview = (source, event) => {
+		container.clearDragPreview();
+		if (!source?.cloneNode) {
+			source = document.createElement('div');
+			source.textContent = state.dragFieldId ? (state.fields.find(field => field.id === state.dragFieldId)?.settings?.label || state.fields.find(field => field.id === state.dragFieldId)?.name || '') : '';
+		}
+		const preview = source.cloneNode(true);
+		preview.className = 'dt-drag-preview bg-body text-body border border-primary rounded shadow';
+		preview.style.cssText = 'position:fixed;left:-10000px;top:-10000px;z-index:10000;width:max-content;max-width:420px;pointer-events:none;font-size:.8125rem;line-height:1.25;opacity:.96;';
+		preview.querySelectorAll('input,button,Resizer,[draggable]').forEach(node => node.remove());
+		document.body.append(preview); state.dragPreview = preview;
+		if (event.dataTransfer?.setDragImage) event.dataTransfer.setDragImage(preview, 14, 14);
+	};
+	container.onFieldDragStart = (field, event) => {
+		if (event.target?.closest?.('Resizer') || !container.editable || state.readonly || field.system) return event.preventDefault();
+		state.dragFieldId = field.id;
+		event.dataTransfer.effectAllowed = 'move';
+		container.createDragPreview(event.target?.closest?.('span') || event.target, event);
+	};
+	container.clearDragIndicators = () => container.querySelectorAll('.dt-drop-before, .dt-drop-row').forEach(node => node.classList.remove('dt-drop-before', 'dt-drop-row'));
+	container.onFieldDragOver = (field, event) => {
+		if (!state.dragFieldId || field.system || field.id === state.dragFieldId) return;
+		event.preventDefault(); container.clearDragIndicators(); event.currentTarget.classList.add('dt-drop-before');
+	};
+	container.onRowDragOver = (row, event) => {
+		if (!state.dragRow || row === state.dragRow || !container.canReorderRows()) return;
+		event.preventDefault(); event.stopPropagation(); container.clearDragIndicators(); event.currentTarget.classList.add('dt-drop-row');
+	};
+	container.onDragEnd = () => { state.dragFieldId = null; state.dragRow = null; container.clearDragIndicators(); container.clearDragPreview(); };
+	container.addEventListener('dragover', event => {
+		if (!state.dragFieldId) return;
+		const header = event.target?.closest?.('.dt-header-row .dt-cell');
+		if (!header || header.dataset.id === state.dragFieldId) return;
+		container.clearDragIndicators(); header.classList.add('dt-drop-before');
+	});
+	container.addEventListener('dragleave', event => {
+		const header = event.target?.closest?.('.dt-header-row .dt-cell');
+		if (header && !header.contains(event.relatedTarget)) header.classList.remove('dt-drop-before');
+	});
+	container.addEventListener('dragend', container.onDragEnd);
+	container.canReorderRows = () => !state.readonly && container.editable && !state.sortConfig.fieldId && !Object.values(state.filterConfig || {}).some(filter => filter?.value || filter?.selectedValues?.length);
+	container.onRowDragStart = (row, event) => {
+		if (!container.canReorderRows()) return event.preventDefault();
+		state.dragRow = row; event.dataTransfer.effectAllowed = 'move'; event.stopPropagation();
+		const rowNode = event.target?.closest?.('.dt-body-row');
+		if (rowNode) container.createDragPreview(rowNode, event);
+	};
+	container.onRowDrop = async (target, event) => {
+		event.preventDefault(); event.stopPropagation();
+		container.clearDragIndicators();
+		const source = state.dragRow;
+		if (!source || source === target || !container.canReorderRows()) return;
+		const original = [...state.list], ordered = [...state.list];
+		const from = ordered.indexOf(source), targetIndex = ordered.indexOf(target);
+		if (from < 0 || targetIndex < 0) return;
+		ordered.splice(from, 1);
+		const to = Math.min(targetIndex, ordered.length);
+		ordered.splice(to, 0, source);
+		const before = ordered[to - 1], after = ordered[to + 1];
+		const beforeValue = Number(before?.priority), afterValue = Number(after?.priority);
+		const gap = afterValue - beforeValue;
+		const tolerance = Number.EPSILON * Math.max(1, Math.abs(beforeValue), Math.abs(afterValue)) * 8;
+		let changed = [];
+		if (!before) { source.priority = Number.isFinite(afterValue) ? afterValue - 100 : 100; changed = [source]; }
+		else if (!after) { source.priority = Number.isFinite(beforeValue) ? beforeValue + 100 : 100; changed = [source]; }
+		else if (Number.isFinite(gap) && gap > tolerance) { source.priority = beforeValue + gap / 2; changed = [source]; }
+		else {
+			// Re-space only a bounded neighborhood. This avoids an unbounded
+			// UPDATE when a very large table has exhausted floating-point gaps.
+			const start = Math.max(0, to - 10), end = Math.min(ordered.length - 1, to + 10);
+			const lower = start > 0 ? Number(ordered[start - 1].priority) : 0;
+			const upper = end + 1 < ordered.length ? Number(ordered[end + 1].priority) : NaN;
+			const count = end - start + 1;
+			const step = Number.isFinite(upper) && upper > lower ? (upper - lower) / (count + 1) : 100;
+			if (!Number.isFinite(step) || step <= Number.EPSILON * Math.max(1, Math.abs(lower), Math.abs(upper)) * 8) {
+				state.dragRow = null;
+				globalThis.Toast?.show('The nearby priority range is exhausted; reorder a wider section before trying again.', { type: 'warning' });
+				return;
+			}
+			changed = ordered.slice(start, end + 1);
+			changed.forEach((row, index) => { row.priority = lower + step * (index + 1); });
+		}
+		if (container.apiUrl) {
+			try { await requestApi('save', { data: changed }); }
+			catch (_) { state.list = original; state.dragRow = null; container.clearDragPreview(); return; }
+			for (const changedRow of changed) {
+				const snapshot = state._originalList.find(row => row.id === changedRow.id);
+				if (snapshot) snapshot.priority = changedRow.priority;
+			}
+		} else state.isDirty = true;
+		state.list = ordered; state.dragRow = null; container.clearDragPreview();
+		container.dispatchEvent(new CustomEvent('reorderrows', { detail: { list: ordered, changed } }));
+	};
+	container.onFieldDrop = async (target, event) => {
+		event.preventDefault();
+		container.clearDragIndicators();
+		if (!state.dragFieldId || target.system || target.id === state.dragFieldId) return;
+		const fields = [...state.fields];
+		const from = fields.findIndex(field => field.id === state.dragFieldId), to = fields.findIndex(field => field.id === target.id);
+		if (from < 0 || to < 0) return;
+		const [moved] = fields.splice(from, 1); fields.splice(to, 0, moved);
+		fields.forEach((field, index) => { field.priority = index + 1; });
+		if (container.apiUrl) {
+			try { await requestApi('setField', { fields }); } catch (_) { return; }
+		}
+		state.fields = fields; state.dragFieldId = null;
+		container.dispatchEvent(new CustomEvent('reorderfields', { detail: fields }));
 	};
 
 	let _editorOverlay, currentEditingNode = null;
@@ -369,6 +568,9 @@ globalThis.Component.register('DataGrid', container => {
 		if (prev) { prev.style.height = (state.prevHeight || 0) + 'px'; prev.style.display = state.prevHeight > 0 ? 'block' : 'none'; }
 		if (post) { post.style.height = (state.postHeight || 0) + 'px'; post.style.display = state.postHeight > 0 ? 'block' : 'none'; }
 	};
+	container.ensureFooterHost = footer => {
+		if (footer?.parentElement !== container) container.appendChild(footer);
+	};
 
 	container.applySortFilter = (options = {}) => {
 		if (state._internalUpdate) return;
@@ -380,7 +582,7 @@ globalThis.Component.register('DataGrid', container => {
 			const previousFilters = state.filterConfig;
 			state.filterConfig = targetFilters; state.sortConfig = targetSort;
 			const reload = async () => {
-				if (state.isDirty && !await globalThis.Dialog.confirm('Discard unsaved changes and reload data?')) { state.filterConfig = previousFilters; state.sortConfig = previousSort; return; }
+				if (container.hasRowChanges() && !await globalThis.Dialog.confirm('Discard unsaved changes and reload data?')) { state.filterConfig = previousFilters; state.sortConfig = previousSort; return; }
 				await container.load();
 			};
 			reload();
@@ -431,9 +633,9 @@ globalThis.Component.register('DataGrid', container => {
 		const btn = event.currentTarget, menu = container.querySelector('.dt-column-menu');
 		if (menu.style.display === 'block' && state.activeFieldId === field.id) {
 			container.hideColumnMenu();
-			container.applySortFilter();
 			return;
 		}
+		container.hideColumnMenu();
 		const type = getEditorType(field);
 		state.activeModes = MODE_MAP[type] || (['boolean', 'switch', 'checkbox', 'radio'].includes(type) ? [] : MODE_MAP.text);
 		if (!state.filterConfig[field.id]) state.filterConfig[field.id] = { mode: state.activeModes[0] || 'contains', value: '', selectedValues: [] };
@@ -445,7 +647,8 @@ globalThis.Component.register('DataGrid', container => {
 		if (leftPos < 0) leftPos = Math.max(0, rect.left - rootRect.left);
 		menu.style.left = leftPos + 'px'; menu.style.top = (rect.bottom - rootRect.top + 5) + 'px';
 
-		const onGlobalClick = (ev) => { if (menu.contains(ev.target) || btn.contains(ev.target)) return; container.hideColumnMenu(); container.applySortFilter(); document.removeEventListener('mousedown', onGlobalClick); };
+		const onGlobalClick = (ev) => { if (menu.contains(ev.target) || btn.contains(ev.target)) return; container.hideColumnMenu(); };
+		container._columnMenuOutsideHandler = onGlobalClick;
 		document.addEventListener('mousedown', onGlobalClick);
 		setTimeout(() => menu.querySelector('input')?.focus(), 50);
 	};
@@ -457,7 +660,14 @@ globalThis.Component.register('DataGrid', container => {
 	};
 
 	container.filterOnlyThis = (val) => { state.filterConfig[state.activeFieldId] = { mode: 'contains', value: '', selectedValues: [String(val)] }; state.filterConfig = { ...state.filterConfig }; container.applySortFilter(); };
-	container.hideColumnMenu = () => { const menu = container.querySelector('.dt-column-menu'); if (menu) menu.style.display = 'none'; };
+	container.hideColumnMenu = () => {
+		const menu = container.querySelector('.dt-column-menu');
+		if (menu) menu.style.display = 'none';
+		if (container._columnMenuOutsideHandler) {
+			document.removeEventListener('mousedown', container._columnMenuOutsideHandler);
+			container._columnMenuOutsideHandler = null;
+		}
+	};
 	container.setSort = (dir) => { const newDir = state.sortConfig.direction === dir && state.sortConfig.fieldId === state.activeFieldId ? null : dir; container.applySortFilter({ sort: newDir }); };
 	container.clearColumnSettings = () => { if (!state.activeFieldId) return; state.filterConfig = { ...state.filterConfig, [state.activeFieldId]: { mode: state.activeModes[0] || 'contains', value: '', value2: '', selectedValues: [] } }; container.applySortFilter(); };
 
@@ -471,8 +681,11 @@ globalThis.Component.register('DataGrid', container => {
 		if (!Array.isArray(fields)) return;
 		fields = getDisplayFields(); state._displayFields = fields;
 		state._fieldsDirty = true; state._masterCellNodes = null;
-		container.style.setProperty('--dt-grid-template', fields.map(f => `var(--w-${f.id}, ${(f.settings?.width || f.width) || 150}px)`).join(' '));
-		container.style.setProperty('--dt-row-width', fields.reduce((sum, f) => sum + ((f.settings?.width || f.width) || 150), 0) + 'px');
+		container.style.setProperty('--dt-grid-template', fields.map((f, index) => {
+			const width = (f.settings?.width || f.width) || (f.fillColumn ? 160 : 150);
+			return `var(--w-${f.id}, ${width}px)`;
+		}).join(' '));
+		container.style.setProperty('--dt-row-width', `max(${fields.reduce((sum, f) => sum + ((f.settings?.width || f.width) || 150), 0)}px, 100%)`);
 
 		let leftSum = 0;
 		fields.forEach(f => {
@@ -488,8 +701,8 @@ globalThis.Component.register('DataGrid', container => {
 	});
 
 	state.__watch('list', list => {
-		if (!state._internalUpdate) {
-			state._originalList = [...(list || [])];
+		if (!state._internalUpdate && !state.isDirty) {
+			state._originalList = globalThis.Util.clone(list || []);
 			setTimeout(() => {
 				const stats = {};
 				state._displayFields.forEach(f => {
@@ -515,7 +728,11 @@ globalThis.Component.register('DataGrid', container => {
 		if (form) {
 			// Assign the schema first, then the cloned row data. This keeps a
 			// native select from exposing its first option before its model value.
-			form.state.schema = [{ name: getDataKey(field), label: '', type: formType, options: field.settings?.options || field.options, setting: field.settings?.attrs }];
+			const setting = { ...(field.settings?.attrs || {}), required: !!(field.settings?.required || field.settings?.attrs?.required) };
+			const pattern = field.settings?.pattern || field.settings?.attrs?.pattern;
+			if (pattern) setting.pattern = pattern;
+			else delete setting.pattern;
+			form.state.schema = [{ name: getDataKey(field), label: '', type: formType, options: field.settings?.options || field.options, setting }];
 			form.state.data = globalThis.NewState(globalThis.Util.clone(row));
 		}
 		const isComplex = ['textarea', 'TagsInput', 'checkbox', 'radio'].includes(formType);
@@ -547,6 +764,7 @@ globalThis.Component.register('DataGrid', container => {
 		if (save && form && form.data) {
 			const input = _editorOverlay.querySelector('input:focus, select:focus, textarea:focus');
 			if (input) input.dispatchEvent(new Event(input.type === 'number' || input.tagName === 'SELECT' ? 'change' : 'input', { bubbles: true }));
+			if (form.form && !form.form.reportValidity()) return false;
 
 			let hasChanges = false;
 			const schema = form.state.schema || [];
@@ -569,13 +787,14 @@ globalThis.Component.register('DataGrid', container => {
 				}
 			}
 			if (hasChanges) {
-				state.list = [...state.list];
 				state.isDirty = true;
+				state.list = [...state.list];
 			}
 		}
 		_editorOverlay.style.display = 'none';
 		if (form) { form.state.schema = []; form.state.data = globalThis.NewState({}); form.data = null; }
 		currentEditingNode = null; state.isBulkEdit = null; container.focus();
+		return true;
 	};
 
 	container.onMainMouseDown = e => {
@@ -598,14 +817,23 @@ globalThis.Component.register('DataGrid', container => {
 	};
 
 	container.onMainDblClick = e => {
-		if (!container.editable) return;
+		if (!container.editable || state.readonly) return;
+		const directRow = e.target.classList?.contains('dt-body-row') ? e.target : null;
+		if (directRow) {
+			const rIdx = directRow._ref?.rIdx ?? Array.from(container.querySelectorAll('.dt-body-row')).indexOf(directRow);
+			state.rowFormMin = 0; state.rowFormMax = state.list.length - 1;
+			container.openRowForm(rIdx + state._listStartIndex);
+			return;
+		}
 		const cell = e.target.closest('.dt-cell'), row = cell?.closest('.dt-row');
 		if (row && !row.classList.contains('dt-header-row')) {
 			const item = row._ref?.item, fIdx = cell.dataset.fidx ? parseInt(cell.dataset.fidx) : Array.from(row.querySelectorAll('.dt-cell')).indexOf(cell);
 			const rIdx = row._ref?.rIdx ?? Array.from(container.querySelectorAll('.dt-body-row')).indexOf(row);
 			const absoluteRow = rIdx + state._listStartIndex;
+			if (e.ctrlKey || e.metaKey) { state.rowFormMin = 0; state.rowFormMax = state.list.length - 1; container.openRowForm(absoluteRow); return; }
+			if (state._displayFields[fIdx]?.type === 'b' || getEditorType(state._displayFields[fIdx]) === 'switch') return;
 
-			if (item && state._displayFields[fIdx] && !state._displayFields[fIdx].system) {
+			if (item && state._displayFields[fIdx] && !state._displayFields[fIdx].system && !state._displayFields[fIdx].rowOrder) {
 				const bounds = selection.getSelectionBounds();
 				if (bounds && absoluteRow >= bounds.minRow && absoluteRow <= bounds.maxRow && fIdx >= bounds.minCol && fIdx <= bounds.maxCol) {
 					const affectedRows = bounds.maxRow - bounds.minRow + 1;
@@ -619,20 +847,102 @@ globalThis.Component.register('DataGrid', container => {
 		}
 	};
 
+	container.rowFormSchema = () => state.fields.map(field => {
+		const settings = field.settings || {};
+		const setting = { ...(settings.attrs || {}), required: !!(settings.required || settings.attrs?.required) };
+		if (settings.pattern || settings.attrs?.pattern) setting.pattern = settings.pattern || settings.attrs.pattern;
+		return { name: getDataKey(field), label: field.memo || field.label || field.name, type: getEditorType(field), options: settings.options || field.options, setting };
+	});
+	container.showRowFormAt = index => {
+		if (index < 0 || index >= state.list.length) return;
+		state.rowFormIndex = index;
+		const modal = container.querySelector(`#${CSS.escape(container.id + '_row_modal')}`);
+		const form = modal?.querySelector('AutoForm');
+		if (form) { form.state.schema = container.rowFormSchema(); form.state.data = state.list[index]; }
+	};
+	container.openRowForm = index => {
+		if (state.readonly) return;
+		container.showRowFormAt(index);
+		const modal = container.querySelector(`#${CSS.escape(container.id + '_row_modal')}`);
+		modal?.show();
+		if (!container._rowFormKeyHandler) {
+			container._rowFormKeyHandler = event => {
+				if (!modal?.classList.contains('show') || !(event.ctrlKey || event.metaKey)) return;
+				if (event.key === 'ArrowLeft' || event.key === 'ArrowRight') {
+					event.preventDefault(); const delta = event.key === 'ArrowLeft' ? -1 : 1; const min = state.rowFormMin ?? 0; const max = state.rowFormMax >= min ? state.rowFormMax : state.list.length - 1; container.showRowFormAt(Math.max(min, Math.min(max, state.rowFormIndex + delta)));
+				}
+			};
+			document.addEventListener('keydown', container._rowFormKeyHandler);
+		}
+	};
+	container.editSelectedRows = () => {
+		if (state.readonly) return;
+		const rows = selection.getSelectedRows();
+		if (!rows.length) return;
+		const indexes = rows.map(row => state.list.indexOf(row)).filter(index => index >= 0).sort((a, b) => a - b);
+		state.rowFormMin = 0; state.rowFormMax = state.list.length - 1;
+		container.openRowForm(indexes[0]);
+	};
+	container.rowFormChanged = () => {
+		const modal = container.querySelector(`#${CSS.escape(container.id + '_row_modal')}`);
+		const form = modal?.querySelector('AutoForm');
+		const row = state.list[state.rowFormIndex];
+		if (!form?.data || !row) return;
+		for (const field of state.fields) {
+			const key = getDataKey(field);
+			if (JSON.stringify(row[key]) !== JSON.stringify(form.data[key])) row[key] = form.data[key];
+		}
+		state.isDirty = container.hasRowChanges();
+		// The form edits the existing row object. Force only the current virtual
+		// window to refresh; rebuilding the complete data set defeats virtualization.
+		scroll.refresh(true);
+	};
+
+	container.toggleSwitchCell = (row, field, event) => {
+		event.stopPropagation();
+		if (!container.editable || state.readonly || field.system) return;
+		row[getDataKey(field)] = !!event.target.checked;
+		state.isDirty = true;
+		state.list = [...state.list];
+	};
+	const emptyValueForField = field => {
+		const editorType = getEditorType(field);
+		if (editorType === 'switch' || field.type === 'b') return false;
+		if (editorType === 'number' || ['i', 'ui', 'bi', 'ubi', 'ti', 'f', 'ff'].includes(field.type)) return null;
+		return '';
+	};
+	const normalizeTypedEmptyValues = rows => rows.map(row => {
+		let normalized = row;
+		for (const field of state.fields) {
+			const key = getDataKey(field);
+			if (row?.[key] !== '') continue;
+			const value = emptyValueForField(field);
+			if (value === '') continue;
+			if (normalized === row) normalized = { ...row };
+			normalized[key] = value;
+		}
+		return normalized;
+	});
+
 	container.addRow = () => {
-		const newRow = {}; state.fields.forEach(f => newRow[getDataKey(f)] = '');
-		state._originalList.push(newRow); state.list = [...state._originalList]; state.isDirty = true;
+		if (state.readonly) return;
+		const newRow = {}; state.fields.forEach(f => newRow[getDataKey(f)] = emptyValueForField(f));
+		const priorityField = state.fields.find(field => field.name === 'priority' && field.type === 'ff');
+		if (priorityField) newRow.priority = Math.max(0, ...state.list.map(row => Number(row.priority) || 0)) + 100;
+		state.isDirty = true; state.list = [...state.list, newRow];
 		setTimeout(() => { scroll.reset(state.list); container.querySelector('.dt-main').scrollTop = container.querySelector('.dt-main').scrollHeight; }, 50);
 	};
 
 	container.deleteSelectedRow = async () => {
+		if (state.readonly) return;
 		const bounds = selection.getSelectionBounds(); if (!bounds) return;
 		const count = bounds.maxRow - bounds.minRow + 1;
 		if (await globalThis.Dialog.confirm(`Are you sure you want to delete ${count} row(s)?`)) {
 			const rMin = bounds.minRow, rMax = bounds.maxRow;
 			const removedItems = state.list.slice(rMin, rMax + 1);
 			if (container.apiUrl) {
-				try { await requestApi('remove', { data: removedItems }); }
+				const removedIDs = removedItems.map(item => item?.id).filter(Boolean);
+				try { await requestApi('remove', { data: removedIDs }); }
 				catch (_) { return; }
 			}
 			state.list = state.list.filter((_, i) => !(i >= rMin && i <= rMax));
@@ -643,26 +953,38 @@ globalThis.Component.register('DataGrid', container => {
 	};
 
 	container.saveChanges = async () => {
+		if (state.readonly) return;
+		const savedList = normalizeTypedEmptyValues(state.list);
+		if (savedList.some((row, index) => row !== state.list[index])) state.list = savedList;
+		const validation = container.validateRows(savedList);
+		if (!validation.ok) { globalThis.Toast?.show(validation.errors[0].message, { type: 'danger' }); return false; }
 		if (container.apiUrl) {
-			try { await requestApi('save', { data: state._originalList }); }
+			try { await requestApi('save', { data: savedList }); }
 			catch (_) { return; }
+			state._originalList = globalThis.Util.clone(state.list);
 		}
-		container.dispatchEvent(new CustomEvent('save', { detail: { list: state._originalList, fields: state.fields } })); state.isDirty = false;
+		container.dispatchEvent(new CustomEvent('save', { detail: { list: savedList, fields: state.fields } })); state.isDirty = false; return true;
 	};
 
 	const getFieldSchema = () => {
 		const types = globalThis.DataGrid.getFieldTypes();
 		const baseSchema = [
-			{ name: 'name', label: 'Field Name', type: 'text', setting: { required: true, placeholder: 'e.g. role' } },
-			{ name: 'user_type', label: 'Field Type', type: 'select', options: types.map(t => ({ label: t.label, value: t.value })) }
+			{ name: 'name', label: 'Field Name', type: 'text', setting: { required: true, placeholder: 'e.g. Display Name' } },
+			{ name: 'user_type', label: 'Field Type', type: 'select', options: types.map(t => ({ label: t.label, value: t.value })) },
+			{ name: 'pinned', label: 'Pin Column', type: 'select', options: [{ label: 'None', value: '' }, { label: 'Left', value: 'left' }, { label: 'Right', value: 'right' }] }
 		];
 		const dynamicSchema = types.reduce((acc, t) => acc.concat(t.schema || []), []);
-		const advancedSchema = [
+		const advancedSchema = state.fieldAdvanced ? [
 			{ type: 'divider', label: 'Advanced Settings' },
-			{ name: 'db_type', label: 'Database Type', type: 'text', setting: { required: true, placeholder: 'e.g. v100, ff, dt' } },
+			{ name: 'required', label: 'Required', type: 'switch' },
+			{ name: 'pattern', label: 'Validation Pattern', type: 'text', setting: { placeholder: 'Regular expression, e.g. ^[A-Z].+$' } },
+			{ name: 'db_type', label: 'Database Type', type: 'dbtype', setting: { required: true } },
 			{ name: 'isIndex', label: 'Index', type: 'switch' },
-			{ name: 'memo', label: 'Memo', type: 'text' }
-		];
+			{ name: 'isSecret', label: 'Secret', type: 'switch' },
+			{ name: 'memo', label: 'Memo', type: 'text' },
+			{ name: 'attrs_json', label: 'Settings', type: 'textarea', setting: { rows: 3, placeholder: '{"minlength":2,"maxlength":100}' } },
+			{ name: 'if_expr', label: 'Display Condition', type: 'text', setting: { placeholder: 'this.data.role === "admin"' } }
+		] : [];
 		const auditSchema = state.advancedMode ? [
 			{ type: 'divider', label: 'System Information' },
 			{ name: 'id', label: 'Field ID', type: 'label' }, { name: 'tableID', label: 'Table ID', type: 'label' },
@@ -671,6 +993,10 @@ globalThis.Component.register('DataGrid', container => {
 		] : [];
 		return baseSchema.concat(dynamicSchema, advancedSchema, auditSchema);
 	};
+	state.__watch('fieldAdvanced', () => {
+		const form = container.querySelector(`Modal[id="${container.id}_field_modal"] AutoForm`);
+		if (form) form.state.schema = getFieldSchema();
+	});
 
 	const parseOptionsStr = (str) => {
 		if (!str) return undefined;
@@ -679,66 +1005,98 @@ globalThis.Component.register('DataGrid', container => {
 		});
 	};
 	const formatOptionsStr = (opts) => { if (!opts) return ''; return opts.map(o => typeof o === 'object' ? `${o.label}:${o.value}` : o).join('\n'); };
+	const parseAttrsJSON = value => {
+		const attrs = JSON.parse(String(value || '{}'));
+		if (!attrs || Array.isArray(attrs) || typeof attrs !== 'object') throw new Error('Control Attributes must be a JSON object');
+		delete attrs.required; delete attrs.pattern;
+		return attrs;
+	};
+	const formatAttrsJSON = attrs => {
+		const settings = { ...(attrs || {}) };
+		delete settings.required; delete settings.pattern;
+		return JSON.stringify(settings, null, 2);
+	};
+	const normalizePattern = value => {
+		const pattern = String(value || '').trim();
+		if (!pattern) return undefined;
+		try { new RegExp(pattern); return pattern; }
+		catch (_) { throw new Error('Validation Pattern must be a valid regular expression'); }
+	};
 	const bindFieldTypeDefaults = (form, data) => {
 		setTimeout(() => {
 			const typeInput = form.querySelector('select[name="user_type"]');
-			const dbTypeInput = form.querySelector('input[name="db_type"]');
+			const dbTypeInput = form.querySelector('[name="db_type"]');
 			const decimalsInput = form.querySelector('input[name="decimals"]');
 			const applyDefault = () => { if (data._dbTypeAuto) data.db_type = getDefaultDbType(data.user_type, data.decimals); };
 			typeInput?.addEventListener('change', () => { data._dbTypeAuto = true; applyDefault(); });
-			dbTypeInput?.addEventListener('input', () => { data._dbTypeAuto = false; });
+			dbTypeInput?.addEventListener('change', () => { data._dbTypeAuto = false; });
 			decimalsInput?.addEventListener('input', applyDefault);
 		});
 	};
+	container.finishFieldDialog = result => {
+		const dialog = container.querySelector(`Modal[id="${container.id}_field_modal"]`);
+		if (!dialog) return;
+		if (result === 1) { dialog.dirty = false; dialog.hide(); }
+		dialog.dispatchEvent(new CustomEvent('fieldresult', { detail: result }));
+	};
 
 	container.addField = async () => {
+		if (state.readonly) return;
 		container.hideColumnMenu();
-		const data = globalThis.NewState({ id: 'c' + Date.now().toString().slice(-4), tableID: state.fields[0]?.tableID || '', creator: '', createTime: '', updater: '', updateTime: '', name: 'New Field', user_type: 'text', db_type: getDefaultDbType('text'), _dbTypeAuto: true, decimals: 0, isIndex: false, memo: '', options_str: '' });
+		const data = globalThis.NewState({ id: 'c' + Date.now().toString().slice(-4), tableID: state.fields[0]?.tableID || '', creator: '', createTime: '', updater: '', updateTime: '', name: '', _editing: false, user_type: 'text', pinned: '', db_type: getDefaultDbType('text'), _dbTypeAuto: true, decimals: 0, isIndex: false, isSecret: false, required: false, pattern: '', memo: '', options_str: '', attrs_json: '{}', if_expr: '' });
 		const d = container.querySelector(`Modal[id="${container.id}_field_modal"]`);
 		if (!d) return;
 		Object.assign(d.state, { title: 'Add Field', buttons: ['Cancel', 'Save'] });
+		state.fieldAdvanced = false;
 		const form = d.querySelector('AutoForm');
 		if (form) {
 			form.state.data = data; form.state.schema = getFieldSchema(); bindFieldTypeDefaults(form, data);
 		}
 		d.show();
-		const result = await new Promise(resolve => d.addEventListener('change', e => resolve(d.result), { once: true }));
+		const result = await new Promise(resolve => d.addEventListener('fieldresult', event => resolve(event.detail), { once: true }));
 		if (result === 2) {
 			const dbType = data.db_type?.trim() || getDefaultDbType(data.user_type, data.decimals);
-			const field = { id: data.id, tableID: data.tableID, name: data.name, memo: data.memo, isIndex: !!data.isIndex, type: dbType, settings: { type: data.user_type, decimals: data.decimals, prefix: data.prefix, suffix: data.suffix, thousandSep: data.thousandSep, labelOn: data.labelOn, labelOff: data.labelOff, format: data.format, placeholder: data.placeholder, options: parseOptionsStr(data.options_str) } };
+			let pattern; try { pattern = normalizePattern(data.pattern); } catch (error) { globalThis.Toast?.show(error.message, { type: 'danger' }); return; }
+			const field = { id: data.id, tableID: data.tableID, name: data.name, memo: data.memo, isIndex: !!data.isIndex, isSecret: !!data.isSecret, type: dbType, settings: { type: data.user_type, pinned: data.pinned || undefined, required: !!data.required, pattern, decimals: data.decimals, prefix: data.prefix, suffix: data.suffix, thousandSep: data.thousandSep, labelOn: data.labelOn, labelOff: data.labelOff, format: data.format, placeholder: data.placeholder, options: parseOptionsStr(data.options_str), attrs: parseAttrsJSON(data.attrs_json), if: data.if_expr?.trim() || undefined } };
 			if (container.apiUrl) { try { await requestApi('setField', { fields: [field] }); } catch (_) { return; } }
 			state.fields = [...state.fields, field]; state.isDirty = !container.apiUrl; container.dispatchEvent(new CustomEvent('savefields', { detail: state.fields })); state.list = [...state.list];
+			d.dirty = false; d.hide();
 		}
 	};
 
 	container.editField = async () => {
+		if (state.readonly) return;
 		if (!state.activeField) return;
 		container.hideColumnMenu();
 		const f = state.activeField; const s = f.settings || {};
-		const data = globalThis.NewState({ id: f.id, tableID: f.tableID || '', creator: f.creator || '', createTime: f.createTime || '', updater: f.updater || '', updateTime: f.updateTime || '', name: f.name, memo: f.memo || '', isIndex: !!f.isIndex, user_type: getEditorType(f), db_type: f.type || '', _dbTypeAuto: true, decimals: s.decimals || 0, prefix: s.prefix || '', suffix: s.suffix || '', thousandSep: !!s.thousandSep, labelOn: s.labelOn || '', labelOff: s.labelOff || '', format: s.format || '', placeholder: s.placeholder || '', options_str: formatOptionsStr(s.options) });
+		const data = globalThis.NewState({ id: f.id, tableID: f.tableID || '', creator: f.creator || '', createTime: f.createTime || '', updater: f.updater || '', updateTime: f.updateTime || '', name: f.name, _editing: true, pinned: s.pinned || f.pinned || '', memo: f.memo || '', isIndex: !!f.isIndex, isSecret: !!f.isSecret, required: !!(s.required || s.attrs?.required), pattern: s.pattern || s.attrs?.pattern || '', user_type: getEditorType(f), db_type: f.type || '', _dbTypeAuto: true, decimals: s.decimals || 0, prefix: s.prefix || '', suffix: s.suffix || '', thousandSep: !!s.thousandSep, labelOn: s.labelOn || '', labelOff: s.labelOff || '', format: s.format || '', placeholder: s.placeholder || '', options_str: formatOptionsStr(s.options), attrs_json: formatAttrsJSON(s.attrs), if_expr: s.if || f.if || '' });
 		const d = container.querySelector(`Modal[id="${container.id}_field_modal"]`);
 		if (!d) return;
 		Object.assign(d.state, { title: 'Edit Field', buttons: ['Cancel', 'Save'] });
+		state.fieldAdvanced = false;
 		const form = d.querySelector('AutoForm');
 		if (form) {
 			form.state.data = data; form.state.schema = getFieldSchema(); bindFieldTypeDefaults(form, data);
 		}
 		d.show();
-		const result = await new Promise(resolve => d.addEventListener('change', e => resolve(d.result), { once: true }));
+		const result = await new Promise(resolve => d.addEventListener('fieldresult', event => resolve(event.detail), { once: true }));
 		if (result === 2) {
 			const idx = state.fields.findIndex(item => item.id === f.id);
 			if (idx !== -1) {
 				// Preserve exact database definitions such as v30 when the
 				// editor is unchanged; only a UI-type switch gets a default.
 				const dbType = data.db_type?.trim() || (data.user_type === getEditorType(f) ? f.type : getDefaultDbType(data.user_type, data.decimals));
-				const updatedField = { ...f, name: data.name, memo: data.memo, isIndex: !!data.isIndex, type: dbType, settings: { ...f.settings, type: data.user_type, decimals: data.decimals, prefix: data.prefix, suffix: data.suffix, thousandSep: data.thousandSep, labelOn: data.labelOn, labelOff: data.labelOff, format: data.format, placeholder: data.placeholder, options: parseOptionsStr(data.options_str) } };
+				let pattern; try { pattern = normalizePattern(data.pattern); } catch (error) { globalThis.Toast?.show(error.message, { type: 'danger' }); return; }
+				const updatedField = { ...f, name: data.name, memo: data.memo, isIndex: !!data.isIndex, isSecret: !!data.isSecret, type: dbType, settings: { ...f.settings, type: data.user_type, pinned: data.pinned || undefined, required: !!data.required, pattern, decimals: data.decimals, prefix: data.prefix, suffix: data.suffix, thousandSep: data.thousandSep, labelOn: data.labelOn, labelOff: data.labelOff, format: data.format, placeholder: data.placeholder, options: parseOptionsStr(data.options_str), attrs: parseAttrsJSON(data.attrs_json), if: data.if_expr?.trim() || undefined } };
 				if (container.apiUrl) { try { await requestApi('setField', { fields: [updatedField] }); } catch (_) { return; } }
 				state.fields[idx] = updatedField; state.fields = [...state.fields]; state.isDirty = !container.apiUrl; container.dispatchEvent(new CustomEvent('savefields', { detail: state.fields })); state.list = [...state.list];
+				d.dirty = false; d.hide();
 			}
 		}
 	};
 
 	container.deleteField = async () => {
+		if (state.readonly) return;
 		if (!state.activeField) return;
 		container.hideColumnMenu();
 		if (state.activeField.system) return;
@@ -763,7 +1121,7 @@ globalThis.Component.register('DataGrid', container => {
 			e.preventDefault();
 			selection.copy();
 		}
-		if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'v') {
+		if (!state.readonly && (e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'v') {
 			e.preventDefault();
 			selection.paste();
 		}
@@ -771,30 +1129,29 @@ globalThis.Component.register('DataGrid', container => {
 
 	state._MODE_ICONS = MODE_ICONS;
 }, globalThis.Util.makeDom(/*html*/`
-<div class="dt-root d-flex flex-column h-100 border bg-body text-body overflow-visible" style="position:relative; user-select:none; outline: none; min-height: 0" tabindex="0">
-        <div class="dt-main flex-grow-1 overflow-auto" $onscroll="this.onScroll()" 
+<div class="dt-root d-flex flex-column h-100 w-100 border bg-body text-body overflow-hidden" style="position:relative; user-select:none; outline: none; min-height: 0" tabindex="0">
+		<div class="dt-main flex-grow-1 overflow-auto" $onscroll="this.onScroll()" 
                 $onmousedown="this.onMainMouseDown(event)" $onmouseover="this.onMainMouseOver(event)" $ondblclick="this.onMainDblClick(event)"
                 style="overflow-anchor:none; min-height: 0">
-                <div class="dt-header border-bottom bg-light sticky-top" style="z-index:20">
+                <div class="dt-header border-bottom bg-body-tertiary sticky-top" style="z-index:20; background-color: var(--bs-tertiary-bg) !important;">
                         <div class="dt-header-row fw-bold text-muted small">
                                 <template $each="this.state?._displayFields || []">
-                                        <div $data-id="item.id" $class="dt-cell dt-col border-end d-flex align-items-center header-cell \${(item.settings?.pinned || item.pinned) ? 'pinned-' + (item.settings?.pinned || item.pinned) : ''}" $style="((item.settings?.pinned || item.pinned) ? 'position: sticky; z-index: 11; background-color: inherit; ' : 'position:relative; ') + 'padding: 0; ' + ((item.settings?.pinned || item.pinned) === 'left' ? 'left: var(--l-' + item.id + '); border-right: 1px solid var(--bs-border-color); box-shadow: 2px 0 5px -2px rgba(0,0,0,0.1);' : ((item.settings?.pinned || item.pinned) === 'right' ? 'right: var(--r-' + item.id + '); border-left: 1px solid var(--bs-border-color); box-shadow: -2px 0 5px -2px rgba(0,0,0,0.1);' : ''))">
-                                                <div class="d-flex align-items-center overflow-hidden flex-grow-1 h-100 px-2 cursor-pointer" $onclick="this.showColumnMenu(item, event)">
+						<div $data-id="item.id" $ondragover="event.preventDefault()" $ondrop="this.onFieldDrop(item,event)" $class="dt-cell dt-col border-end d-flex align-items-center header-cell \${item.system ? 'text-secondary' : ''} \${(item.settings?.pinned || item.pinned) ? 'pinned-' + (item.settings?.pinned || item.pinned) : ''}" $style="((item.settings?.pinned || item.pinned) ? 'position: sticky; z-index: 11; background-color: var(--bs-tertiary-bg); ' : 'position:relative; ') + 'padding: 0; ' + ((item.settings?.pinned || item.pinned) === 'left' ? 'left: var(--l-' + item.id + '); border-right: 1px solid var(--bs-border-color); box-shadow: 2px 0 5px -2px rgba(0,0,0,0.1);' : ((item.settings?.pinned || item.pinned) === 'right' ? 'right: var(--r-' + item.id + '); border-left: 1px solid var(--bs-border-color); box-shadow: -2px 0 5px -2px rgba(0,0,0,0.1);' : ''))">
+								<div class="d-flex align-items-center overflow-hidden flex-grow-1 h-100 px-2">
                                                         <i $if="this.state?.filterConfig?.[item.id] && (this.state.filterConfig[item.id].value || this.state.filterConfig[item.id].selectedValues?.length)" class="bi bi-filter me-1 text-primary"></i>
                                                         <i $if="this.state?.sortConfig?.fieldId === item.id && this.state.sortConfig.direction" $class="bi bi-sort-\${this.state.sortConfig.direction === 'asc' ? 'down' : 'up-alt'} me-1 text-primary"></i>
-                                                        <span $text="item.settings?.label || item.name" class="text-truncate flex-grow-1"></span>
+										<span draggable="true" $ondragstart="this.onFieldDragStart(item,event)" $class="text-truncate flex-grow-1 cursor-grab \${item.rowOrder ? 'd-flex align-items-center justify-content-center' : ''}" $onclick="this.showColumnMenu(item, event)"><i $if="item.rowOrder" class="bi bi-list" title="Row order"></i><span $if="!item.rowOrder" $text="item.settings?.label || item.name"></span></span>
                                                 </div>
-                                                <button class="btn btn-xs btn-link text-muted p-0 border-0 me-1 header-menu-btn" $onclick="this.showColumnMenu(item, event)"><i class="bi bi-chevron-down"></i></button>
-                                                <Resizer $.target="thisNode.parentElement" style="position:absolute; right:0; top:0; bottom:0; width:4px; z-index:10" min="50" max="1000" $onresizing="this.onColumnResizing(item, event)" $onresize="this.onColumnResize(item, event)"></Resizer>
+				<button $if="!item.rowOrder" class="btn btn-xs btn-link text-muted p-0 border-0 me-1 header-menu-btn" $onclick="this.showColumnMenu(item, event)"><i class="bi bi-chevron-down"></i></button>
+								<Resizer $.target="thisNode.parentElement" style="position:absolute; right:0; top:0; bottom:0; width:4px; z-index:10" min="50" max="1000" $onmousedown="event.stopPropagation()" $ondragstart="event.preventDefault();event.stopPropagation()" $onresizing="this.onColumnResizing(item, event)" $onresize="this.onColumnResize(item, event)"></Resizer>
                                         </div>
                                 </template>
-                        </div>
-                </div>
+                                </div>
                 <div class="dt-body" style="position:relative">
                         <div class="dt-spacer-prev flex-shrink-0" style="display:none"></div>
                         <template $each="this.state?._renderedList || []" key="id" index="rIdx">
-                                <div class="dt-row dt-body-row border-bottom bg-white" $.="this._initRow(thisNode)">
-                                <template $each="this.state?._displayFields || []" as="f" index="fIdx" key="id"><div $data-fidx="fIdx" $class="dt-cell border-end px-2 d-flex align-items-center \${(f.settings?.pinned || f.pinned) ? 'pinned-' + (f.settings?.pinned || f.pinned) : ''}" $style="((f.settings?.pinned || f.pinned) ? 'position: sticky; z-index: 1; background-color: inherit; ' : '') + ((f.settings?.pinned || f.pinned) === 'left' ? 'left: var(--l-' + f.id + '); border-right: 1px solid var(--bs-border-color); box-shadow: 2px 0 5px -2px rgba(0,0,0,0.1);' : ((f.settings?.pinned || f.pinned) === 'right' ? 'right: var(--r-' + f.id + '); border-left: 1px solid var(--bs-border-color); box-shadow: -2px 0 5px -2px rgba(0,0,0,0.1);' : ''))"><span $text="this.format(item[this.getDataKey(f)], f)" class="text-truncate"></span></div></template>
+				<div class="dt-row dt-body-row bg-body" $.="this._initRow(thisNode)" $ondragover="this.onRowDragOver(item,event)" $ondragleave="if(!thisNode.contains(event.relatedTarget))thisNode.classList.remove('dt-drop-row')" $ondrop="this.onRowDrop(item,event)">
+				<template $each="this.state?._displayFields || []" as="f" index="fIdx" key="id"><div $data-fidx="fIdx" $class="dt-cell border-end px-2 d-flex align-items-center \${(f.settings?.pinned || f.pinned) ? 'pinned-' + (f.settings?.pinned || f.pinned) : ''}" $style="((f.settings?.pinned || f.pinned) ? 'position: sticky; z-index: 1; background-color: var(--bs-body-bg); ' : '') + ((f.settings?.pinned || f.pinned) === 'left' ? 'left: var(--l-' + f.id + '); border-right: 1px solid var(--bs-border-color); box-shadow: 2px 0 5px -2px rgba(0,0,0,0.1);' : ((f.settings?.pinned || f.pinned) === 'right' ? 'right: var(--r-' + f.id + '); border-left: 1px solid var(--bs-border-color); box-shadow: -2px 0 5px -2px rgba(0,0,0,0.1);' : ''))"><span $if="f.rowOrder" draggable="true" $onmousedown="event.stopPropagation()" $ondragstart="this.onRowDragStart(item,event)" $ondrop="this.onRowDrop(item,event)" $class="d-flex align-items-center justify-content-center w-100 h-100 \${this.canReorderRows() ? 'text-muted cursor-grab' : 'text-body-tertiary'}"><i class="bi bi-list"></i></span><input $if="!f.rowOrder && this.getEditorType(f)==='switch'" class="form-check-input mt-0" type="checkbox" $checked="!!item[this.getDataKey(f)]" $disabled="this.state?.readonly" $onchange="this.toggleSwitchCell(item,f,event)"><span $if="!f.rowOrder && this.getEditorType(f)!=='switch'" $text="this.format(item[this.getDataKey(f)], f)" class="text-truncate"></span></div></template>
                                 </div>
                         </template>
                         <div class="dt-spacer-post flex-shrink-0" style="display:none"></div>
@@ -842,36 +1199,50 @@ globalThis.Component.register('DataGrid', container => {
                                 <span class="cursor-pointer text-primary small fw-bold" $onclick="this.clearColumnSettings()"><i class="bi bi-x-circle me-1"></i> Clear Filter</span>
                         </div>
 
-                        <div $if="this.state?.editable && !this.state?.activeField?.system" class="mt-3 pt-2 border-top d-flex gap-1 justify-content-between">
-                                <button class="btn btn-sm btn-light border-0 flex-grow-1" title="Edit Field" $onclick="this.editField()"><i class="bi bi-pencil"></i></button>
-                                <button class="btn btn-sm btn-light border-0 flex-grow-1" title="Add Field" $onclick="this.addField()"><i class="bi bi-plus-lg"></i></button>
-                                <button class="btn btn-sm btn-light border-0 flex-grow-1 text-danger" title="Delete Field" $onclick="this.deleteField()"><i class="bi bi-trash"></i></button>
+                        <div $if="this.state?.editable && !this.state?.readonly && !this.state?.activeField?.system" class="mt-3 pt-2 border-top d-flex gap-1 justify-content-between">
+                                <button class="btn btn-sm btn-outline-secondary border-0 flex-grow-1" title="Edit Field" $onclick="this.editField()"><i class="bi bi-pencil"></i></button>
+                                <button class="btn btn-sm btn-outline-secondary border-0 flex-grow-1" title="Add Field" $onclick="this.addField()"><i class="bi bi-plus-lg"></i></button>
+                                <button class="btn btn-sm btn-outline-secondary border-0 flex-grow-1 text-danger" title="Delete Field" $onclick="this.deleteField()"><i class="bi bi-trash"></i></button>
                         </div>
                 </template>
         </div>
 
-        <Modal $.id="this.id + '_field_modal'">
+		<Modal $.id="this.id + '_field_modal'" guard-dirty>
             <div slot="body"><AutoForm nobutton class="p-3"></AutoForm></div>
-            <div slot="footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" $onclick="thisNode.closest('Modal').result=1">Cancel</button>
-                <button type="button" class="btn btn-primary" data-bs-dismiss="modal" $onclick="thisNode.closest('Modal').result=2">Save</button>
+			<div slot="footer" class="d-flex align-items-center w-100">
+				<label class="small me-auto mb-0"><input class="form-check-input me-1" type="checkbox" data-no-dirty $bind="thisNode.closest('DataGrid').state.fieldAdvanced">{#Advanced mode#}</label>
+                <button type="button" class="btn btn-sm btn-secondary" $onclick="thisNode.closest('DataGrid').finishFieldDialog(1)">Cancel</button>
+                <button type="button" class="btn btn-sm btn-primary" $onclick="thisNode.closest('DataGrid').finishFieldDialog(2)">Save</button>
             </div>
-        </Modal>
+		</Modal>
 
-        <div class="dt-footer border-top bg-light d-flex align-items-center px-3 py-1 shadow-sm" style="height:40px; z-index: 10">
+		<Modal $.id="this.id + '_row_modal'" .title="{#Edit Row#}">
+			<div slot="body"><AutoForm nobutton class="p-3" $oninput="thisNode.closest('DataGrid').rowFormChanged()" $onchange="thisNode.closest('DataGrid').rowFormChanged()"></AutoForm></div>
+			<div slot="footer" class="d-flex align-items-center w-100">
+				<span class="small text-muted me-auto" $text="((thisNode.closest('DataGrid').state.rowFormIndex ?? -1) + 1) + ' / ' + (thisNode.closest('DataGrid').state.list?.length || 0)"></span>
+				<button class="btn btn-sm btn-outline-secondary" $disabled="thisNode.closest('DataGrid').state.rowFormIndex <= thisNode.closest('DataGrid').state.rowFormMin" $onclick="const grid=thisNode.closest('DataGrid');grid.showRowFormAt(grid.state.rowFormIndex-1)"><i class="bi bi-arrow-left"></i> {#Previous#}</button>
+				<button class="btn btn-sm btn-outline-secondary" $disabled="thisNode.closest('DataGrid').state.rowFormIndex >= thisNode.closest('DataGrid').state.rowFormMax" $onclick="const grid=thisNode.closest('DataGrid');grid.showRowFormAt(grid.state.rowFormIndex+1)">{#Next#} <i class="bi bi-arrow-right"></i></button>
+				<button class="btn btn-sm btn-secondary" $onclick="thisNode.closest('Modal').hide(true)">{#Close#}</button>
+			</div>
+		</Modal>
+
+        <div class="dt-footer border-top bg-body-tertiary d-flex align-items-center px-3 py-1 shadow-sm text-nowrap" $.="this.ensureFooterHost(thisNode)" style="position:absolute; left:0; right:0; bottom:0; height:40px; z-index:30; overflow:hidden">
                 <div class="d-flex align-items-center gap-3 flex-grow-1">
                         <div class="d-flex align-items-center gap-1 text-muted" style="font-size: 0.75rem">
                                 <i class="bi bi-check-all fs-6"></i><span $text="(this.state?.selectedRowCount || 0) + ' / ' + (this.apiUrl ? (this.state?.total || 0) : (this.state?.list?.length || 0))"></span>
                         </div>
-                        <div $if="this.state?.editable" class="d-flex align-items-center gap-1">
-                                <button class="btn btn-sm btn-light border-0 d-flex align-items-center px-2 py-1" $onclick="this.addRow()" title="Add Row"><i class="bi bi-plus-lg text-primary me-1"></i> Add</button>
-                                <button class="btn btn-sm btn-light border-0 d-flex align-items-center px-2 py-1" $onclick="this.deleteSelectedRow()" $disabled="!this.state?.selectedRowCount" title="Delete Selected Rows"><i class="bi bi-trash text-danger me-1"></i> Delete</button>
+                        <div $if="this.state?.editable && !this.state?.readonly" class="d-flex align-items-center gap-1">
+                                <button class="btn btn-sm btn-outline-secondary border-0 d-flex align-items-center px-2 py-1" $onclick="this.addRow()" title="Add Row"><i class="bi bi-plus-lg text-primary"></i><span class="dt-toolbar-label ms-1">Add</span></button>
+                                <button class="btn btn-sm btn-outline-secondary border-0 d-flex align-items-center px-2 py-1" $onclick="this.editSelectedRows()" $disabled="!this.state?.selectedRowCount" title="Edit Selected Rows"><i class="bi bi-pencil text-primary"></i><span class="dt-toolbar-label ms-1">Edit</span></button>
+                                <button class="btn btn-sm btn-outline-secondary border-0 d-flex align-items-center px-2 py-1" $onclick="this.deleteSelectedRow()" $disabled="!this.state?.selectedRowCount" title="Delete Selected Rows"><i class="bi bi-trash text-danger"></i><span class="dt-toolbar-label ms-1">Delete</span></button>
                         </div>
-						<label class="small"><input class="form-check-input me-1" type="checkbox" $bind="this.state.advancedMode">{#Advanced mode#}</label>
+                        <label $if="this.state?.showAdvanced" class="small d-flex align-items-center mb-0 text-nowrap" title="System Fields"><input class="form-check-input" type="checkbox" $bind="this.state.advancedMode"><i class="bi bi-eye mx-1 dt-toolbar-icon"></i><span class="dt-toolbar-label ms-1">System Fields</span></label>
+						<div slot-id="footer-start" class="d-flex align-items-center gap-2"></div>
                 </div>
-                <div $if="this.state?.editable" class="d-flex align-items-center gap-2">
-                        <button $if="this.state?.isDirty" class="btn btn-sm btn-primary border-0 px-3 shadow-sm d-flex align-items-center fw-bold" $onclick="this.saveChanges()"><i class="bi bi-cloud-upload me-1"></i> Save</button>
-                        <button $if="!this.state?.isDirty" class="btn btn-sm btn-light border-0 px-3 text-muted disabled d-flex align-items-center" disabled><i class="bi bi-cloud-check me-1"></i> Saved</button>
+				<div slot-id="footer-end" class="d-flex align-items-center gap-2"></div>
+                <div $if="this.state?.editable && !this.state?.readonly" class="d-flex align-items-center gap-2">
+                        <button $if="this.state?.isDirty" class="btn btn-sm btn-primary border-0 px-3 shadow-sm d-flex align-items-center fw-bold text-nowrap" $onclick="this.saveChanges()"><i class="bi bi-cloud-upload"></i><span class="dt-toolbar-label ms-1">Save</span></button>
+                        <button $if="!this.state?.isDirty" class="btn btn-sm btn-outline-secondary border-0 px-3 text-body-secondary disabled d-flex align-items-center text-nowrap" disabled><i class="bi bi-cloud-check"></i><span class="dt-toolbar-label ms-1">Saved</span></button>
                 </div>
         </div>
 </div>
@@ -879,17 +1250,29 @@ globalThis.Component.register('DataGrid', container => {
 <style>
         DataGrid { display: block; }
         .dt-root { font-size: 0.875rem; }
-        .dt-row, .dt-header-row { display: grid; grid-template-columns: var(--dt-grid-template); width: var(--dt-row-width, max-content); min-width: 100%; height: 40px; contain: paint layout; }
-        .dt-main { position: relative; }
-        .dt-header-row { background-color: var(--bs-tertiary-bg); border-bottom: 1px solid var(--bs-border-color); }
-        .dt-cell { background: inherit; white-space: nowrap; flex-shrink: 0; contain: content; }
+		.dt-row, .dt-header-row { display: grid; grid-template-columns: var(--dt-grid-template); width: var(--dt-row-width, max-content); min-width: 0; height: 40px; box-sizing: content-box; position: relative; }
+		DataGrid, .dt-root { width: 100%; min-width: 0; max-width: 100%; overflow: hidden !important; }
+		.dt-main { position: relative; min-height: 0; min-width: 0; width: 100%; max-width: 100%; flex: 1 1 auto; padding-bottom: 40px; overflow-x: auto; overflow-y: auto; }
+		.dt-footer { flex: 0 0 40px; overflow: visible !important; }
+		.dt-header-row { background-color: rgba(var(--bs-secondary-rgb), 0.08); }
+		.dt-body-row { background-color: rgba(var(--bs-secondary-rgb), 0.08) !important; cursor: pointer; }
+		.dt-body-row .dt-cell { background-color: var(--bs-body-bg); cursor: default; border-bottom: 1px solid var(--bs-border-color); }
+		.dt-header-row .dt-cell { background-color: var(--bs-tertiary-bg); cursor: default; border-bottom: 1px solid var(--bs-border-color); }
+		.dt-cell { white-space: nowrap; flex-shrink: 0; contain: content; }
+		.dt-toolbar-icon { display: none; }
+		@media (max-width: 1100px) { .dt-toolbar-label { display: none; } .dt-toolbar-icon { display: inline-block; } .dt-footer { padding-left: .5rem !important; padding-right: .5rem !important; } .dt-footer .gap-3 { gap: .5rem !important; } }
         .dt-cell-selected { background-color: rgba(var(--bs-primary-rgb), 0.15) !important; outline: 1px solid var(--bs-primary); outline-offset: -1px; }
-        .dt-body-row:hover { background-color: var(--bs-secondary-bg) !important; }
+		.dt-body-row:hover { background-color: var(--bs-secondary-bg) !important; }
+		.dt-drop-before { box-shadow: inset 3px 0 0 var(--bs-primary) !important; }
+		.dt-body-row.dt-drop-row { position: relative; box-shadow: none !important; }
+		.dt-body-row.dt-drop-row::after { content: ''; position: absolute; inset: 0; z-index: 30; pointer-events: none; border-top: 3px solid var(--bs-primary); }
+        .dt-drag-preview { background-color: var(--bs-body-bg); color: var(--bs-body-color); border-color: var(--bs-primary) !important; }
         .header-cell .header-menu-btn { opacity: 0; transition: opacity 0.2s; }
         .header-cell:hover .header-menu-btn { opacity: 1; }
         .dt-column-menu { background-color: var(--bs-body-bg); border: 1px solid var(--bs-primary); box-shadow: 0 10px 40px rgba(0,0,0,0.2) !important; z-index: 2100 !important; }
         .btn-xs { padding: 1px 5px; line-height: 1.5; }
-        .cursor-pointer { cursor: pointer; }
+		.cursor-pointer { cursor: pointer; }
+		.cursor-grab { cursor: grab; }
         .dt-filter-tabs i { font-size: 1.1rem; }
         .dt-filter-tabs div:hover i { color: var(--bs-primary); }
         .menu-item-row .only-btn { opacity: 0; }

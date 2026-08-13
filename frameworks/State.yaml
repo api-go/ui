@@ -48,6 +48,7 @@ component:
   rules:
     - Keep required public behavior declarative; do not expose internal DOM as an application contract.
     - A bindable component listens for bind and writes event.detail into its state.
+    - Slotted nodes are supplied by the application and transferred into the matching slot receiver. Their internal markup, layout, wrapping, labels, and interaction ownership remain with the application; the receiving component should only position the slot container.
 
 examples:
   bindings: |

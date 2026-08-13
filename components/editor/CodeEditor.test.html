@@ -11,6 +11,8 @@
 </head>
 <body>
   <CodeEditor id="javascript" path="src/app.js" value="function run(){&#10;console.log('ok')&#10;}"></CodeEditor>
+  <CodeEditor id="markdown" path="docs/README.md" mode="split" style="height:360px" value="# Preview&#10;&#10;**ready**"></CodeEditor>
+  <CodeEditor id="htmlPreview" path="pages/preview.html" mode="preview" style="height:240px"></CodeEditor>
   <div style="position:absolute;left:-10000px;top:0;width:800px">
     <CodeEditor id="json" path="config/app.json" value="{&quot;enabled&quot;:true}"></CodeEditor>
     <CodeEditor id="yaml" path="config/app.yml" value="enabled: true"></CodeEditor>
@@ -23,19 +25,19 @@
   </div>
   <button id="runAll" type="button">测试全部</button><pre id="result"></pre>
   <script>
-    const cases = ['languages', 'highlight', 'path-detection', 'lang-precedence', 'value', 'ready-view-focus', 'readonly-theme', 'change-input', 'diagnostics', 'reindent', 'autoform-code', 'editor-document', 'registry', 'on-demand-bundles']
+    const cases = ['languages', 'highlight', 'path-detection', 'lang-precedence', 'value', 'ready-view-focus', 'readonly-theme', 'change-input', 'diagnostics', 'reindent', 'autoform-code', 'editor-document', 'registry', 'on-demand-bundles', 'markdown-preview', 'markdown-options', 'preview-modes', 'preview-events', 'html-sandbox', 'html-script-opt-in', 'html-script-manual-refresh', 'html-script-auto']
     const assert = (result, feature, condition, message) => { result.assertions++; if (condition) result.passed++; else { result.failed++; result.failures.push({ feature, message }) } }
     const tick = (ms = 80) => new Promise(resolve => setTimeout(resolve, ms))
     window.runTest = async () => {
       const result = { name: 'components.editor.CodeEditor', status: 'running', assertions: 0, passed: 0, failed: 0, failures: [], consoleErrors: [], coverage: { tested: [], total: cases, percent: 0 } }
       const editors = [...document.querySelectorAll('CodeEditor')]
       await Promise.all(editors.map(editor => editor.ready))
-      const languages = ['javascript', 'json', 'yaml', 'python', 'html', 'css']
+      const languages = ['javascript', 'json', 'yaml', 'python', 'html', 'css', 'markdown']
       assert(result, 'languages', languages.every(name => document.querySelector(`#${name}`).language === name), 'all six normalized languages initialize')
       await tick()
       const unhighlighted = languages.filter(name => !document.querySelector(`#${name} .cm-content span[class]`))
       assert(result, 'highlight', !unhighlighted.length, `all six language parsers produce highlighted tokens; missing=${unhighlighted.join(',')}`)
-      assert(result, 'path-detection', CodeMirror.languageFromPath('A/FILE.YAML?version=2') === 'yaml' && CodeMirror.languageFromPath('task.py') === 'python', 'extensions are detected case-insensitively')
+      assert(result, 'path-detection', CodeMirror.languageFromPath('A/FILE.YAML?version=2') === 'yaml' && CodeMirror.languageFromPath('task.py') === 'python' && CodeMirror.languageFromPath('README.MD') === 'markdown', 'extensions are detected case-insensitively')
       const explicit = document.querySelector('#explicit')
       const json = document.querySelector('#json')
       assert(result, 'lang-precedence', explicit.language === 'css', 'explicit lang overrides the path extension')
@@ -65,9 +67,48 @@
       let saveDetail; documentEditor.addEventListener('save', event => { saveDetail = event.detail }, { once: true })
       const saved = await documentEditor.save()
       assert(result, 'editor-document', documentEditor.documentMode && saved === saveDetail && saved.type === 'code' && saved.data.endsWith('print(2)'), 'path enables stateless Editor document load/save behavior with string data')
-      assert(result, 'registry', ['js', 'json', 'yaml', 'py', 'html', 'css'].every(extension => Editor.resolve({ path: `file.${extension}` })?.component === 'CodeEditor'), 'Editor registry resolves every supported extension')
+      assert(result, 'registry', ['js', 'json', 'yaml', 'py', 'html', 'css', 'md'].every(extension => Editor.resolve({ path: `file.${extension}` })?.component === 'CodeEditor'), 'Editor registry resolves every supported extension')
       const resources = performance.getEntriesByType('resource').map(entry => new URL(entry.name).pathname)
-      assert(result, 'on-demand-bundles', languages.every(name => resources.some(path => path.endsWith(`/libraries/CodeMirror${{ javascript: 'JavaScript', json: 'JSON', yaml: 'YAML', python: 'Python', html: 'HTML', css: 'CSS' }[name]}.js`))), 'each requested language loads its independent classic-script bundle')
+      assert(result, 'on-demand-bundles', languages.every(name => resources.some(path => path.endsWith(`/libraries/CodeMirror${{ javascript: 'JavaScript', json: 'JSON', yaml: 'YAML', python: 'Python', html: 'HTML', css: 'CSS', markdown: 'Markdown' }[name]}.js`))), 'each requested language loads its independent classic-script bundle')
+      const markdown = document.querySelector('#markdown')
+      await markdown.refreshPreview()
+      assert(result, 'markdown-preview', markdown.querySelector('.code-editor-markdown h1')?.textContent === 'Preview' && markdown.querySelector('.code-editor-markdown strong')?.textContent === 'ready', 'Markdown split preview uses the shared safe renderer')
+      markdown.value = '# Updated'
+      await tick(260)
+      assert(result, 'markdown-preview', markdown.querySelector('.code-editor-markdown h1')?.textContent === 'Updated' && performance.getEntriesByType('resource').some(entry => new URL(entry.name).pathname.endsWith('/libraries/Markdown.js')), 'Markdown preview refreshes and loads its renderer on demand')
+      markdown.setAttribute('allowhtml', ''); markdown.setAttribute('breaks', '')
+      markdown.value = 'one\ntwo\n\n<mark onclick="window.__unsafe=true">safe</mark><script>window.__unsafe=true<\/script>'
+      await tick(260)
+      assert(result, 'markdown-options', markdown.querySelector('.code-editor-markdown br') && markdown.querySelector('.code-editor-markdown mark')?.textContent === 'safe' && !markdown.querySelector('.code-editor-markdown [onclick], .code-editor-markdown script') && !window.__unsafe, 'Markdown preview supports breaks and sanitized raw HTML opt-in')
+      let modeDetail, previewDetail
+      markdown.addEventListener('modechange', event => { modeDetail = event.detail }, { once: true })
+      markdown.addEventListener('preview', event => { previewDetail = event.detail }, { once: true })
+      markdown.mode = 'preview'; await tick()
+      const previewOnly = markdown.mode === 'preview' && markdown.querySelector('.code-editor-source').hidden && !markdown.querySelector('.code-editor-preview').hidden
+      markdown.setMode('source'); await tick()
+      assert(result, 'preview-modes', previewOnly && markdown.mode === 'source' && !markdown.querySelector('.code-editor-source').hidden && markdown.querySelector('.code-editor-preview').hidden, 'source, split, and preview modes switch panes')
+      assert(result, 'preview-events', modeDetail === 'preview' && previewDetail?.language === 'markdown', 'modechange and preview events expose their public details')
+      const htmlPreview = document.querySelector('#htmlPreview')
+      let scriptRuns = 0
+      const onMessage = event => { if (event.data === 'html-script-ran') scriptRuns++ }
+      window.addEventListener('message', onMessage)
+      htmlPreview.value = '<h1>HTML</h1><script>parent.postMessage("html-script-ran", "*")<\/script>'
+      await htmlPreview.refreshPreview(); await tick(120)
+      const iframe = htmlPreview.querySelector('iframe')
+      assert(result, 'html-sandbox', iframe.srcdoc.includes('<h1>HTML</h1>') && iframe.getAttribute('sandbox') === '' && scriptRuns === 0, 'HTML renders in a sandbox and scripts are disabled by default')
+      htmlPreview.setAttribute('previewscripts', '')
+      await tick(160)
+      assert(result, 'html-script-opt-in', iframe.getAttribute('sandbox') === 'allow-scripts' && !iframe.sandbox.contains('allow-same-origin') && scriptRuns === 1, 'previewscripts executes inside an opaque-origin sandbox without same-origin access')
+      htmlPreview.value = htmlPreview.value.replace('HTML</h1>', 'Changed</h1>')
+      await tick(260)
+      const didNotAutoRun = scriptRuns === 1 && htmlPreview.classList.contains('code-editor-preview-stale')
+      await htmlPreview.refreshPreview(); await tick(160)
+      assert(result, 'html-script-manual-refresh', didNotAutoRun && scriptRuns === 2 && !htmlPreview.classList.contains('code-editor-preview-stale'), 'script-enabled HTML waits for explicit refresh after edits')
+      htmlPreview.setAttribute('previewauto', '')
+      htmlPreview.value = htmlPreview.value.replace('Changed</h1>', 'Automatic</h1>')
+      await tick(360)
+      assert(result, 'html-script-auto', scriptRuns === 3 && iframe.srcdoc.includes('Automatic</h1>'), 'previewauto explicitly reruns script-enabled HTML after edits')
+      window.removeEventListener('message', onMessage)
       result.coverage.tested = [...cases]; result.coverage.percent = 100; result.status = result.failed ? 'failed' : 'passed'; document.querySelector('#result').textContent = JSON.stringify(result, null, 2); return result
     }
     document.querySelector('#runAll').onclick = window.runTest

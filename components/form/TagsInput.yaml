@@ -1,5 +1,5 @@
 name: TagsInput
-purpose: Enter a list of unique string tags; Enter, comma, or space commits a tag.
+purpose: Enter a list of unique string tags; Enter or leaving the input commits a tag. Spaces and commas remain valid tag content.
 
 attributes:
   placeholder: string; input placeholder (the built-in default is localized)

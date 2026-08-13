@@ -1,0 +1,46 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>components.editor.MarkdownViewer tests</title>
+  <script src="../../ui.js" components="MarkdownViewer"></script>
+</head>
+<body>
+  <MarkdownViewer id="viewer" linktarget="_blank"></MarkdownViewer>
+  <MarkdownViewer id="safe" allowhtml></MarkdownViewer>
+  <button id="runAll" type="button">测试全部</button><pre id="result"></pre>
+  <script>
+    const cases = ['markdown', 'gfm', 'value-bind', 'breaks', 'raw-html-default', 'sanitize', 'links', 'api-scope', 'render-event']
+    const assert = (result, feature, condition, message) => { result.assertions++; if (condition) result.passed++; else { result.failed++; result.failures.push({ feature, message }) } }
+    window.runTest = async () => {
+      const result = { name: 'components.editor.MarkdownViewer', status: 'running', assertions: 0, passed: 0, failed: 0, failures: [], consoleErrors: [], coverage: { tested: [], total: cases, percent: 0 } }
+      const viewer = document.querySelector('#viewer')
+      viewer.value = '# Title\n\nA **bold** paragraph.\n\n```js\nconst ok = true\n```'
+      assert(result, 'markdown', viewer.querySelector('h1')?.textContent === 'Title' && viewer.querySelector('strong')?.textContent === 'bold' && viewer.querySelector('pre code')?.textContent.includes('const ok'), 'headings, emphasis, and fenced code render')
+      viewer.value = '| A | B |\n| - | - |\n| 1 | 2 |\n\n~~gone~~\n\n- [x] Ready'
+      assert(result, 'gfm', viewer.querySelectorAll('table td').length === 2 && viewer.querySelector('s')?.textContent === 'gone' && viewer.querySelector('input[type=checkbox]')?.checked, 'tables, strikethrough, and task lists render')
+      viewer.dispatchEvent(new CustomEvent('bind', { detail: 'Bound **value**' }))
+      assert(result, 'value-bind', viewer.value === 'Bound **value**' && viewer.querySelector('strong')?.textContent === 'value', 'value property and bind replace the source')
+      viewer.setAttribute('breaks', '')
+      viewer.value = 'one\ntwo'
+      assert(result, 'breaks', viewer.querySelector('br') !== null, 'breaks converts paragraph line breaks')
+      viewer.removeAttribute('allowhtml')
+      viewer.value = '<mark>raw</mark>'
+      assert(result, 'raw-html-default', !viewer.querySelector('mark') && viewer.textContent.includes('<mark>'), 'raw HTML is escaped by default')
+      const safe = document.querySelector('#safe')
+      safe.value = '<mark onclick="window.__unsafe=true">ok</mark><script>window.__unsafe=true<\/script><img src=x onerror="window.__unsafe=true">'
+      assert(result, 'sanitize', safe.querySelector('mark')?.textContent === 'ok' && !safe.querySelector('[onclick],script,[onerror]') && !window.__unsafe, 'allowhtml remains sanitized')
+      viewer.value = '[Open](https://example.com)'
+      const link = viewer.querySelector('a')
+      assert(result, 'links', link?.target === '_blank' && link?.rel.includes('noopener'), 'linktarget decorates links safely')
+      assert(result, 'api-scope', !('load' in viewer) && !('save' in viewer) && !viewer.documentMode, 'viewer has no document transport API')
+      let detail
+      viewer.addEventListener('render', event => { detail = event.detail }, { once: true })
+      viewer.value = 'event'
+      assert(result, 'render-event', detail?.source === 'event' && detail?.html.includes('event') && viewer.getHTML().includes('event'), 'render event and getHTML expose the rendered result')
+      result.coverage.tested = [...cases]; result.coverage.percent = 100; result.status = result.failed ? 'failed' : 'passed'; document.querySelector('#result').textContent = JSON.stringify(result, null, 2); return result
+    }
+    document.querySelector('#runAll').onclick = window.runTest
+  </script>
+</body>
+</html>

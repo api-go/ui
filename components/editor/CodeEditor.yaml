@@ -1,18 +1,24 @@
 name: CodeEditor
-purpose: Edit source text with syntax highlighting, syntax diagnostics, reindentation, AutoForm binding, and optional Editor document transport.
+purpose: Edit source text with syntax highlighting, diagnostics, reindentation, and optional Markdown or sandboxed HTML preview.
 
 attributes:
-  lang: "javascript|js|json|yaml|yml|python|py|html|css; overrides path extension detection."
+  lang: "javascript|js|json|yaml|yml|python|py|html|css|markdown|md; overrides path extension detection."
   path: File path used for language detection and optional Editor document transport.
   api: Optional Editor document endpoint; requires path for automatic loading and saving.
   version: Optional document history version passed to Editor transport.
   value: Initial source string.
   theme: "light|dark; defaults to light."
   readonly: boolean
+  mode: "source|split|preview; Markdown and HTML only, otherwise source."
+  previewscripts: boolean; allow scripts in HTML preview inside a sandbox without same-origin permission.
+  previewauto: boolean; rerun script-enabled HTML after each edit; otherwise explicit refresh is required.
+  allowhtml: boolean; parse raw HTML inside Markdown preview before sanitizing it.
+  breaks: boolean; convert Markdown paragraph line breaks to br elements.
 
 properties:
   value: Current source string; compatible with $bind and AutoForm type code.
   language: Normalized active language name.
+  mode: Current source, split, or preview mode; assigning it also updates the mode attribute.
   view: CodeMirror EditorView after ready resolves.
   ready: Promise resolving to the component after its on-demand language bundle loads.
   diagnostics: Current syntax diagnostics.
@@ -22,6 +28,8 @@ methods:
   reindent: Reindent the complete document using the active language indentation rules and return value.
   validate: Return current parser syntax diagnostics and update diagnostics.
   focus: Focus the CodeMirror editing surface.
+  setMode: "setMode(source|split|preview) — switch panes and return the effective mode."
+  refreshPreview: Render the current Markdown or HTML source and return a Promise<boolean>.
   load: Added by Editor in document mode; load source text from api and path.
   save: Added by Editor in document mode; save a code document envelope.
 
@@ -30,10 +38,12 @@ events:
   input: Bubbles after an interactive document change for $bind compatibility.
   change: "detail=source string after an interactive document change or reindent."
   diagnostics: "detail=array of parser syntax diagnostics whenever the result changes."
+  modechange: "detail=effective source|split|preview mode."
+  preview: "detail={ language, source } after Markdown or HTML preview refreshes."
   loaded: In document mode, detail is the loaded Editor document envelope.
   save: In document mode, cancelable with detail equal to the outgoing document envelope.
   saved: In document mode, detail is the save response.
-  error: "detail=Error from language loading or Editor transport."
+  error: "detail=Error from language, preview, or Editor transport loading."
 
 languages:
   javascript: ".js|.mjs|.cjs; aliases js and javascript."
@@ -42,6 +52,14 @@ languages:
   python: ".py; aliases py and python."
   html: ".html|.htm; aliases html and htm."
   css: .css
+  markdown: ".md|.markdown; aliases md and markdown."
+
+preview:
+  markdown: Sanitized Markdown rendered in the preview pane; its parser library loads only when first needed.
+  html: Source assigned to iframe srcdoc. Scripts are disabled by default.
+  html_scripts: previewscripts uses sandbox="allow-scripts" without allow-same-origin, top navigation, forms, popups, or downloads.
+  refresh_policy: Markdown and script-free HTML update after edits. Script-enabled HTML becomes stale and waits for Refresh unless previewauto is present.
+  responsive: Split mode uses equal columns and changes to stacked equal regions below the Bootstrap md breakpoint.
 
 validation:
   scope: Parser-level syntax errors only; no code execution, semantic lint, type checking, or full formatter.
@@ -53,6 +71,8 @@ reindent:
 rules:
   - Explicit lang takes precedence over path extension; JavaScript is the fallback.
   - The shared CodeMirror core loads once and each language bundle loads only when first requested.
+  - Preview modes are available only for Markdown and HTML; other languages remain in source mode.
+  - HTML preview isolation reduces page privileges but is not a substitute for a separate origin when running untrusted hostile code.
   - AutoForm mode is a plain string control and does not enable Editor transport.
   - Editor document mode is enabled only by path, api, state.path, or version and stores source text in state.data.
 
@@ -60,6 +80,10 @@ examples:
   direct: |
     <CodeEditor path="scripts/app.js" value="function run(){\nconsole.log('ok')\n}"></CodeEditor>
     <button $onclick="document.querySelector('CodeEditor').reindent()">Reindent</button>
+  markdown_split: |
+    <CodeEditor path="README.md" mode="split" style="height:480px" value="# Hello"></CodeEditor>
+  html_script_preview: |
+    <CodeEditor path="page.html" mode="split" previewscripts style="height:480px"></CodeEditor>
   autoform: |
     <script>
       const formData = { config: '{"enabled":true}' }
@@ -70,6 +94,7 @@ examples:
     <CodeEditor api="/documents" path="scripts/task.py"></CodeEditor>
 
 related:
+  - MarkdownViewer.yaml
   - ../../utilities/Editor.yaml
   - ../base/AutoForm.yaml
 

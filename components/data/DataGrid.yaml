@@ -22,7 +22,8 @@ state:
 editing:
   formTypes: [text, number, select, checkbox, radio, switch, textarea, date, datetime, TagsInput, DatePicker, ColorPicker, IconPicker]
   rule: Double-click an editable cell, then click outside the editor or press Enter to save its bound value.
-  field_settings: Field Name and Field Type are common settings. Advanced Settings shows read-only Field ID and Table ID, plus editable Database Type, Index, and Memo. Changing Field Type assigns its default database type; Database Type may be manually overridden.
+  field_settings: Field Name, Field Type, and type-specific options are shown first. Advanced mode exposes a friendly Database Type selector covering i/ui/bi/ubi/ti/v[N]/c[N]/t/dt/d/tm/f/ff/b/bb; VARCHAR and CHAR show an inline length input and still submit one encoded type string. It also exposes Index, Memo, AutoForm Control Attributes JSON, and Display Condition.
+  row_form: Double-click the trailing tinted background of a row to open an AutoForm bound to that local row. Previous/Next and Ctrl/Cmd+ArrowLeft/ArrowRight switch rows. Changes remain local until the grid Save action.
 
 filtering:
   rule: Click a column header, enter a value in its menu, and the grid filters immediately. Use the menu controls for sort and reset.
@@ -35,12 +36,14 @@ field:
     name: Database column name and row value key.
     type: Database storage type, for example v100, v30, ff, b, or dt. It is preserved when editing an unchanged UI type; changing settings.type assigns that UI type's default storage type.
     memo: Field description.
-    settings: "{ type, label, options, attrs, width, pinned, decimals, prefix, suffix, thousandSep, labelOn, labelOff }; type is the application/editor type."
+    settings: "Extensible field metadata. Built-ins are { type, label, options, attrs, if, width, pinned, decimals, prefix, suffix, thousandSep, labelOn, labelOff }. Applications may add custom keys. DataGrid interprets only documented built-ins; only attrs maps to AutoForm control attributes, so the complete settings object must never be expanded onto a native control. Omit absent attrs such as pattern instead of storing undefined."
     formatter: Function receiving value and field.
 
 methods:
   addRow: Add an empty row.
   deleteSelectedRow: Delete selected rows.
+  getSelectedRows: Return the unique data rows touched by the current cell selections, in row order.
+  getQuery: Return the current structured filter and sort payload used by an API-backed grid.
   saveChanges: Dispatch save.
   addField: Add a field.
   editField: Edit the active field.
@@ -48,6 +51,7 @@ methods:
   editCell: Open a cell editor.
   applySortFilter: Apply current or supplied sorting and filters.
   onScroll: Refresh the virtual row window after scrolling.
+  openRowForm: Open the local row AutoForm by absolute row index.
 
 events:
   save:
@@ -65,8 +69,11 @@ api:
     setField: "request { fields: [field] }; called after adding or editing a field."
     removeField: "request { fields: [field] }; called after deleting a field."
     save: "request { data: list }; called by Save."
-    remove: "request { data: items }; called by Delete."
+    remove: "request { data: ids }; called by Delete; ids contains stable record ID strings, not row objects."
   behavior: Sorting and filters build validated filter plus sort structures and reload from the server. Pending edits require confirmation before a reload.
+  field_layout: Header drag reorder writes Field.priority; completed column resize writes settings.width. API-backed grids immediately call setField with complete field records, so these metadata-only operations do not make the row Save button dirty.
+  row_order: A real data field named priority with database type ff becomes a 42px drag handle. It follows the same optional Pin Column setting as ordinary fields and is not pinned implicitly. Reordering is available only with no active user sort or filter. Normally only the moved row is saved with a midpoint priority; exhausted floating-point gaps re-space at most 21 nearby rows rather than the whole table.
+  empty_table: When fields returns an empty array, DataGrid does not query the not-yet-created physical table and shows Add Field in the footer.
 
 advanced_mode:
   behavior: The footer toggle appends read-only internal columns id, creator, createTime, updater, and updateTime. They are not added to fields or included in field save requests.
@@ -96,6 +103,7 @@ rules:
   - Give the DataGrid or its parent an explicit height so virtual scrolling has a viewport.
   - Treat underscore-prefixed state fields as internal read-only diagnostics.
   - Custom field editors must be registered in AutoForm before use.
+  - The trailing row editor is the tinted row div background after the last real field, not a synthetic field or pseudo-element. Real cells paint their own background, so cell and row-background double-clicks remain distinct without an event-capturing overlay.
 
 examples:
   local_and_api: |

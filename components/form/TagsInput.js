@@ -28,6 +28,10 @@ globalThis.Component.register('TagsInput', container => {
             container._change()
         }
     }
+    container._commitInput = input => {
+        container._addTag(input.value)
+        input.value = ''
+    }
 }, globalThis.Util.makeDom(/*html*/`
 <div class="form-control d-flex flex-wrap gap-1 align-items-center" style="min-height:38px;cursor:text">
   <template $each="this.state.value">
@@ -42,13 +46,11 @@ globalThis.Component.register('TagsInput', container => {
                 }
         })}" $text="item"></button>
   </template>
-  <input type="text" class="border-0 shadow-none py-0 px-2 flex-grow-1 bg-transparent" $placeholder="this.placeholder || '{#new tag name#}'" style="min-width:100px;width:0;outline:none" $onchange="event.stopPropagation()" $oninput="event.stopPropagation()" $onkeydown="${globalThis.Util.getFunctionBody(function (event) {
+  <input type="text" class="border-0 shadow-none py-0 px-2 flex-grow-1 bg-transparent" $placeholder="this.placeholder || '{#new tag name#}'" style="min-width:100px;width:0;outline:none" $onchange="event.stopPropagation()" $oninput="event.stopPropagation()" $onblur="this._commitInput(thisNode)" $onkeydown="${globalThis.Util.getFunctionBody(function (event) {
                 if (event.isComposing) return
-                if (['Enter', ',', ' '].includes(event.key)) {
+                if (event.key === 'Enter') {
                         event.preventDefault()
-                        const v = thisNode.value.trim()
-                        this._addTag(v)
-                        thisNode.value = ''
+                        this._commitInput(thisNode)
                 }
         })}">
 </div>

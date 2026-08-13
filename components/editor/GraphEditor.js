@@ -255,7 +255,7 @@ globalThis.Component.register('GraphEditor', container => {
           </article>
         </template>
         <template $each="this.state.edgeLayouts || []" as="edge" index="edgeIndex" key="id">
-          <button type="button" class="graph-edge-label btn btn-sm btn-light border position-absolute" $class="this.state.selectedEdgeId===edge.id?'border-primary':''" $style="'left:'+edge.x+'px;top:'+edge.y+'px'" $onclick="event.stopPropagation();this.selectEdge(edge)" $ondblclick="event.stopPropagation();this.editEdge(edge)"><span slot-id="edge-label" $text="edge.label || '↗'"></span></button>
+          <button type="button" class="graph-edge-label btn btn-sm btn-outline-secondary position-absolute" $class="this.state.selectedEdgeId===edge.id?'border-primary':''" $style="'left:'+edge.x+'px;top:'+edge.y+'px'" $onclick="event.stopPropagation();this.selectEdge(edge)" $ondblclick="event.stopPropagation();this.editEdge(edge)"><span slot-id="edge-label" $text="edge.label || '↗'"></span></button>
         </template>
       </div>
       <div slot-id="empty" $if="!this.state.data.nodes.length" class="position-absolute text-muted">{#No nodes#}</div>

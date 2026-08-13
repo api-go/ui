@@ -3,7 +3,7 @@ const { test, expect } = require('../tools/playwright.cjs');
 test('ui.js expands base, form, data, and editor component groups', async ({ page }) => {
   await page.goto('/ui/test/groups.html');
 
-  const names = ['API', 'AutoForm', 'List', 'Modal', 'Dialog', 'Toast', 'Nav', 'Resizer', 'DatePicker', 'ColorPicker', 'IconPicker', 'TagsInput', 'DataGrid', 'Chart', 'Kanban', 'Mindmap', 'GraphEditor', 'CodeEditor'];
+  const names = ['API', 'AutoForm', 'List', 'Modal', 'Dialog', 'Toast', 'Nav', 'Resizer', 'DatePicker', 'ColorPicker', 'IconPicker', 'TagsInput', 'DataGrid', 'Chart', 'Kanban', 'Mindmap', 'GraphEditor', 'CodeEditor', 'MarkdownViewer'];
   expect(await page.evaluate(items => items.every(name => Component.exists(name)), names)).toBe(true);
   await expect(page.locator('#datePicker')).toBeAttached();
   await expect(page.locator('#tagsInput')).toBeAttached();
@@ -14,6 +14,7 @@ test('ui.js expands base, form, data, and editor component groups', async ({ pag
   await expect(page.locator('#graphEditor.graph-editor-root')).toBeAttached();
   await page.locator('#codeEditor').evaluate(editor => editor.ready);
   await expect(page.locator('#codeEditor .cm-editor')).toBeAttached();
+  await expect(page.locator('#markdownViewer h1')).toHaveText('Ready');
   expect(await page.evaluate(() => typeof Editor === 'object' && typeof SortableAPI === 'object' && typeof GraphDocument === 'object' && typeof GraphCanvas === 'object' && Chart.version === '4.5.1')).toBe(true);
 });
 
@@ -24,7 +25,10 @@ test('ui.min.js loads minified libraries, utilities, and components', async ({ p
   await expect(page.locator('#minMindmap.mindmap-root')).toBeAttached();
   await expect(page.locator('#minGraph.graph-editor-root')).toBeAttached();
   await page.locator('#minCode').evaluate(editor => editor.ready);
+  await page.locator('#minMarkdownCode').evaluate(editor => editor.ready.then(() => editor.refreshPreview()));
   await expect(page.locator('#minCode .cm-editor')).toBeAttached();
+  await expect(page.locator('#minViewer h1')).toHaveText('Minified');
+  await expect(page.locator('#minMarkdownCode .code-editor-markdown h1')).toHaveText('Preview');
   const resources = await page.evaluate(() => performance.getEntriesByType('resource').map(entry => new URL(entry.name).pathname));
   expect(resources.some(path => path.endsWith('/libraries/ChartJS.min.js'))).toBe(true);
   expect(resources.some(path => path.endsWith('/libraries/SortableJS.min.js'))).toBe(true);
@@ -32,7 +36,10 @@ test('ui.min.js loads minified libraries, utilities, and components', async ({ p
   expect(resources.some(path => path.endsWith('/components/editor/GraphEditor.min.js'))).toBe(true);
   expect(resources.some(path => path.endsWith('/libraries/CodeMirror.min.js'))).toBe(true);
   expect(resources.some(path => path.endsWith('/libraries/CodeMirrorYAML.min.js'))).toBe(true);
+  expect(resources.some(path => path.endsWith('/libraries/CodeMirrorMarkdown.min.js'))).toBe(true);
+  expect(resources.some(path => path.endsWith('/libraries/Markdown.min.js'))).toBe(true);
   expect(resources.some(path => path.endsWith('/components/editor/CodeEditor.min.js'))).toBe(true);
+  expect(resources.some(path => path.endsWith('/components/editor/MarkdownViewer.min.js'))).toBe(true);
 });
 
 test('Chart paints pixels without an unload permissions warning', async ({ page }) => {

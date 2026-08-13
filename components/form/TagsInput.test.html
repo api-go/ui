@@ -29,7 +29,7 @@
     <pre id="result" class="h-25 overflow-auto border rounded bg-body p-2 mb-0 flex-shrink-0 small"></pre>
   </div>
   <script>
-    const cases = ['placeholder', 'value', 'add', 'unique', 'remove', 'change', 'autoform']
+    const cases = ['placeholder', 'value', 'add', 'blur', 'content', 'unique', 'remove', 'change', 'autoform']
     const consoleErrors = []
     const originalConsoleError = console.error
     console.error = (...args) => { consoleErrors.push(args.map(String).join(' ')); originalConsoleError(...args) }
@@ -62,6 +62,12 @@
       textInput.value = 'owner'; textInput.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true })); await tick()
       assert(result, 'add', input.value.includes('owner'), 'Enter adds a trimmed tag')
       assert(result, 'change', Array.isArray(changed) && changed.includes('owner'), 'change event exposes the complete tag array')
+      textInput.value = 'reviewed'; textInput.dispatchEvent(new FocusEvent('blur')); await tick()
+      assert(result, 'blur', input.value.includes('reviewed') && textInput.value === '', 'blur commits unfinished input as a tag')
+      textInput.value = 'New York, USA'; textInput.dispatchEvent(new KeyboardEvent('keydown', { key: ',', bubbles: true })); await tick()
+      assert(result, 'content', textInput.value === 'New York, USA' && !input.value.includes('New York, USA'), 'spaces and commas remain valid unfinished tag content')
+      textInput.dispatchEvent(new FocusEvent('blur')); await tick()
+      assert(result, 'content', input.value.includes('New York, USA'), 'blur commits a tag containing spaces and commas')
       textInput.value = 'owner'; textInput.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true })); await tick()
       assert(result, 'unique', input.value.filter(tag => tag === 'owner').length === 1, 'duplicate tags are ignored')
       const owner = [...input.querySelectorAll('button')].find(button => button.textContent === 'owner')

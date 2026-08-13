@@ -22,11 +22,11 @@ schema:
   item: "{name, type, label?, setting?, options?, placeholder?, if?}"
   types: "text|password|email|number|date|datetime|file|select|checkbox|radio|switch|textarea|label|divider|DatePicker|ColorPicker|IconPicker|TagsInput|code"
   options: "select/checkbox/radio options: ['A', {value:'b', label:'B'}]"
-  setting: "attributes copied to the control; DatePicker rangeEnd is an example"
+  setting: "native/control attributes copied to the control. Do not place schema metadata such as type or options here. Omit absent values instead of supplying undefined. Boolean required, readonly, and disabled values may be JavaScript expression strings evaluated against this.data, for example { readonly: '!!this.data.id' }."
   if: 'JavaScript expression evaluated by `$$if`; use component data through `this.data`, for example `this.data.role === "admin"`.'
   label: Read-only text displaying item.value or data[item.name].
   divider: Full-width section divider; label is its optional section title.
-  database_fields: 'Data-API field definitions with tableID are accepted and converted for rendering only: name stays the data key; settings.type is the control type; settings.options are control options; settings.attrs become control attributes. The original fields and data are not changed.'
+  database_fields: 'Data-API field definitions with tableID are accepted and converted for rendering only: name stays the data key; settings.type is the control type; settings.options are control options; only settings.attrs become control attributes. Other custom settings remain field metadata and must not be expanded onto the native control. The original fields and data are not changed.'
 
 submit:
   source: Set api to an API element, or set request.url.
@@ -39,7 +39,8 @@ examples:
     <script>
       const profile = { name: 'Ada', role: 'admin', tags: ['math'] }
       const profileSchema = [
-        { name: 'name', label: 'Name', type: 'text', setting: { required: true } },
+      { name: 'name', label: 'Name', type: 'text', setting: { required: true } },
+      { name: 'code', label: 'Code', type: 'text', setting: { readonly: '!!this.data.id' } },
         { name: 'role', label: 'Role', type: 'select', options: [{ value: 'admin', label: 'Admin' }, { value: 'user', label: 'User' }] },
         { name: 'tags', label: 'Tags', type: 'TagsInput' }
       ]

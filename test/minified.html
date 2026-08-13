@@ -2,7 +2,7 @@
 <html>
 <head>
   <meta charset="utf-8">
-  <script src="/ui/ui.min.js" components="Chart,Kanban,Mindmap,GraphEditor,CodeEditor"></script>
+  <script src="/ui/ui.min.js" components="Chart,Kanban,Mindmap,GraphEditor,CodeEditor,MarkdownViewer"></script>
 </head>
 <body>
   <Chart id="minChart"></Chart>
@@ -10,5 +10,7 @@
   <Mindmap id="minMindmap"></Mindmap>
   <GraphEditor id="minGraph"></GraphEditor>
   <CodeEditor id="minCode" path="config/app.yaml" value="enabled: true"></CodeEditor>
+  <MarkdownViewer id="minViewer" value="# Minified"></MarkdownViewer>
+  <CodeEditor id="minMarkdownCode" path="README.md" mode="preview" value="# Preview"></CodeEditor>
 </body>
 </html>

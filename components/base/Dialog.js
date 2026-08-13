@@ -21,32 +21,34 @@ globalThis.Component.register('Dialog', container => {
     button.click()
   }
   container.addEventListener('keydown', onKeydown)
-  container.addEventListener('shown.bs.modal', () => actionButtons().at(-1)?.focus())
+  container.addEventListener('shown.bs.modal', () => {
+    document.querySelectorAll('.modal-backdrop').item(document.querySelectorAll('.modal-backdrop').length - 1)?.classList.add('dialog-backdrop')
+    actionButtons().at(-1)?.focus()
+  })
 }, globalThis.Util.makeDom(/*html*/`
 <div class="modal fade" data-bs-backdrop="static">
   <div class="modal-dialog modal-dialog-centered">
-    <div $class="modal-content border-\${this.state?.type || 'primary'} border-2 shadow-lg">
+    <div $class="modal-content bg-body text-body border-\${this.state?.type || 'primary'} border-2 shadow-lg">
       <template $if="this.state?.title">
-        <div $class="modal-header py-2 px-3 bg-light fw-bold text-\${this.state?.type || 'primary'}" $text="this.state?.title"></div>
+        <div $class="modal-header py-2 px-3 bg-body-tertiary fw-bold text-\${this.state?.type || 'primary'}" $text="this.state?.title"></div>
       </template>
       <div class="modal-body p-4 text-center">
-        <div $text="this.state?.message" class="fs-5 text-secondary"></div>
+        <div $text="this.state?.message" class="fs-5 text-body-secondary"></div>
       </div>
-      <div class="modal-footer py-2 px-3 bg-light border-0 d-flex justify-content-center gap-3">
+      <div class="modal-footer py-2 px-3 bg-body-tertiary border-0 d-flex justify-content-center gap-3">
         <template $each="this.state?.buttons">
-        <button type="button" $class="'btn px-4 btn-'+(index === this.state.buttons.length-1 ? (this.state.type === 'body' ? 'primary' : this.state.type) : 'secondary')" $onclick="this.result=index+1; this.hide()" $text="item"></button>
+        <button type="button" $class="'btn btn-sm px-3 btn-'+(index === this.state.buttons.length-1 ? (this.state.type === 'body' ? 'primary' : this.state.type) : 'secondary')" $onclick="this.result=index+1; this.hide()" $text="item"></button>
         </template>
       </div>
     </div>
   </div>
 </div>
-`))
-,
-globalThis.Util.makeDom(/*html*/`
+`), globalThis.Util.makeDom(/*html*/`
 <style>
   Dialog.modal { background: transparent; border: 0; padding: 0; }
+  .modal-backdrop.dialog-backdrop.show { opacity: .25; }
 </style>
-`)
+`))
 
 let _dialogCount = 0
 globalThis.Dialog = {

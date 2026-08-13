@@ -12,7 +12,7 @@
     const treeUsers = [{ id: 'root', label: 'Root', summary: 'Parent node', parent: '' }, ...Array.from({ length: 20 }, (_, index) => ({ id: 'child-' + (index + 1), label: 'Child ' + (index + 1), summary: 'Tree child', parent: 'root' }))]
     const fastUsers = Array.from({ length: 1000 }, (_, index) => ({ id: index + 1, label: 'Virtual user ' + (index + 1), summary: 'Virtual scrolling row' }))
     const searchableUsers = Array.from({ length: 100 }, (_, index) => ({ id: index + 1, label: index === 49 ? 'Beta' : (index % 2 ? 'Alpha ' : 'Gamma ') + (index + 1), summary: 'Searchable row ' + (index + 1) }))
-    const customUsers = [{ key: 'ada', title: 'Ada', desc: 'Admin' }, { key: 'lin', title: 'Lin', desc: 'Editor' }]
+    const customUsers = [{ key: 'ada', title: 'A very long table name that must stay on one line', desc: 'A very long table memo that must also stay on one line' }, { key: 'lin', title: 'Lin', desc: 'Editor' }]
     State.nav = 'normal'
   </script>
 </head>
@@ -38,7 +38,7 @@
     <main class="flex-fill overflow-hidden">
       <section class="h-100 d-flex flex-column" $if="State.nav === 'normal'"><List id="normalList" class="flex-fill border rounded bg-body" $.state.list="users" auto-select></List></section>
 
-      <section class="h-100 d-flex flex-column" $if="State.nav === 'actions'"><List id="actionsList" class="flex-fill border rounded bg-body" $.state.list="users" auto-select><button slot="item-actions" class="actions-action btn btn-sm btn-outline-secondary" $onclick="event.stopPropagation()">Edit</button></List></section>
+      <section class="h-100 d-flex flex-column" $if="State.nav === 'actions'"><List id="actionsList" class="flex-fill border rounded bg-body" $.state.list="users" auto-select><button slot="item-actions" class="actions-action btn btn-sm btn-outline-secondary text-nowrap flex-shrink-0" $onclick="event.stopPropagation()">Edit</button></List></section>
 
       <section class="h-100 d-flex flex-column" $if="State.nav === 'group'"><List id="groupList" class="flex-fill border rounded bg-body" mode="group" $.state.groups="groups" $.state.list="groupedUsers" auto-select-group></List></section>
 
@@ -74,12 +74,12 @@
     async function verify(id, result) {
       State.nav = id; await tick(); const list = currentList(id)
       if (id === 'normal') { list.state.selectedItem = null; assert(result, 'normal', list.querySelectorAll('.list-group-item').length === 60, 'normal list renders 60 rows'); list.querySelector('.list-group-item').click(); assert(result, 'select', list.state.selectedItem === 1, 'row click selects item') }
-      if (id === 'actions') { assert(result, 'actions', list.querySelectorAll('.actions-action').length === 60, 'actions render for every row'); list.querySelector('.actions-action').click(); assert(result, 'actions', list.state.selectedItem == null, 'action does not select row') }
+      if (id === 'actions') { const action = list.querySelector('.actions-action'); const style = action && getComputedStyle(action); assert(result, 'actions', list.querySelectorAll('.actions-action').length === 60 && action.classList.contains('text-nowrap') && style?.whiteSpace === 'nowrap', 'actions preserve application-provided layout classes'); action.click(); assert(result, 'actions', list.state.selectedItem == null, 'action does not select row') }
       if (id === 'group') { list.state.selectedGroup = null; assert(result, 'group', list.querySelectorAll('.fw-bold').length === 3, 'three group headers render'); list.querySelector('.fw-bold').click(); assert(result, 'group-select', list.state.selectedGroup === 'ops', 'group click selects group') }
       if (id === 'tree') { list.collapsed.root = false; list.state.list = [...treeUsers]; await tick(); assert(result, 'tree', list.querySelectorAll('.list-group-item').length === 21, 'tree renders all nodes'); const toggle = list.querySelector('.bi-caret-down-fill'); assert(result, 'collapse', !!toggle, 'expanded root has a collapse control'); if (toggle) { toggle.click(); await tick(); assert(result, 'collapse', list.querySelectorAll('.list-group-item').length === 1, 'tree collapses children') } }
       if (id === 'fast') { assert(result, 'fast', list.querySelectorAll('.list-group-item').length < 1000, 'virtual list renders a window'); list.scrollTop = list.scrollHeight; list.dispatchEvent(new Event('scroll')); await tick(); assert(result, 'fast', list.scrollTop > 0, 'List itself scrolls') }
       if (id === 'filterSort') { assert(result, 'filter', list.querySelectorAll('.list-group-item').length === 1, 'Beta filter keeps one item'); filterInput.value = ''; filterInput.dispatchEvent(new Event('input')); sortInput.value = '-label'; sortInput.dispatchEvent(new Event('change')); await tick(); assert(result, 'sort', list.querySelector('.list-group-item')?.textContent.includes('Gamma'), 'descending order puts Gamma first') }
-      if (id === 'fields') assert(result, 'custom-fields', list.textContent.includes('Ada') && list.textContent.includes('Admin'), 'custom field mapping renders title and desc')
+      if (id === 'fields') { const row = list.querySelector('.list-group-item'); const text = row?.querySelectorAll('.text-truncate') || []; assert(result, 'custom-fields', list.textContent.includes('A very long table name') && text.length === 2 && row.classList.contains('w-100'), 'custom fields render in constrained single-line label and summary areas') }
     }
     function finish(testResult, ids) { testResult.coverage.tested = ids.flatMap(id => featureMap[id]); testResult.coverage.percent = Math.round(testResult.coverage.tested.length / allFeatures.length * 100); testResult.consoleErrors = [...consoleErrors]; testResult.status = testResult.failed || testResult.consoleErrors.length ? 'failed' : 'passed'; const statusNode = document.querySelector('#status'); const coverageNode = document.querySelector('#coverage'); statusNode.className = 'badge text-bg-' + (testResult.status === 'passed' ? 'success' : 'danger'); statusNode.textContent = testResult.status === 'passed' ? '通过' : '失败'; coverageNode.textContent = `覆盖 ${testResult.coverage.percent}%`; document.querySelector('#result').textContent = JSON.stringify(testResult, null, 2); window.testResult = testResult; return testResult }
     window.runCase = async id => { consoleErrors.length = 0; const testResult = newResult(id); await verify(id, testResult); return finish(testResult, [id]) }

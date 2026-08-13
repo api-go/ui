@@ -1,13 +1,23 @@
 /**
- * CodeMirror-backed source editor and AutoForm string control.
+ * CodeMirror-backed source editor with optional Markdown and sandboxed HTML preview.
  */
 globalThis.Component.register('CodeEditor', container => {
   const cm = globalThis.CodeMirror
   const host = container.querySelector('.code-editor-host')
+  const sourcePane = container.querySelector('.code-editor-source')
+  const previewPane = container.querySelector('.code-editor-preview')
+  const markdownPreview = container.querySelector('.code-editor-markdown')
+  const htmlPreview = container.querySelector('.code-editor-html')
+  const toolbar = container.querySelector('.code-editor-toolbar')
+  const refreshButton = container.querySelector('[data-action=refresh]')
+  const modeButtons = [...container.querySelectorAll('[data-mode]')]
   const state = container.state
   let view = null
   let value = container.getAttribute('value') || ''
+  let mode = 'source'
   let languageSequence = 0
+  let previewSequence = 0
+  let previewTimer = null
   let diagnosticSignature = ''
   let destroyed = false
   let suppressChange = false
@@ -17,11 +27,15 @@ globalThis.Component.register('CodeEditor', container => {
   const readonlyCompartment = new cm.Compartment()
   const path = () => state.path ?? container.getAttribute('path') ?? ''
   const requestedLanguage = () => cm.resolveLanguage({ lang: container.getAttribute('lang'), path: path() })
+  const previewable = () => container.language === 'markdown' || container.language === 'html'
+  const requestedMode = () => ['source', 'split', 'preview'].includes(container.getAttribute('mode')) ? container.getAttribute('mode') : 'source'
   const readonlyExtensions = () => [
     cm.EditorState.readOnly.of(container.hasAttribute('readonly')),
     cm.EditorView.editable.of(!container.hasAttribute('readonly'))
   ]
   const themeExtension = () => container.getAttribute('theme') === 'dark' ? cm.oneDark : []
+  const emitError = error => container.dispatchEvent(new CustomEvent('error', { detail: error, bubbles: false }))
+
   const collectDiagnostics = editorView => {
     if (!editorView) return []
     const diagnostics = []
@@ -46,19 +60,80 @@ globalThis.Component.register('CodeEditor', container => {
     publishDiagnostics(diagnostics)
     return diagnostics
   }, { delay: 180 })
+
+  const renderPreview = async () => {
+    clearTimeout(previewTimer)
+    previewTimer = null
+    const sequence = ++previewSequence
+    const source = container.value
+    container.classList.remove('code-editor-preview-stale')
+    if (!previewable()) return false
+    if (container.language === 'markdown') {
+      if (!globalThis.Markdown) {
+        if (!globalThis.__ApigoUIRuntime?.loadAsset) throw new Error('Markdown preview requires the UI runtime')
+        await globalThis.__ApigoUIRuntime.loadAsset('libraries/Markdown.js')
+      }
+      if (destroyed || sequence !== previewSequence) return false
+      markdownPreview.innerHTML = globalThis.Markdown.render(source, {
+        allowHtml: container.hasAttribute('allowhtml'),
+        breaks: container.hasAttribute('breaks')
+      })
+      markdownPreview.hidden = false
+      htmlPreview.hidden = true
+    } else {
+      const scripts = container.hasAttribute('previewscripts')
+      htmlPreview.setAttribute('sandbox', scripts ? 'allow-scripts' : '')
+      htmlPreview.srcdoc = source
+      htmlPreview.hidden = false
+      markdownPreview.hidden = true
+    }
+    container.dispatchEvent(new CustomEvent('preview', { detail: { language: container.language, source }, bubbles: false }))
+    return true
+  }
+  const schedulePreview = () => {
+    if (mode === 'source' || !previewable()) return
+    if (container.language === 'html' && container.hasAttribute('previewscripts') && !container.hasAttribute('previewauto')) {
+      container.classList.add('code-editor-preview-stale')
+      return
+    }
+    clearTimeout(previewTimer)
+    previewTimer = setTimeout(() => renderPreview().catch(emitError), 180)
+  }
+  const applyMode = next => {
+    next = ['source', 'split', 'preview'].includes(next) && previewable() ? next : 'source'
+    const changed = mode !== next
+    mode = next
+    container.dataset.mode = mode
+    modeButtons.forEach(button => button.classList.toggle('active', button.dataset.mode === mode))
+    sourcePane.hidden = mode === 'preview'
+    previewPane.hidden = mode === 'source'
+    if (mode !== 'source') renderPreview().catch(emitError)
+    requestAnimationFrame(() => view?.requestMeasure())
+    if (changed) container.dispatchEvent(new CustomEvent('modechange', { detail: mode, bubbles: false }))
+    return mode
+  }
+  const updatePreviewAvailability = () => {
+    const available = previewable()
+    toolbar.hidden = !available
+    if (!available) applyMode('source')
+    else applyMode(requestedMode())
+  }
   const updateValue = next => {
     next = String(next ?? '')
     value = next
-    if (!view || view.state.doc.toString() === next) return
-    suppressChange = true
-    try { view.dispatch({ changes: { from: 0, to: view.state.doc.length, insert: next } }) }
-    finally { suppressChange = false }
+    if (view && view.state.doc.toString() !== next) {
+      suppressChange = true
+      try { view.dispatch({ changes: { from: 0, to: view.state.doc.length, insert: next } }) }
+      finally { suppressChange = false }
+    }
+    schedulePreview()
   }
   const emitChange = () => {
     value = view.state.doc.toString()
     if (container.documentMode && state.data !== value) state.data = value
     container.dispatchEvent(new CustomEvent('change', { detail: value, bubbles: false }))
     container.dispatchEvent(new Event('input', { bubbles: true }))
+    schedulePreview()
   }
   const installLanguage = async name => {
     const sequence = ++languageSequence
@@ -66,6 +141,7 @@ globalThis.Component.register('CodeEditor', container => {
     if (destroyed || sequence !== languageSequence) return
     container.language = name
     if (view) view.dispatch({ effects: languageCompartment.reconfigure(factory()) })
+    updatePreviewAvailability()
   }
 
   Object.defineProperty(container, 'value', {
@@ -74,9 +150,20 @@ globalThis.Component.register('CodeEditor', container => {
     set: updateValue
   })
   Object.defineProperty(container, 'view', { configurable: true, get: () => view })
+  Object.defineProperty(container, 'mode', {
+    configurable: true,
+    get: () => mode,
+    set: next => {
+      next = String(next || 'source').toLowerCase()
+      if (container.getAttribute('mode') !== next) container.setAttribute('mode', next)
+      else applyMode(next)
+    }
+  })
 
   container.diagnostics = []
   container.language = requestedLanguage()
+  container.refreshPreview = renderPreview
+  container.setMode = next => { container.mode = next; return container.mode }
   container.validate = () => {
     const diagnostics = collectDiagnostics(view)
     publishDiagnostics(diagnostics)
@@ -90,6 +177,8 @@ globalThis.Component.register('CodeEditor', container => {
   }
   container.focus = () => view?.focus()
   container.addEventListener('bind', event => { container.value = event.detail })
+  modeButtons.forEach(button => button.addEventListener('click', () => { container.mode = button.dataset.mode }))
+  refreshButton.addEventListener('click', () => renderPreview().catch(emitError))
 
   const documentMode = container.hasAttribute('path') || container.hasAttribute('api') || state.path !== undefined || state.version !== undefined
   container.documentMode = documentMode
@@ -101,7 +190,7 @@ globalThis.Component.register('CodeEditor', container => {
   state.__watch('path', () => {
     if (container.hasAttribute('lang')) return
     const name = requestedLanguage()
-    if (name !== container.language) installLanguage(name).catch(error => container.dispatchEvent(new CustomEvent('error', { detail: error, bubbles: false })))
+    if (name !== container.language) installLanguage(name).catch(emitError)
   })
 
   container.ready = cm.loadLanguage(container.language).then(factory => {
@@ -122,10 +211,11 @@ globalThis.Component.register('CodeEditor', container => {
       }),
       parent: host
     })
+    updatePreviewAvailability()
     container.dispatchEvent(new CustomEvent('ready', { detail: container, bubbles: false }))
     return container
   }).catch(error => {
-    container.dispatchEvent(new CustomEvent('error', { detail: error, bubbles: false }))
+    emitError(error)
     throw error
   })
 
@@ -133,36 +223,84 @@ globalThis.Component.register('CodeEditor', container => {
     for (const mutation of mutations) {
       if (mutation.attributeName === 'lang' || mutation.attributeName === 'path') {
         const name = requestedLanguage()
-        if (name !== container.language) installLanguage(name).catch(error => container.dispatchEvent(new CustomEvent('error', { detail: error, bubbles: false })))
+        if (name !== container.language) installLanguage(name).catch(emitError)
       } else if (mutation.attributeName === 'theme' && view) {
         view.dispatch({ effects: themeCompartment.reconfigure(themeExtension()) })
       } else if (mutation.attributeName === 'readonly' && view) {
         view.dispatch({ effects: readonlyCompartment.reconfigure(readonlyExtensions()) })
       } else if (mutation.attributeName === 'value') {
         updateValue(container.getAttribute('value') || '')
+      } else if (mutation.attributeName === 'mode') {
+        applyMode(requestedMode())
+      } else if (['previewscripts', 'allowhtml', 'breaks'].includes(mutation.attributeName) && mode !== 'source') {
+        renderPreview().catch(emitError)
       }
     }
   })
-  observer.observe(container, { attributes: true, attributeFilter: ['lang', 'path', 'theme', 'readonly', 'value'] })
+  observer.observe(container, { attributes: true, attributeFilter: ['lang', 'path', 'theme', 'readonly', 'value', 'mode', 'previewscripts', 'allowhtml', 'breaks'] })
   globalThis.DOMDisposer.add(container, () => {
     destroyed = true
+    clearTimeout(previewTimer)
     observer.disconnect()
     view?.destroy()
     view = null
+    htmlPreview.srcdoc = ''
   })
-}, globalThis.Util.makeDom(/*html*/`<div class="code-editor-root"><div class="code-editor-host"></div></div>`), globalThis.Util.makeDom(/*html*/`<style>
+}, globalThis.Util.makeDom(/*html*/`
+<div class="code-editor-root">
+  <div class="code-editor-toolbar btn-toolbar border-bottom p-1 gap-1" hidden>
+    <div class="btn-group btn-group-sm" role="group" aria-label="Preview mode">
+      <button type="button" class="btn btn-outline-secondary" data-mode="source">Source</button>
+      <button type="button" class="btn btn-outline-secondary" data-mode="split">Split</button>
+      <button type="button" class="btn btn-outline-secondary" data-mode="preview">Preview</button>
+    </div>
+    <button type="button" class="btn btn-outline-secondary btn-sm ms-auto" data-action="refresh">Refresh</button>
+  </div>
+  <div class="code-editor-workspace">
+    <div class="code-editor-source"><div class="code-editor-host"></div></div>
+    <div class="code-editor-preview" hidden>
+      <div class="code-editor-markdown markdown-body" hidden></div>
+      <iframe class="code-editor-html" title="HTML preview" sandbox hidden></iframe>
+    </div>
+  </div>
+</div>
+`), globalThis.Util.makeDom(/*html*/`<style>
   CodeEditor { display:block; min-height:160px; border:1px solid var(--bs-border-color); border-radius:var(--bs-border-radius); overflow:hidden; background:var(--bs-body-bg); }
+  CodeEditor .code-editor-root { display:flex; flex-direction:column; width:100%; height:100%; min-height:inherit; }
+  CodeEditor .code-editor-workspace { display:grid; grid-template-columns:minmax(0, 1fr); flex:1 1 auto; min-height:0; }
+  CodeEditor[data-mode="split"] .code-editor-workspace { grid-template-columns:minmax(0, 1fr) minmax(0, 1fr); }
+  CodeEditor .code-editor-source, CodeEditor .code-editor-preview { min-width:0; min-height:0; overflow:hidden; }
+  CodeEditor .code-editor-preview { border-left:1px solid var(--bs-border-color); background:var(--bs-body-bg); }
   CodeEditor .code-editor-host, CodeEditor .cm-editor { height:100%; min-height:inherit; }
   CodeEditor .cm-scroller { overflow:auto; font-family:var(--bs-font-monospace); font-size:.875rem; }
   CodeEditor .cm-focused { outline:2px solid rgba(var(--bs-primary-rgb),.25); outline-offset:-2px; }
   CodeEditor[readonly] .cm-content { cursor:default; }
+  CodeEditor .code-editor-markdown { box-sizing:border-box; height:100%; overflow:auto; padding:1rem; overflow-wrap:anywhere; }
+  CodeEditor .code-editor-html { display:block; width:100%; height:100%; min-height:160px; border:0; background:white; }
+  CodeEditor.code-editor-preview-stale [data-action="refresh"] { color:var(--bs-warning-text-emphasis); border-color:var(--bs-warning-border-subtle); }
+  CodeEditor .markdown-body > :first-child { margin-top:0; } CodeEditor .markdown-body > :last-child { margin-bottom:0; }
+  CodeEditor .markdown-body h1, CodeEditor .markdown-body h2 { padding-bottom:.3em; border-bottom:1px solid var(--bs-border-color); }
+  CodeEditor .markdown-body h1 { font-size:2em; } CodeEditor .markdown-body h2 { font-size:1.5em; } CodeEditor .markdown-body h3 { font-size:1.25em; }
+  CodeEditor .markdown-body h1, CodeEditor .markdown-body h2, CodeEditor .markdown-body h3, CodeEditor .markdown-body h4, CodeEditor .markdown-body h5, CodeEditor .markdown-body h6 { margin:1.25em 0 .6em; font-weight:600; line-height:1.25; }
+  CodeEditor .markdown-body p, CodeEditor .markdown-body ul, CodeEditor .markdown-body ol, CodeEditor .markdown-body blockquote, CodeEditor .markdown-body pre, CodeEditor .markdown-body table { margin:0 0 1em; }
+  CodeEditor .markdown-body blockquote { padding:0 1em; color:var(--bs-secondary-color); border-left:.25em solid var(--bs-border-color); }
+  CodeEditor .markdown-body code { padding:.15em .35em; border-radius:.25rem; background:var(--bs-tertiary-bg); font-family:var(--bs-font-monospace); font-size:.875em; }
+  CodeEditor .markdown-body pre { padding:1em; overflow:auto; border-radius:var(--bs-border-radius); background:var(--bs-tertiary-bg); }
+  CodeEditor .markdown-body pre code { padding:0; background:transparent; }
+  CodeEditor .markdown-body table { display:block; width:max-content; max-width:100%; overflow:auto; border-collapse:collapse; }
+  CodeEditor .markdown-body th, CodeEditor .markdown-body td { padding:.4em .75em; border:1px solid var(--bs-border-color); }
+  CodeEditor .markdown-body img { max-width:100%; height:auto; }
+  @media (max-width:767.98px) {
+    CodeEditor[data-mode="split"] .code-editor-workspace { grid-template-columns:minmax(0, 1fr); grid-template-rows:minmax(160px, 1fr) minmax(160px, 1fr); }
+    CodeEditor[data-mode="split"] .code-editor-preview { border-left:0; border-top:1px solid var(--bs-border-color); }
+  }
 </style>`))
 
 globalThis.AutoForm?.register('CodeEditor', 'code')
 globalThis.Editor?.register({
   name: 'CodeEditor',
   component: 'CodeEditor',
-  extensions: ['js', 'mjs', 'cjs', 'json', 'yaml', 'yml', 'py', 'html', 'htm', 'css'],
-  types: ['code', 'javascript', 'json', 'yaml', 'python', 'html', 'css'],
-  mimeTypes: ['text/javascript', 'application/javascript', 'application/json', 'application/yaml', 'text/yaml', 'text/x-python', 'text/html', 'text/css']
+  extensions: ['js', 'mjs', 'cjs', 'json', 'yaml', 'yml', 'py', 'html', 'htm', 'css', 'md', 'markdown'],
+  types: ['code', 'javascript', 'json', 'yaml', 'python', 'html', 'css', 'markdown'],
+  mimeTypes: ['text/javascript', 'application/javascript', 'application/json', 'application/yaml', 'text/yaml', 'text/x-python', 'text/html', 'text/css', 'text/markdown']
 })

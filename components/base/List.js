@@ -227,13 +227,13 @@ globalThis.Component.register('List', container => {
 <div class="list-group overflow-auto" onscroll="this.refresh()" style="overflow-anchor:none">
         <div class="vs-pad-top flex-shrink-0" style="height:0px;"></div>
         <template slot-id="item" $each="this.state.renderedList">
-                <div $onupdate="this.onItemUpdate(index, thisNode)" $class="list-group-item d-inline-flex align-items-center pe-2 \${item.type==='group'?'bg-body-tertiary fw-bold ps-2':'list-group-item-action ' + (this.mode==='group'?'ps-4':'ps-2')} \${item.type==='group'?(this.state?.selectedGroup===item[this.groupidfield]?'active':''):(this.state?.selectedItem===item[this.idfield]?'active':'')}" $onclick="item.type==='group'?this.selectGroup(item,index):this.selectItem(item,index)">
+                <div $onupdate="this.onItemUpdate(index, thisNode)" $class="list-group-item d-inline-flex align-items-center w-100 pe-2 \${item.type==='group'?'bg-body-tertiary fw-bold ps-2':'list-group-item-action ' + (this.mode==='group'?'ps-4':'ps-2')} \${item.type==='group'?(this.state?.selectedGroup===item[this.groupidfield]?'active':''):(this.state?.selectedItem===item[this.idfield]?'active':'')}" $onclick="item.type==='group'?this.selectGroup(item,index):this.selectItem(item,index)">
                         <template $if="item.type === 'group'">
                                 <template $if="this.groupicon">
                                         <span $class="bi bi-\${this.groupicon} text-body"></span>
                                 </template>
-                                <div class="flex-shrink-0 px-1" $text="\${item[this.grouplabelfield]}"></div>
-                                <div class="text-muted small flex-fill text-end" $text="\${item[this.groupsummaryfield] || ''}"></div>
+                                <div class="flex-fill text-truncate px-1" $text="\${item[this.grouplabelfield]}"></div>
+                                <div class="text-muted small flex-fill text-truncate text-end" $text="\${item[this.groupsummaryfield] || ''}"></div>
                                 <div slot-id="group-actions"></div>
                         </template>
                         <template $if="item.type === 'item'">
@@ -250,7 +250,7 @@ globalThis.Component.register('List', container => {
                                 <template $if="this.mode !== 'tree' && this.itemicon">
                                         <span $class="bi bi-\${this.itemicon} text-body"></span>
                                 </template>
-                                <div class="flex-shrink-0 px-1" $text="\${item[this.labelfield] || ''}"></div>
+                                <div class="flex-fill text-truncate px-1" $text="\${item[this.labelfield] || ''}"></div>
                                 <div class="text-muted fs-7 small ms-2 flex-fill text-truncate text-end" $text="\${item[this.summaryfield] || ''}"></div>
                                 <div slot-id="item-actions"></div>
                         </template>

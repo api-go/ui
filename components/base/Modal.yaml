@@ -1,6 +1,10 @@
 name: Modal
 purpose: Present slotted content in a controllable Bootstrap modal.
 
+attributes:
+  static: Prevent Escape and backdrop dismissal in every state.
+  guard-dirty: Track edits to form controls; Escape, backdrop clicks, and the header close button are blocked after edits. Explicit actions can call hide(true).
+
 binding:
   behavior: Bind a boolean with $bind to show or hide the modal.
 
@@ -13,11 +17,13 @@ state:
 
 methods:
   show: Show the Bootstrap modal.
-  hide: Hide the Bootstrap modal.
+  hide: Hide the Bootstrap modal. Pass true for an explicit confirmed or cancel action that may close guarded dirty content.
 
 events:
   change:
     detail: false when the modal is hidden.
+  dismissblocked:
+    detail: Emitted when guard-dirty blocks an implicit dismissal.
 
 slots:
   header: Replace the modal header.

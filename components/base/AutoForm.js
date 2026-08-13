@@ -15,25 +15,25 @@ const AUTOFORM_BLUEPRINT = globalThis.Util.makeDom(/*html*/`
     <div style="display:contents">
         <label $name="item.name" $class="\${this.inline ? 'mb-0 text-muted text-nowrap' : 'col-form-label text-muted'}" $text="item.label"></label>
         <div control-wrapper $class="\${this.inline ? 'd-flex align-items-center' : 'mb-3 d-flex align-items-center'}">
-          <template $if="['text', 'password', 'email', 'number', 'date', 'datetime', 'file'].includes(item.type)"><input $name="item.name" $type="item.type" $.="item.setting || {}" $bind="this.state.data[item.name]" $class="form-control \${item.type === 'number' ? 'text-end' : ''}"></template>
+          <template $if="['text', 'password', 'email', 'number', 'date', 'datetime', 'file'].includes(item.type)"><input $name="item.name" $type="item.type" $.="item.setting || {}" $$readonly="typeof item.setting?.readonly === 'string' ? item.setting.readonly : !!item.setting?.readonly" $$disabled="typeof item.setting?.disabled === 'string' ? item.setting.disabled : !!item.setting?.disabled" $$required="typeof item.setting?.required === 'string' ? item.setting.required : !!item.setting?.required" $bind="this.state.data[item.name]" $class="form-control \${item.type === 'number' ? 'text-end' : ''}"></template>
 
-          <template $if="item.type === 'select'"><select $name="item.name" $.="item.setting || {}" $bind="this.state.data[item.name]" class="form-select">
+          <template $if="item.type === 'select'"><select $name="item.name" $.="item.setting || {}" $$disabled="typeof item.setting?.disabled === 'string' ? item.setting.disabled : !!item.setting?.disabled" $$required="typeof item.setting?.required === 'string' ? item.setting.required : !!item.setting?.required" $bind="this.state.data[item.name]" class="form-select">
               <option value="" $if="item.placeholder" $text="item.placeholder" disabled selected></option>
               <option $each="item.options" as="opt" $value="opt.value !== undefined ? opt.value : opt" $text="opt.label || opt"></option>
           </select></template>
 
           <template $if="['checkbox', 'radio'].includes(item.type)"><div class="d-flex align-items-center flex-wrap gap-3 h-100" style="padding: 0 0.75rem; min-height: calc(2.25rem + 2px);">
               <label $each="item.options || [item.text||item.label||item.name]" as="opt" class="form-check mb-0 d-flex align-items-center" style="padding-left:0; cursor:pointer;">
-                  <input $name="item.name" class="form-check-input m-0 me-2" style="float:none;" $type="item.type" $.="item.setting || {}" $value="item.options ? (opt.value !== undefined ? opt.value : opt) : 'on'" $bind="this.state.data[item.name]">
+                  <input $name="item.name" class="form-check-input m-0 me-2" style="float:none;" $type="item.type" $.="item.setting || {}" $$disabled="typeof item.setting?.disabled === 'string' ? item.setting.disabled : !!item.setting?.disabled" $$required="typeof item.setting?.required === 'string' ? item.setting.required : !!item.setting?.required" $value="item.options ? (opt.value !== undefined ? opt.value : opt) : 'on'" $bind="this.state.data[item.name]">
                   <span $if="!this.inline || (item.options && item.options.length > 0)" $text="opt.label || opt" class="form-check-label"></span>
               </label>
           </div></template>
 
           <template $if="item.type === 'switch'"><div class="form-check form-switch fs-5 d-flex align-items-center m-0" style="padding: 0 0.75rem; min-height: calc(2.25rem + 2px); display:flex !important;">
-              <input $name="item.name" class="form-check-input m-0" style="float:none; cursor:pointer" type="checkbox" $bind="this.state.data[item.name]">
+              <input $name="item.name" class="form-check-input m-0" style="float:none; cursor:pointer" type="checkbox" $.="item.setting || {}" $$disabled="typeof item.setting?.disabled === 'string' ? item.setting.disabled : !!item.setting?.disabled" $bind="this.state.data[item.name]">
           </div></template>
 
-          <template $if="item.type === 'textarea'"><textarea $name="item.name" class="form-control" $.="item.setting || {}" $bind="this.state.data[item.name]"></textarea></template>
+          <template $if="item.type === 'textarea'"><textarea $name="item.name" class="form-control" $.="item.setting || {}" $$readonly="typeof item.setting?.readonly === 'string' ? item.setting.readonly : !!item.setting?.readonly" $$disabled="typeof item.setting?.disabled === 'string' ? item.setting.disabled : !!item.setting?.disabled" $$required="typeof item.setting?.required === 'string' ? item.setting.required : !!item.setting?.required" $bind="this.state.data[item.name]"></textarea></template>
 
           <template $if="item.type === 'label'"><span $name="item.name" $.="item.setting || {}" $text="item.value ?? this.state.data[item.name] ?? ''" class="form-control-plaintext text-break py-1"></span></template>
         </div>
@@ -87,7 +87,8 @@ const normalizeSchemaItem = field => {
                 type: settings.type ?? getDbFormType(field.type),
                 options: settings.options ?? field.options,
                 placeholder: settings.placeholder ?? field.placeholder,
-                setting: settings.attrs ?? field.setting
+                setting: settings.attrs ?? field.setting,
+                if: settings.if ?? field.if
         };
 };
 

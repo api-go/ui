@@ -35,11 +35,11 @@ const loading = new Map()
 const names = {
   js: 'javascript', javascript: 'javascript', mjs: 'javascript', cjs: 'javascript',
   json: 'json', yaml: 'yaml', yml: 'yaml', py: 'python', python: 'python',
-  html: 'html', htm: 'html', css: 'css'
+  html: 'html', htm: 'html', css: 'css', md: 'markdown', markdown: 'markdown'
 }
 const files = {
   javascript: 'CodeMirrorJavaScript', json: 'CodeMirrorJSON', yaml: 'CodeMirrorYAML',
-  python: 'CodeMirrorPython', html: 'CodeMirrorHTML', css: 'CodeMirrorCSS'
+  python: 'CodeMirrorPython', html: 'CodeMirrorHTML', css: 'CodeMirrorCSS', markdown: 'CodeMirrorMarkdown'
 }
 const normalizeLanguage = value => names[String(value || '').toLowerCase().replace(/^\\./, '')] || ''
 const languageFromPath = path => {
@@ -55,7 +55,9 @@ const loadLanguage = name => {
   if (loading.has(name)) return loading.get(name)
   const filename = files[name]
   if (!filename) return Promise.reject(new Error('Unsupported CodeEditor language: ' + name))
-  const task = new Promise((resolve, reject) => {
+  const loadScript = globalThis.__ApigoUIRuntime?.loadAsset
+    ? globalThis.__ApigoUIRuntime.loadAsset('libraries/' + filename + '.js')
+    : new Promise((resolve, reject) => {
     const script = document.createElement('script')
     const url = new URL(filename + (minified ? '.min.js' : '.js'), sourceUrl)
     url.search = sourceUrl.search
@@ -63,7 +65,11 @@ const loadLanguage = name => {
     script.onload = () => languages.has(name) ? resolve(languages.get(name)) : reject(new Error('CodeEditor language did not register: ' + name))
     script.onerror = () => reject(new Error('Failed to load CodeEditor language: ' + name))
     document.head.appendChild(script)
-  }).catch(error => { loading.delete(name); throw error })
+  })
+  const task = loadScript.then(() => languages.has(name)
+    ? languages.get(name)
+    : Promise.reject(new Error('CodeEditor language did not register: ' + name)))
+    .catch(error => { loading.delete(name); throw error })
   loading.set(name, task)
   return task
 }
@@ -98,7 +104,8 @@ const languageEntries = {
   CodeMirrorYAML: `import { yaml } from '@codemirror/lang-yaml'; globalThis.CodeMirror.registerLanguage('yaml', () => yaml())`,
   CodeMirrorPython: `import { python } from '@codemirror/lang-python'; globalThis.CodeMirror.registerLanguage('python', () => python())`,
   CodeMirrorHTML: `import { html } from '@codemirror/lang-html'; globalThis.CodeMirror.registerLanguage('html', () => html())`,
-  CodeMirrorCSS: `import { css } from '@codemirror/lang-css'; globalThis.CodeMirror.registerLanguage('css', () => css())`
+  CodeMirrorCSS: `import { css } from '@codemirror/lang-css'; globalThis.CodeMirror.registerLanguage('css', () => css())`,
+  CodeMirrorMarkdown: `import { markdownLanguage } from '@codemirror/lang-markdown'; globalThis.CodeMirror.registerLanguage('markdown', () => markdownLanguage)`
 }
 
 const virtual = source => ({

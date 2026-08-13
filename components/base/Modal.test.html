@@ -13,17 +13,18 @@
 <body class="vh-100 overflow-hidden bg-body-tertiary">
   <div class="container-fluid h-100 py-3 d-flex flex-column">
     <header class="d-flex align-items-center gap-2 mb-3 flex-shrink-0"><h1 class="h4 mb-0">components.Modal</h1><span id="status" class="badge text-bg-secondary">未测试</span><button id="runAll" class="btn btn-primary btn-sm ms-auto" type="button">测试全部</button><span id="coverage" class="small text-body-secondary"></span></header>
-    <main class="flex-fill overflow-auto"><Modal id="titleModal" $.state.title="modalState.title" $.state.type="modalState.type"></Modal><Modal id="editModal" $bind="modalModel.open" $.state.type="modalState.type"><div slot="header" id="customHeader">Custom header</div><div slot="body" id="customBody">Custom body</div><div slot="footer" id="customFooter">Custom footer</div></Modal></main>
+    <main class="flex-fill overflow-auto"><Modal id="titleModal" $.state.title="modalState.title" $.state.type="modalState.type"></Modal><Modal id="editModal" $bind="modalModel.open" $.state.type="modalState.type"><div slot="header" id="customHeader">Custom header</div><div slot="body" id="customBody">Custom body</div><div slot="footer" id="customFooter">Custom footer</div></Modal><Modal id="guardedModal" guard-dirty><div slot="body"><input name="guardedValue"></div></Modal><Modal id="staticModal" static></Modal></main>
     <pre id="result" class="h-25 overflow-auto border rounded bg-body p-2 mt-3 mb-0 flex-shrink-0 small"></pre>
   </div>
   <script>
-    const cases = ['binding', 'title', 'type', 'show', 'hide', 'change-event', 'header-slot', 'body-slot', 'footer-slot', 'body-scroll']
+    const cases = ['binding', 'title', 'type', 'show', 'hide', 'change-event', 'header-layout', 'header-slot', 'body-slot', 'footer-slot', 'body-scroll', 'default-dismiss', 'static', 'guard-dirty']
     const errors = []; const originalError = console.error; console.error = (...args) => { errors.push(args.map(String).join(' ')); originalError(...args) }; addEventListener('error', event => errors.push(String(event.message || event.error || event))); addEventListener('unhandledrejection', event => errors.push(String(event.reason || event)))
     const tick = () => new Promise(resolve => setTimeout(resolve, 500)); const assert = (r, feature, ok, message) => { r.assertions++; if (ok) r.passed++; else { r.failed++; r.failures.push({ feature, message }) } }
     window.runTest = async () => { errors.length = 0; const r = { name: 'components.Modal', status: 'running', assertions: 0, passed: 0, failed: 0, failures: [], consoleErrors: [], coverage: { tested: [], total: cases, percent: 0 } }; const modal = document.querySelector('#editModal'); let change
       modal.addEventListener('change', event => { change = event.detail }, { once: true }); modal.dispatchEvent(new CustomEvent('bind', { detail: true })); await tick()
       assert(r, 'binding', modal.classList.contains('show'), '$bind true shows the modal')
       assert(r, 'title', document.querySelector('#titleModal .modal-title')?.textContent === 'Edit user', 'title renders the default header title')
+	  assert(r, 'header-layout', document.querySelector('#titleModal .modal-title')?.classList.contains('me-auto'), 'default close button is pushed to the right edge of the header')
       assert(r, 'type', modal.querySelector('.modal-content')?.classList.contains('border-success'), 'type applies the Bootstrap contextual type')
       assert(r, 'show', typeof modal.show === 'function' && modal.classList.contains('show'), 'show() is exposed and shows the Bootstrap modal')
       assert(r, 'header-slot', modal.querySelector('#customHeader')?.textContent === 'Custom header', 'header slot replaces the header')
@@ -31,6 +32,9 @@
       assert(r, 'footer-slot', modal.querySelector('#customFooter')?.textContent === 'Custom footer', 'footer slot replaces the footer')
       assert(r, 'body-scroll', modal.querySelector('.modal-dialog')?.classList.contains('modal-dialog-scrollable'), 'long body content scrolls without moving the header or footer')
       modal.hide(); await tick(); assert(r, 'hide', !modal.classList.contains('show'), 'hide() hides the Bootstrap modal'); assert(r, 'change-event', change === false, 'change detail is false when the modal is hidden')
+      assert(r, 'default-dismiss', modal.modal._config.backdrop === true && modal.modal._config.keyboard === true, 'modal allows backdrop and Escape dismissal by default')
+      const staticModal = document.querySelector('#staticModal'); assert(r, 'static', staticModal.modal._config.backdrop === 'static' && staticModal.modal._config.keyboard === false, 'static disables backdrop and Escape dismissal')
+      const guarded = document.querySelector('#guardedModal'); guarded.show(); await tick(); const guardedInput = guarded.querySelector('input'); guardedInput.value = 'changed'; guardedInput.dispatchEvent(new Event('input', { bubbles: true })); guarded.hide(); await tick(); const blocked = guarded.classList.contains('show'); guarded.hide(true); await tick(); assert(r, 'guard-dirty', blocked && !guarded.classList.contains('show'), 'guard-dirty blocks implicit dismissal after edits and hide(true) closes explicitly')
       r.coverage.tested = [...cases]; r.coverage.percent = 100; r.consoleErrors = [...errors]; r.status = r.failed || r.consoleErrors.length ? 'failed' : 'passed'; document.querySelector('#status').className = 'badge text-bg-' + (r.status === 'passed' ? 'success' : 'danger'); document.querySelector('#status').textContent = r.status === 'passed' ? '通过' : '失败'; document.querySelector('#coverage').textContent = '覆盖 100%'; document.querySelector('#result').textContent = JSON.stringify(r, null, 2); return r }
     document.querySelector('#runAll').onclick = window.runTest
   </script>

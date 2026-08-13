@@ -45,6 +45,7 @@ rules:
   - With fast, a custom item row must retain list-group-item and $onupdate.
   - Use event.stopPropagation() for action controls that must not select the row.
   - 'Non-default field mapping is declarative: `idfield="key" labelfield="title" summaryfield="desc"`.'
+  - Default label and summary areas truncate to one line. Slotted item-actions and group-actions preserve application-provided layout classes, including wrapping behavior.
 
 examples: |
   <script>

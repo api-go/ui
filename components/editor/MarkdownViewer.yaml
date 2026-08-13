@@ -1,0 +1,35 @@
+name: MarkdownViewer
+purpose: Render a Markdown string as sanitized HTML without document transport or editing behavior.
+
+attributes:
+  value: Initial Markdown source string.
+  breaks: boolean; convert source line breaks inside paragraphs to br elements.
+  allowhtml: boolean; parse inline raw HTML before sanitizing it; scripts and unsafe attributes are always removed.
+  linktarget: Optional target applied to rendered links; _blank also adds noopener noreferrer.
+
+properties:
+  value: Current Markdown source string; compatible with $bind.
+
+methods:
+  render: Render the current value and return the sanitized HTML string.
+  getHTML: Return the current rendered HTML.
+
+events:
+  render: "detail={ source, html } after a render. html is the sanitized parser output before linktarget decoration."
+
+syntax:
+  - CommonMark-style headings, lists, links, images, blockquotes, code, tables, strikethrough, autolinks, and task lists.
+  - Raw HTML is escaped by default. allowhtml enables it, but DOMPurify still removes scripts, event handlers, and unsafe markup.
+
+rules:
+  - MarkdownViewer is intentionally value-only and has no api, path, load, or save behavior.
+  - Use CodeEditor with a .md path when source editing or split preview is required.
+
+examples: |
+  <MarkdownViewer value="# Hello&#10;&#10;- [x] Ready" linktarget="_blank"></MarkdownViewer>
+
+related:
+  - CodeEditor.yaml
+
+tests:
+  - MarkdownViewer.test.html

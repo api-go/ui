@@ -11,6 +11,7 @@ attributes:
   node-height: Initial default node height when data.settings.nodeHeight is absent.
   h-gap: Initial default horizontal gap when data.settings.hGap is absent.
   v-gap: Initial default vertical gap when data.settings.vGap is absent.
+  toolbar: Opt in to the built-in toolbar; tools remain available through getTools/runTool without it.
 
 state:
   data: "{ nodes:[{ id, title, content, collapsed? }], edges:[{ id, from, to }], view:{ x, y, scale }, settings:{ direction, nodeWidth, nodeHeight, hGap, vGap } }"
@@ -44,6 +45,8 @@ methods:
   cancelEdit: Discard the active draft.
   fit: Fit visible nodes into the viewport.
   schemas: Return the merged editing schemas.
+  getTools: Return resolved direction, fit, and add-child toolbar descriptors.
+  runTool: Execute a published toolbar command by id.
 
 events:
   select:
@@ -60,6 +63,8 @@ events:
     detail: Server save result.
   error:
     detail: Transport Error.
+  toolschange:
+    detail: Resolved toolbar descriptors.
 
 api:
   load_request: "{ action:'get', path, version? }"

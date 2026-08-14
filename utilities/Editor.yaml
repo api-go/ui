@@ -15,6 +15,7 @@ global:
       load: POST a get action and normalize response meta plus data into a document envelope.
       save: POST a set action with the document envelope in data.
       connect: Attach path/version/load/save behavior to a component without inheritance.
+      setTools: "setTools(component, tools) publishes editor commands without forcing an internal toolbar."
       clone: Clone JSON document data.
 
 transport:
@@ -32,6 +33,13 @@ rules:
   - A missing component api always means stateless behavior and no automatic HTTP request.
   - Editor is a utility facade, not a base class, custom element, or application-wide service locator.
   - Components register their own extension associations only when their source is loaded.
+  - Components publish tools through editorTools, getTools(), runTool(id), and toolschange; host pages decide where and how to render them.
+
+toolbar_api:
+  tool: "{ id, label, icon, group?, active?, disabled?, hidden?, run }"
+  component_properties: "editorTools contains the source descriptors; getTools() returns resolved booleans."
+  component_methods: "runTool(id, ...args) executes the command and emits toolschange."
+  event: "toolschange detail is the resolved tool array."
 
 examples: |
   Editor.register({ name: 'Kanban', component: 'Kanban', extensions: ['kanban'], types: ['kanban'] })

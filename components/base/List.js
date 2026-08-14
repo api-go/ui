@@ -12,7 +12,7 @@ globalThis.Component.register('List', container => {
 	const defaultSets = {
 		idfield: 'id', labelfield: 'label', summaryfield: 'summary',
 		groupidfield: 'id', grouplabelfield: 'label', groupsummaryfield: 'summary', groupfield: 'group',
-		parentfield: 'parent', groupicon: 'folder', itemicon: 'file'
+		parentfield: 'parent', groupicon: 'folder', itemicon: 'file', iconfield: ''
 	}
 	// Field names are ordinary declarative attributes, so static markup needs no setup script.
 	Object.keys(defaultSets).forEach(name => {
@@ -155,7 +155,9 @@ globalThis.Component.register('List', container => {
 				const id = item[container.idfield]
 				const hasChildren = !!childrenMap[id]?.length
 				const isCollapsed = container.collapsed[id]
-				flatList.push({ type: 'item', ...item, _level: level, _hasChildren: hasChildren, _parents: parents })
+				// `type` is also a common business field (for example Doc folders).
+				// Keep the renderer discriminator authoritative after spreading user data.
+				flatList.push({ ...item, type: 'item', _level: level, _hasChildren: hasChildren, _parents: parents })
 				if (hasChildren && !isCollapsed) traverse(childrenMap[id], level + 1, [...parents, id])
 			})
 			traverse(childrenMap[''] || [], 0, [])
@@ -212,6 +214,7 @@ globalThis.Component.register('List', container => {
 		container.dispatchEvent(new CustomEvent('groupclick', { bubbles: false, detail: { item, index } }))
 	}
 	container.toggleCollapse = (item) => { if (container.collapsible && item._hasChildren) { container.collapsed[item[container.idfield]] = !container.collapsed[item[container.idfield]]; updateFlatList(); } }
+	container.itemIcon = item => (container.iconfield && item?.[container.iconfield]) || container.itemicon
 
 	Object.defineProperty(container, 'filterFunc', {
 		get: () => container._filterFunc,
@@ -244,11 +247,11 @@ globalThis.Component.register('List', container => {
                                                 </template>
                                         </div>
                                 </template>
-                                <template $if="this.mode === 'tree'">
-                                        <span $class="text-muted bi bi-\${item._hasChildren ? this.groupicon : this.itemicon}"></span>
-                                </template>
-                                <template $if="this.mode !== 'tree' && this.itemicon">
-                                        <span $class="bi bi-\${this.itemicon} text-body"></span>
+						<template $if="this.mode === 'tree' && (item._hasChildren ? this.groupicon : this.itemIcon(item))">
+								<span $class="text-muted bi bi-\${item._hasChildren ? this.groupicon : this.itemIcon(item)}"></span>
+						</template>
+						<template $if="this.mode !== 'tree' && this.itemIcon(item)">
+								<span $class="bi bi-\${this.itemIcon(item)} text-body"></span>
                                 </template>
                                 <div class="flex-fill text-truncate px-1" $text="\${item[this.labelfield] || ''}"></div>
                                 <div class="text-muted fs-7 small ms-2 flex-fill text-truncate text-end" $text="\${item[this.summaryfield] || ''}"></div>

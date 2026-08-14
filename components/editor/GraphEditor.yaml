@@ -8,6 +8,7 @@ attributes:
   readonly: Disable graph mutations and node dragging.
   node-width: Initial node width before custom slot measurement.
   node-height: Initial node height before custom slot measurement.
+  toolbar: Opt in to the built-in toolbar; tools remain available through getTools/runTool without it.
 
 state:
   data: "{ nodes:[{ id, title, content, x, y }], edges:[{ id, from, to, label, content }], view:{ x, y, scale } }"
@@ -44,6 +45,8 @@ methods:
   startNodeDrag: Move a node in graph coordinates.
   fit: Fit all nodes into the viewport.
   schemas: Return merged node and edge schemas.
+  getTools: Return resolved fit, add-node, and delete toolbar descriptors.
+  runTool: Execute a published toolbar command by id.
 
 events:
   select:
@@ -60,6 +63,8 @@ events:
     detail: Server save result.
   error:
     detail: Transport Error.
+  toolschange:
+    detail: Resolved toolbar descriptors.
 
 api:
   load_request: "{ action:'get', path, version? }"

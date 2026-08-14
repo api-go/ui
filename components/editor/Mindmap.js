@@ -27,7 +27,6 @@ globalThis.Component.register('Mindmap', container => {
     return data
   }
   globalThis.Editor.connect(container, { type: 'mindmap', defaultData, normalize })
-  globalThis.Editor.register({ name: 'Mindmap', component: 'Mindmap', extensions: ['mindmap'], types: ['mindmap'], mimeTypes: ['application/x-mindmap+json'] })
 
   const state = container.state
   if (state.extraSchemas === undefined && state.extraschemas !== undefined) state.extraSchemas = state.extraschemas
@@ -182,6 +181,12 @@ globalThis.Component.register('Mindmap', container => {
   }
   document.addEventListener('keydown', outsideEditorEscape)
   container.schemas = schemas
+  globalThis.Editor.setTools(container, [
+    { id: 'direction-left', group: 'view', label: 'Expand left', icon: 'diagram-3', active: () => state.data.settings?.direction === 'left', run: () => container.setDirection('left') },
+    { id: 'direction-right', group: 'view', label: 'Expand right', icon: 'diagram-3', active: () => state.data.settings?.direction === 'right', run: () => container.setDirection('right') },
+    { id: 'fit', group: 'view', label: 'Fit map', icon: 'bounding-box', run: () => container.fit() },
+    { id: 'add-child', label: 'Add child', icon: 'node-plus', disabled: () => container.readonly, run: () => container.addChild() }
+  ])
   const documentSave = container.save
   container.save = async () => { const data = normalize(state.data); data.view = canvas.view; state.data = data; const result = await documentSave(); if (result) state.dirty = false; return result }
   container.addEventListener('loaded', () => { state.dirty = false; render(true) })
@@ -192,7 +197,7 @@ globalThis.Component.register('Mindmap', container => {
   globalThis.DOMDisposer.add(container, () => { clearTimeout(renderTimer); canvas.destroy(); document.removeEventListener('pointerdown', outsidePointer); modal()?.removeEventListener('keydown', container.onEditorKeydown); document.removeEventListener('keydown', outsideEditorEscape) })
 }, globalThis.Util.makeDom(/*html*/`
 <div class="mindmap-root d-flex flex-column h-100 border rounded overflow-hidden bg-body" tabindex="0" $onkeydown="this.onKeydown(event)">
-  <div slot-id="toolbar" class="d-flex align-items-center gap-2 border-bottom px-2 py-2 bg-body">
+  <div $if="this.hasAttribute('toolbar')" slot-id="toolbar" class="d-flex align-items-center gap-2 border-bottom px-2 py-2 bg-body">
     <div class="btn-group btn-group-sm" role="group" aria-label="{#Direction#}">
       <button type="button" class="mindmap-direction mindmap-direction-left" $class="'btn '+(this.state.data.settings?.direction==='left'?'btn-secondary':'btn-outline-secondary')" $onclick="this.setDirection('left')" title="{#Expand left#}"><i class="bi bi-diagram-3"></i></button>
       <button type="button" class="mindmap-direction mindmap-direction-right" $class="'btn '+(this.state.data.settings?.direction==='right'?'btn-secondary':'btn-outline-secondary')" $onclick="this.setDirection('right')" title="{#Expand right#}"><i class="bi bi-diagram-3"></i></button>
@@ -200,7 +205,7 @@ globalThis.Component.register('Mindmap', container => {
     <button type="button" class="mindmap-fit btn btn-sm btn-outline-secondary" $onclick="this.fit()" title="{#Fit map#}"><i class="bi bi-bounding-box"></i></button>
     <div class="flex-grow-1"></div>
     <span $if="this.state.selectedNodeId" class="small text-muted d-none d-lg-inline">Tab {#child#} · Enter {#sibling#} · Space {#preview#}</span>
-    <button type="button" class="mindmap-save" $class="'btn btn-sm '+(this.state.dirty?'btn-primary':'btn-outline-secondary')" $disabled="!this.state.dirty || this.state.saving" $onclick="this.save()"><i class="bi bi-save me-1"></i>{#Save#}</button>
+    <button $if="!this.hasAttribute('nosave')" type="button" class="mindmap-save" $class="'btn btn-sm '+(this.state.dirty?'btn-primary':'btn-outline-secondary')" $disabled="!this.state.dirty || this.state.saving" $onclick="this.save()"><i class="bi bi-save me-1"></i>{#Save#}</button>
   </div>
   <div class="graph-viewport flex-grow-1 position-relative overflow-hidden bg-body-tertiary" $onclick="this.onCanvasClick(event)">
     <div class="graph-scene position-absolute">
@@ -247,3 +252,5 @@ globalThis.Component.register('Mindmap', container => {
   Mindmap .mindmap-preview-arrow { position:absolute; left:50%; bottom:-6px; width:12px; height:12px; background:inherit; transform:translateX(-50%) rotate(45deg); }
   Mindmap:focus { outline:none; }
 </style>`))
+
+globalThis.Editor?.register({ name: 'Mindmap', component: 'Mindmap', extensions: ['mindmap'], types: ['mindmap'], mimeTypes: ['application/x-mindmap+json'] })

@@ -26,10 +26,10 @@
   </script>
 </head>
 <body>
-  <Mindmap id="map" style="height:440px" $.state.data="mapData" $.state.extraSchemas="mapExtras"></Mindmap>
+  <Mindmap id="map" toolbar style="height:440px" $.state.data="mapData" $.state.extraSchemas="mapExtras"></Mindmap>
   <div class="d-none">
     <Mindmap id="leftMap" direction="left" style="height:260px" $.state.data="mapData"></Mindmap>
-    <Mindmap id="customMap" style="height:260px" $.state.data="customMap">
+    <Mindmap id="customMap" toolbar style="height:260px" $.state.data="customMap">
       <button slot="toolbar" class="custom-toolbar">Custom toolbar</button>
       <div slot="node" class="custom-node" $text="node.title"></div>
       <button slot="node-actions" class="custom-actions">+</button>

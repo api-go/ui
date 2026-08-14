@@ -21,9 +21,9 @@
   </script>
 </head>
 <body>
-  <Kanban id="board" style="height:420px" $.state.data="board" $.state.extraSchemas="boardExtras"></Kanban>
+  <Kanban id="board" toolbar style="height:420px" $.state.data="board" $.state.extraSchemas="boardExtras"></Kanban>
   <div class="d-none">
-  <Kanban id="customBoard" style="height:320px" $.state.data="customBoard">
+  <Kanban id="customBoard" toolbar style="height:320px" $.state.data="customBoard">
     <button slot="toolbar" class="custom-toolbar">Custom tools</button>
     <div slot="column-header" class="custom-column" $text="column.title + ':' + columnIndex"></div>
     <div slot="card" class="custom-card" $text="card.title + ':' + card.priority"></div>

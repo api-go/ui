@@ -23,7 +23,6 @@ globalThis.Component.register('GraphEditor', container => {
   container.nodeWidth = Number(container.getAttribute('node-width')) || 190
   container.nodeHeight = Number(container.getAttribute('node-height')) || 84
   globalThis.Editor.connect(container, { type: 'graph', defaultData, normalize })
-  globalThis.Editor.register({ name: 'GraphEditor', component: 'GraphEditor', extensions: ['graph'], types: ['graph'], mimeTypes: ['application/x-graph+json'] })
 
   const state = container.state
   if (state.extraSchemas === undefined && state.extraschemas !== undefined) state.extraSchemas = state.extraschemas
@@ -229,6 +228,11 @@ globalThis.Component.register('GraphEditor', container => {
   }
   document.addEventListener('keydown', outsideEditorEscape)
   container.schemas = schemas
+  globalThis.Editor.setTools(container, [
+    { id: 'fit', group: 'view', label: 'Fit graph', icon: 'bounding-box', run: () => container.fit() },
+    { id: 'add-node', label: 'Add node', icon: 'plus-lg', disabled: () => container.readonly, run: () => container.addNode() },
+    { id: 'remove-selected', label: 'Delete selected', icon: 'trash', disabled: () => container.readonly || (!state.selectedNodeId && !state.selectedEdgeId), run: () => container.removeSelected() }
+  ])
   const documentSave = container.save
   container.save = async () => { const data = normalize(state.data); data.view = canvas.view; state.data = data; const result = await documentSave(); if (result) state.dirty = false; return result }
   container.addEventListener('loaded', () => { state.dirty = false; render(true) })
@@ -239,10 +243,10 @@ globalThis.Component.register('GraphEditor', container => {
   globalThis.DOMDisposer.add(container, () => { clearTimeout(renderTimer); dragCleanup?.(); canvas.destroy(); document.removeEventListener('pointerdown', outsidePointer); modal()?.removeEventListener('keydown', container.onEditorKeydown); document.removeEventListener('keydown', outsideEditorEscape) })
 }, globalThis.Util.makeDom(/*html*/`
 <div class="graph-editor-root d-flex flex-column h-100 border rounded overflow-hidden bg-body" tabindex="0" $onkeydown="this.onKeydown(event)">
-  <div slot-id="toolbar" class="d-flex align-items-center gap-2 border-bottom px-2 py-2 bg-body">
+  <div $if="this.hasAttribute('toolbar')" slot-id="toolbar" class="d-flex align-items-center gap-2 border-bottom px-2 py-2 bg-body">
     <button type="button" class="graph-fit btn btn-sm btn-outline-secondary" $onclick="this.fit()" title="{#Fit graph#}"><i class="bi bi-bounding-box"></i></button>
     <span $if="this.state.selectedNodeId" class="graph-connect-hint small text-muted"><i class="bi bi-link-45deg me-1"></i>{#Shift-click another node to connect#}</span>
-    <div class="flex-grow-1"></div><button type="button" class="graph-save" $class="'btn btn-sm '+(this.state.dirty?'btn-primary':'btn-outline-secondary')" $disabled="!this.state.dirty || this.state.saving" $onclick="this.save()"><i class="bi bi-save me-1"></i>{#Save#}</button>
+    <div class="flex-grow-1"></div><button $if="!this.hasAttribute('nosave')" type="button" class="graph-save" $class="'btn btn-sm '+(this.state.dirty?'btn-primary':'btn-outline-secondary')" $disabled="!this.state.dirty || this.state.saving" $onclick="this.save()"><i class="bi bi-save me-1"></i>{#Save#}</button>
   </div>
   <div class="graph-viewport flex-grow-1 position-relative overflow-hidden bg-body-tertiary" $onclick="this.onCanvasClick(event)" $ondblclick="this.onCanvasDoubleClick(event)">
     <div class="graph-scene position-absolute">
@@ -283,3 +287,5 @@ globalThis.Component.register('GraphEditor', container => {
   GraphEditor .graph-preview-arrow { position:absolute; left:50%; bottom:-6px; width:12px; height:12px; background:inherit; transform:translateX(-50%) rotate(45deg); }
   GraphEditor:focus { outline:none; }
 </style>`))
+
+globalThis.Editor?.register({ name: 'GraphEditor', component: 'GraphEditor', extensions: ['graph'], types: ['graph'], mimeTypes: ['application/x-graph+json'] })

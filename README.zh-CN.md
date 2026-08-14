@@ -5,7 +5,7 @@
 `@apigo.cc/ui` 是不需要生产构建的原生 JavaScript UI 组件库。页面使用一个 `ui.js` 入口，并且每个页面都显式写出使用的组件：
 
 ```html
-<script src="https://cdn.jsdelivr.net/npm/@apigo.cc/ui@1.0.2/ui.js" components="base,form"></script>
+<script src="https://cdn.jsdelivr.net/npm/@apigo.cc/ui@1.0.3/ui.js" components="base,form"></script>
 ```
 
 `ui.js` 默认加载框架和兼容性核心 utilities；专用 utilities 与内嵌 libraries 会根据组件依赖自动加载。`components` 中只填写页面直接使用的公开组件名，例如 `components="List,Chart,Kanban"`；组件依赖会自动加载，不需要主动声明底层模块。

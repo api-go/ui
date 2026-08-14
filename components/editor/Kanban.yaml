@@ -6,6 +6,7 @@ attributes:
   path: Static document path; state.path is preferred for reactive paths.
   version: Optional load-only historical version.
   readonly: Disable editing and drag operations.
+  toolbar: Opt in to the built-in toolbar; tools remain available through getTools/runTool without it.
 
 state:
   data: "{ columns: [{ id, title, items: [{ id, title, content }] }] }"
@@ -36,6 +37,8 @@ methods:
   removeCard: Ask for confirmation, then remove a card. Pass { confirm:false } only for an already-confirmed workflow.
   deleteEditing: Delete the entity currently open in the editor after confirmation.
   schemas: Return built-in schemas merged with state.extraSchemas.
+  getTools: Return resolved toolbar descriptors.
+  runTool: Execute a published toolbar command by id.
 
 events:
   change:
@@ -51,6 +54,8 @@ events:
     detail: Server result after save.
   error:
     detail: Error instance from automatic transport.
+  toolschange:
+    detail: Resolved toolbar descriptors.
 
 api:
   transport: POST to the component api attribute.

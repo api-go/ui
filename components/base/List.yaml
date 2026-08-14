@@ -15,6 +15,7 @@ attributes:
   groupsummaryfield: summary
   groupfield: group
   parentfield: parent
+  iconfield: "Optional item field containing a Bootstrap Icons suffix; falls back to itemicon when empty."
 
 state:
   list: 'Array of item objects. Declarative form: `$.state.list="users"`.'
@@ -45,13 +46,14 @@ rules:
   - With fast, a custom item row must retain list-group-item and $onupdate.
   - Use event.stopPropagation() for action controls that must not select the row.
   - 'Non-default field mapping is declarative: `idfield="key" labelfield="title" summaryfield="desc"`.'
+  - 'Per-item icons are opt-in: set `iconfield="icon"`; values such as `person` render the `bi-person` class and empty values fall back to itemicon.'
   - Default label and summary areas truncate to one line. Slotted item-actions and group-actions preserve application-provided layout classes, including wrapping behavior.
 
 examples: |
   <script>
     const users = [
-      { id: 'ada', label: 'Ada', summary: 'Admin' },
-      { id: 'lin', label: 'Lin', summary: 'Editor' }
+      { id: 'ada', label: 'Ada', summary: 'Admin', icon: 'person' },
+      { id: 'lin', label: 'Lin', summary: 'Editor', icon: 'pencil' }
     ]
     const groups = [{ id: 'ops', label: 'Operations' }]
     const groupedUsers = [{ id: 'ada', label: 'Ada', group: 'ops' }]
@@ -62,6 +64,8 @@ examples: |
   </script>
 
   <List $.state.list="users" auto-select></List>
+
+  <List $.state.list="users" iconfield="icon"></List>
 
   <List $.state.list="users" auto-select>
     <button slot="item-actions" $onclick="event.stopPropagation(); edit(item)">Edit</button>

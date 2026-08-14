@@ -14,6 +14,8 @@ attributes:
   previewauto: boolean; rerun script-enabled HTML after each edit; otherwise explicit refresh is required.
   allowhtml: boolean; parse raw HTML inside Markdown preview before sanitizing it.
   breaks: boolean; convert Markdown paragraph line breaks to br elements.
+  toolbar: boolean; opt in to the component's built-in toolbar. By default tools are exposed only through the Editor toolbar API.
+  notoolbar: boolean; compatibility override that hides the built-in toolbar even when toolbar is present.
 
 properties:
   value: Current source string; compatible with $bind and AutoForm type code.
@@ -23,6 +25,7 @@ properties:
   ready: Promise resolving to the component after its on-demand language bundle loads.
   diagnostics: Current syntax diagnostics.
   documentMode: True when path, api, or version enables Editor document behavior.
+  editorTools: Source toolbar command descriptors supplied through Editor.setTools.
 
 methods:
   reindent: Reindent the complete document using the active language indentation rules and return value.
@@ -32,6 +35,8 @@ methods:
   refreshPreview: Render the current Markdown or HTML source and return a Promise<boolean>.
   load: Added by Editor in document mode; load source text from api and path.
   save: Added by Editor in document mode; save a code document envelope.
+  getTools: Return resolved source, preview, split, validate, and reindent tool descriptors.
+  runTool: Execute a published editor tool by id.
 
 events:
   ready: "detail=CodeEditor after the language bundle and view are ready."
@@ -44,6 +49,7 @@ events:
   save: In document mode, cancelable with detail equal to the outgoing document envelope.
   saved: In document mode, detail is the save response.
   error: "detail=Error from language, preview, or Editor transport loading."
+  toolschange: "detail=resolved toolbar descriptors after capabilities or active state change."
 
 languages:
   javascript: ".js|.mjs|.cjs; aliases js and javascript."

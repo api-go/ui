@@ -1,6 +1,6 @@
 {
   "name": "@apigo.cc/ui",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "private": false,
   "scripts": {
     "build": "node tools/build.cjs",

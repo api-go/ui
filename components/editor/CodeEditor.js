@@ -9,7 +9,6 @@ globalThis.Component.register('CodeEditor', container => {
   const markdownPreview = container.querySelector('.code-editor-markdown')
   const htmlPreview = container.querySelector('.code-editor-html')
   const toolbar = container.querySelector('.code-editor-toolbar')
-  const refreshButton = container.querySelector('[data-action=refresh]')
   const modeButtons = [...container.querySelectorAll('[data-mode]')]
   const state = container.state
   let view = null
@@ -83,7 +82,10 @@ globalThis.Component.register('CodeEditor', container => {
     } else {
       const scripts = container.hasAttribute('previewscripts')
       htmlPreview.setAttribute('sandbox', scripts ? 'allow-scripts' : '')
-      htmlPreview.srcdoc = source
+      let previewSource = source
+	  if (typeof container.transformPreview === 'function') previewSource = await container.transformPreview(source)
+	  if (!scripts) previewSource = previewSource.replace(/<script\b[^>]*>[\s\S]*?<\/script\s*>/gi, '')
+      htmlPreview.srcdoc = previewSource
       htmlPreview.hidden = false
       markdownPreview.hidden = true
     }
@@ -110,11 +112,12 @@ globalThis.Component.register('CodeEditor', container => {
     if (mode !== 'source') renderPreview().catch(emitError)
     requestAnimationFrame(() => view?.requestMeasure())
     if (changed) container.dispatchEvent(new CustomEvent('modechange', { detail: mode, bubbles: false }))
+    if (changed && container.getTools) container.dispatchEvent(new CustomEvent('toolschange', { detail: container.getTools(), bubbles: false }))
     return mode
   }
   const updatePreviewAvailability = () => {
     const available = previewable()
-    toolbar.hidden = !available
+    toolbar.hidden = !available || !container.hasAttribute('toolbar') || container.hasAttribute('notoolbar')
     if (!available) applyMode('source')
     else applyMode(requestedMode())
   }
@@ -175,15 +178,32 @@ globalThis.Component.register('CodeEditor', container => {
     if (!changes.empty) view.dispatch({ changes })
     return container.value
   }
+  globalThis.Editor.setTools(container, [
+    { id: 'source', group: 'view', label: 'Source', icon: 'code-slash', active: () => mode === 'source', hidden: () => !previewable(), run: () => container.setMode('source') },
+    { id: 'split-vertical', group: 'view', label: 'Split left and right', icon: 'layout-split', active: () => mode === 'split' && container.getAttribute('split-direction') !== 'horizontal', hidden: () => !previewable(), run: () => { container.setAttribute('split-direction', 'vertical'); container.setMode('split') } },
+    { id: 'split-horizontal', group: 'view', label: 'Split top and bottom', icon: 'view-stacked', active: () => mode === 'split' && container.getAttribute('split-direction') === 'horizontal', hidden: () => !previewable(), run: () => { container.setAttribute('split-direction', 'horizontal'); container.setMode('split') } },
+    { id: 'preview', group: 'view', label: 'Preview', icon: 'eye', active: () => mode === 'preview', hidden: () => !previewable(), run: () => container.setMode('preview') },
+    { id: 'validate', group: 'document', label: 'Validate syntax', icon: 'check2-circle', run: () => container.validate() },
+    { id: 'reindent', group: 'document', label: 'Format indentation', icon: 'text-indent-left', run: () => container.reindent() }
+  ])
   container.focus = () => view?.focus()
   container.addEventListener('bind', event => { container.value = event.detail })
+  // Reconcile explicitly after document transport completes. This also covers
+  // host state implementations that coalesce a rapid path/data update.
+  container.addEventListener('loaded', () => {
+    updateValue(state.data)
+    requestAnimationFrame(() => view?.requestMeasure())
+  })
   modeButtons.forEach(button => button.addEventListener('click', () => { container.mode = button.dataset.mode }))
-  refreshButton.addEventListener('click', () => renderPreview().catch(emitError))
 
   const documentMode = container.hasAttribute('path') || container.hasAttribute('api') || state.path !== undefined || state.version !== undefined
   container.documentMode = documentMode
   if (documentMode) {
-    globalThis.Editor.connect(container, { type: 'code', defaultData: value, normalize: next => String(next ?? '') })
+    globalThis.Editor.connect(container, {
+      type: 'code',
+      defaultData: value,
+      normalize: next => typeof next === 'string' ? next : JSON.stringify(next ?? {}, null, 2)
+    })
     state.__watch('data', updateValue)
     updateValue(state.data)
   }
@@ -193,31 +213,28 @@ globalThis.Component.register('CodeEditor', container => {
     if (name !== container.language) installLanguage(name).catch(emitError)
   })
 
-  container.ready = cm.loadLanguage(container.language).then(factory => {
-    if (destroyed) return container
-    view = new cm.EditorView({
-      state: cm.EditorState.create({
-        doc: value,
-        extensions: [
-          cm.setup,
-          cm.keymap.of([cm.indentWithTab]),
-          languageCompartment.of(factory()),
-          themeCompartment.of(themeExtension()),
-          readonlyCompartment.of(readonlyExtensions()),
-          syntaxLinter,
-          cm.lintGutter(),
-          cm.EditorView.updateListener.of(update => { if (update.docChanged && !suppressChange) emitChange() })
-        ]
-      }),
-      parent: host
-    })
-    updatePreviewAvailability()
-    container.dispatchEvent(new CustomEvent('ready', { detail: container, bubbles: false }))
-    return container
-  }).catch(error => {
-    emitError(error)
-    throw error
+  // Never block the editable surface on a dynamically loaded language package.
+  // Syntax highlighting is an enhancement and is installed asynchronously below.
+  view = new cm.EditorView({
+    state: cm.EditorState.create({
+      doc: value,
+      extensions: [
+        cm.setup,
+        cm.keymap.of([cm.indentWithTab]),
+        languageCompartment.of([]),
+        themeCompartment.of(themeExtension()),
+        readonlyCompartment.of(readonlyExtensions()),
+        syntaxLinter,
+        cm.lintGutter(),
+        cm.EditorView.updateListener.of(update => { if (update.docChanged && !suppressChange) emitChange() })
+      ]
+    }),
+    parent: host
   })
+  updatePreviewAvailability()
+  container.ready = Promise.resolve(container)
+  container.dispatchEvent(new CustomEvent('ready', { detail: container, bubbles: false }))
+  installLanguage(container.language).catch(emitError)
 
   const observer = new MutationObserver(mutations => {
     for (const mutation of mutations) {
@@ -232,12 +249,14 @@ globalThis.Component.register('CodeEditor', container => {
         updateValue(container.getAttribute('value') || '')
       } else if (mutation.attributeName === 'mode') {
         applyMode(requestedMode())
+      } else if (mutation.attributeName === 'notoolbar' || mutation.attributeName === 'toolbar') {
+        updatePreviewAvailability()
       } else if (['previewscripts', 'allowhtml', 'breaks'].includes(mutation.attributeName) && mode !== 'source') {
         renderPreview().catch(emitError)
       }
     }
   })
-  observer.observe(container, { attributes: true, attributeFilter: ['lang', 'path', 'theme', 'readonly', 'value', 'mode', 'previewscripts', 'allowhtml', 'breaks'] })
+  observer.observe(container, { attributes: true, attributeFilter: ['lang', 'path', 'theme', 'readonly', 'value', 'mode', 'toolbar', 'notoolbar', 'split-direction', 'previewscripts', 'allowhtml', 'breaks'] })
   globalThis.DOMDisposer.add(container, () => {
     destroyed = true
     clearTimeout(previewTimer)
@@ -254,7 +273,6 @@ globalThis.Component.register('CodeEditor', container => {
       <button type="button" class="btn btn-outline-secondary" data-mode="split">Split</button>
       <button type="button" class="btn btn-outline-secondary" data-mode="preview">Preview</button>
     </div>
-    <button type="button" class="btn btn-outline-secondary btn-sm ms-auto" data-action="refresh">Refresh</button>
   </div>
   <div class="code-editor-workspace">
     <div class="code-editor-source"><div class="code-editor-host"></div></div>
@@ -269,15 +287,17 @@ globalThis.Component.register('CodeEditor', container => {
   CodeEditor .code-editor-root { display:flex; flex-direction:column; width:100%; height:100%; min-height:inherit; }
   CodeEditor .code-editor-workspace { display:grid; grid-template-columns:minmax(0, 1fr); flex:1 1 auto; min-height:0; }
   CodeEditor[data-mode="split"] .code-editor-workspace { grid-template-columns:minmax(0, 1fr) minmax(0, 1fr); }
+  CodeEditor[data-mode="split"][split-direction="horizontal"] .code-editor-workspace { grid-template-columns:minmax(0, 1fr); grid-template-rows:minmax(0, 1fr) minmax(0, 1fr); }
   CodeEditor .code-editor-source, CodeEditor .code-editor-preview { min-width:0; min-height:0; overflow:hidden; }
   CodeEditor .code-editor-preview { border-left:1px solid var(--bs-border-color); background:var(--bs-body-bg); }
+  CodeEditor[data-mode="split"][split-direction="horizontal"] .code-editor-preview { border-left:0; border-top:1px solid var(--bs-border-color); }
   CodeEditor .code-editor-host, CodeEditor .cm-editor { height:100%; min-height:inherit; }
   CodeEditor .cm-scroller { overflow:auto; font-family:var(--bs-font-monospace); font-size:.875rem; }
   CodeEditor .cm-focused { outline:2px solid rgba(var(--bs-primary-rgb),.25); outline-offset:-2px; }
+  CodeEditor .cm-cursor, CodeEditor .cm-dropCursor { border-left:2px solid var(--bs-primary) !important; filter:drop-shadow(0 0 1px var(--bs-body-bg)); }
   CodeEditor[readonly] .cm-content { cursor:default; }
   CodeEditor .code-editor-markdown { box-sizing:border-box; height:100%; overflow:auto; padding:1rem; overflow-wrap:anywhere; }
   CodeEditor .code-editor-html { display:block; width:100%; height:100%; min-height:160px; border:0; background:white; }
-  CodeEditor.code-editor-preview-stale [data-action="refresh"] { color:var(--bs-warning-text-emphasis); border-color:var(--bs-warning-border-subtle); }
   CodeEditor .markdown-body > :first-child { margin-top:0; } CodeEditor .markdown-body > :last-child { margin-bottom:0; }
   CodeEditor .markdown-body h1, CodeEditor .markdown-body h2 { padding-bottom:.3em; border-bottom:1px solid var(--bs-border-color); }
   CodeEditor .markdown-body h1 { font-size:2em; } CodeEditor .markdown-body h2 { font-size:1.5em; } CodeEditor .markdown-body h3 { font-size:1.25em; }

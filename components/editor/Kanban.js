@@ -19,7 +19,6 @@ globalThis.Component.register('Kanban', container => {
   }
   container.readonly = container.hasAttribute('readonly')
   globalThis.Editor.connect(container, { type: 'kanban', defaultData: () => ({ columns: [] }), normalize })
-  globalThis.Editor.register({ name: 'Kanban', component: 'Kanban', extensions: ['kanban'], types: ['kanban'], mimeTypes: ['application/x-kanban+json'] })
 
   const state = container.state
   // HTML lowercases attribute names, so declarative $.state.extraSchemas arrives as extraschemas.
@@ -150,6 +149,9 @@ globalThis.Component.register('Kanban', container => {
   }
   document.addEventListener('keydown', outsideEditorEscape)
   container.schemas = schemas
+  globalThis.Editor.setTools(container, [
+    { id: 'add-column', label: 'Add column', icon: 'layout-three-columns', disabled: () => container.readonly, run: () => container.addColumn() }
+  ])
   const documentSave = container.save
   container.save = async () => { const result = await documentSave(); if (result) state.dirty = false; return result }
   container.addEventListener('loaded', () => { state.dirty = false })
@@ -158,14 +160,14 @@ globalThis.Component.register('Kanban', container => {
   globalThis.DOMDisposer.add(container, () => { clearTimeout(sortableTimer); destroySortables(); modal()?.removeEventListener('keydown', container.onEditorKeydown); document.removeEventListener('keydown', outsideEditorEscape) })
 }, globalThis.Util.makeDom(/*html*/`
 <div class="kanban-root d-flex flex-column h-100 min-h-0 border rounded bg-body overflow-hidden">
-  <div slot-id="toolbar" class="kanban-toolbar d-flex align-items-center gap-2 border-bottom bg-body px-3 py-2">
+  <div $if="this.hasAttribute('toolbar')" slot-id="toolbar" class="kanban-toolbar d-flex align-items-center gap-2 border-bottom bg-body px-3 py-2">
     <strong class="text-truncate" $text="this.state.data.title || '{#Kanban#}'"></strong>
     <div $if="!this.readonly" class="dropdown">
       <button type="button" class="btn btn-sm btn-link link-secondary p-1" data-bs-toggle="dropdown" aria-expanded="false" title="{#Board menu#}"><i class="bi bi-three-dots"></i></button>
       <ul class="dropdown-menu shadow-sm"><li><button type="button" class="dropdown-item" $onclick="this.addColumn()"><i class="bi bi-layout-three-columns me-2"></i>{#Add column#}</button></li></ul>
     </div>
     <div class="flex-grow-1"></div>
-    <button type="button" class="kanban-save" $class="'btn btn-sm '+(this.state.dirty?'btn-primary':'btn-outline-secondary')" $disabled="!this.state.dirty || this.state.saving" $onclick="this.save()"><i class="bi bi-save me-1"></i>{#Save#}</button>
+    <button $if="!this.hasAttribute('nosave')" type="button" class="kanban-save" $class="'btn btn-sm '+(this.state.dirty?'btn-primary':'btn-outline-secondary')" $disabled="!this.state.dirty || this.state.saving" $onclick="this.save()"><i class="bi bi-save me-1"></i>{#Save#}</button>
   </div>
   <div class="kanban-columns d-flex gap-3 flex-grow-1 overflow-auto p-3 align-items-stretch">
     <template $each="this.state.data.columns" as="column" index="columnIndex" key="id">
@@ -225,3 +227,5 @@ globalThis.Component.register('Kanban', container => {
   Kanban .sortable-ghost { opacity:.35; }
   Kanban .sortable-drag { cursor:grabbing; }
 </style>`))
+
+globalThis.Editor?.register({ name: 'Kanban', component: 'Kanban', extensions: ['kanban'], types: ['kanban'], mimeTypes: ['application/x-kanban+json'] })

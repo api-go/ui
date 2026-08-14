@@ -89,6 +89,24 @@ const Editor = (() => {
       }
       return target
     },
+    setTools(container, tools = []) {
+      container.editorTools = tools.map(tool => ({ group: 'primary', ...tool }))
+      container.getTools = () => container.editorTools.map(tool => ({
+        ...tool,
+        hidden: typeof tool.hidden === 'function' ? !!tool.hidden() : !!tool.hidden,
+        disabled: typeof tool.disabled === 'function' ? !!tool.disabled() : !!tool.disabled,
+        active: typeof tool.active === 'function' ? !!tool.active() : !!tool.active
+      }))
+      container.runTool = (id, ...args) => {
+        const tool = container.editorTools.find(item => item.id === id)
+        if (!tool || (typeof tool.disabled === 'function' ? tool.disabled() : tool.disabled)) return undefined
+        const result = tool.run?.(...args)
+        container.dispatchEvent(new CustomEvent('toolschange', { detail: container.getTools(), bubbles: false }))
+        return result
+      }
+      container.dispatchEvent(new CustomEvent('toolschange', { detail: container.getTools(), bubbles: false }))
+      return container.editorTools
+    },
     async load({ api, path, version, type }) {
       if (!api) throw new Error('Document api is required for automatic load')
       if (!path) throw new Error('Document path is required for automatic load')

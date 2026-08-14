@@ -3,7 +3,7 @@
 <head><meta charset="utf-8"><title>utilities.Editor tests</title><script src="../ui.js" components="Editor"></script></head>
 <body><button id="runAll">测试全部</button><pre id="result"></pre>
 <script>
-  const cases = ['register-get-list-unregister', 'resolve-precedence', 'document-format', 'schema-merge-defaults', 'clone', 'get-load', 'set-save', 'connect-stateless']
+  const cases = ['register-get-list-unregister', 'resolve-precedence', 'document-format', 'schema-merge-defaults', 'tools-api', 'clone', 'get-load', 'set-save', 'connect-stateless']
   const assert = (result, feature, condition, message) => { result.assertions++; if (condition) result.passed++; else { result.failed++; result.failures.push({ feature, message }) } }
   window.runTest = async () => {
     const result = { name: 'utilities.Editor', status: 'running', assertions: 0, passed: 0, failed: 0, failures: [], consoleErrors: [], coverage: { tested: [], total: cases, percent: 0 } }
@@ -17,6 +17,8 @@
     const schemas = Editor.mergeSchemas({ node: [{ name: 'title', label: 'Title', setting: { required: true } }, { name: 'content' }] }, { node: [{ name: 'title', label: 'Name', setting: { maxlength: 10 } }, { name: 'content', hidden: true }, { name: 'kind', default: 'scene' }] })
     const data = Editor.applyDefaults({}, schemas.node)
     assert(result, 'schema-merge-defaults', schemas.node.length === 2 && schemas.node[0].label === 'Name' && schemas.node[0].setting.required && schemas.node[0].setting.maxlength === 10 && data.kind === 'scene', 'extra schemas merge, hide, and apply defaults')
+    const toolHost = document.createElement('div'); let toolRuns = 0, toolsChanges = 0; toolHost.addEventListener('toolschange', () => toolsChanges++); Editor.setTools(toolHost, [{ id: 'validate', label: 'Validate', icon: 'check2', active: () => toolRuns > 0, run: () => ++toolRuns }]); const initialTools = toolHost.getTools(); const toolResult = toolHost.runTool('validate')
+    assert(result, 'tools-api', initialTools[0].id === 'validate' && !initialTools[0].active && toolResult === 1 && toolHost.getTools()[0].active && toolsChanges === 2, 'editor tools can be described, rendered externally, and invoked through a stable component API')
     const source = { nested: { value: 1 } }, copy = Editor.clone(source); copy.nested.value = 2
     assert(result, 'clone', source.nested.value === 1, 'clone isolates JSON data')
     const loaded = await Editor.load({ api: '/__http__/document', path: 'boards/api.kanban', version: 3, type: 'kanban' })

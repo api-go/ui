@@ -1,5 +1,5 @@
 name: View
-purpose: Load an HTML fragment once and initialize its markup, styles, scripts, and nested views.
+purpose: Load and cache an HTML fragment, then initialize its markup, styles, scripts, and nested views.
 
 attributes:
   file:
@@ -13,7 +13,7 @@ properties:
 methods:
   load:
     signature: view.load()
-    behavior: Load the fragment once per View instance and return the same promise on later calls.
+    behavior: Load the fragment once per View instance and return the same promise on later calls. Recreated View instances reuse the response cache for the same absolute file URL.
 
 events:
   ready:
@@ -26,7 +26,7 @@ rules:
   - An inline script identical to one already present in the document is not executed again.
   - External script src values resolve relative to the fragment file.
   - Fragment style elements remain inside the View and are not duplicated when the same View instance is moved by $if.
-  - A View under $if loads only when first rendered. Re-rendering the same instance does not reload or re-execute scripts.
+  - A View under $if loads only when first rendered. Re-entering the branch may create a new component instance; the fragment response is reused and its scripts are not executed again.
   - Inline scripts use normal browser global script semantics; View does not create a private scope.
 
 examples:

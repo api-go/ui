@@ -1,6 +1,9 @@
 /**
  * View Component Module
  */
+const viewFragmentLoads = new Map()
+const viewExecutedScripts = new Set()
+
 globalThis.Component.register('View', container => {
         const resolveFile = file => {
                 const parentView = container.parentElement?.closest('view')
@@ -9,14 +12,20 @@ globalThis.Component.register('View', container => {
 
         const executeScripts = async scripts => {
                 for (const oldScript of scripts) {
-                        const duplicateInlineScript = !oldScript.src && [...document.scripts].some(script => script !== oldScript && !script.src && script.textContent === oldScript.textContent)
-                        if (duplicateInlineScript) {
+                        const source = oldScript.getAttribute('src')
+                        const resolvedSource = source ? new URL(source, container.fileURL).href : ''
+                        const scriptKey = resolvedSource ? `src:${resolvedSource}` : `inline:${oldScript.textContent}`
+                        const duplicateDocumentScript = [...document.scripts].some(script => script !== oldScript && (
+                                resolvedSource ? script.src === resolvedSource : !script.src && script.textContent === oldScript.textContent
+                        ))
+                        if (viewExecutedScripts.has(scriptKey) || duplicateDocumentScript) {
+                                viewExecutedScripts.add(scriptKey)
                                 oldScript.remove()
                                 continue
                         }
                         const script = document.createElement('script')
                         Array.from(oldScript.attributes).forEach(attribute => script.setAttribute(attribute.name, attribute.value))
-                        if (script.src) script.src = new URL(script.getAttribute('src'), container.fileURL).href
+                        if (resolvedSource) script.src = resolvedSource
                         script.textContent = oldScript.textContent
                         const loaded = script.src ? new Promise((resolve, reject) => {
                                 script.addEventListener('load', resolve, { once: true })
@@ -24,7 +33,21 @@ globalThis.Component.register('View', container => {
                         }) : null
                         oldScript.replaceWith(script)
                         if (loaded) await loaded
+                        viewExecutedScripts.add(scriptKey)
                 }
+        }
+
+        const loadFragment = fileURL => {
+                if (viewFragmentLoads.has(fileURL)) return viewFragmentLoads.get(fileURL)
+                const loading = globalThis.HTTP.get({ url: fileURL, responseType: 'text' }).then(response => {
+                        if (!response.ok) throw new Error(response.error || `Failed to load View: ${fileURL}`)
+                        return response.result
+                }).catch(error => {
+                        viewFragmentLoads.delete(fileURL)
+                        throw error
+                })
+                viewFragmentLoads.set(fileURL, loading)
+                return loading
         }
 
         container.load = () => {
@@ -32,10 +55,9 @@ globalThis.Component.register('View', container => {
                 const file = container.getAttribute('file')
                 if (!file) return Promise.reject(new Error('View requires file="..."'))
                 container.fileURL = resolveFile(file)
-                container._loadPromise = globalThis.HTTP.get({ url: container.fileURL, responseType: 'text' }).then(async response => {
-                        if (!response.ok) throw new Error(response.error || `Failed to load View: ${container.fileURL}`)
+                container._loadPromise = loadFragment(container.fileURL).then(async result => {
                         const template = document.createElement('template')
-                        template.innerHTML = response.result
+                        template.innerHTML = result
                         const scripts = [...template.content.querySelectorAll('script')]
                         container.replaceChildren(template.content)
                         await executeScripts(scripts)

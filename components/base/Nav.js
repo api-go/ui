@@ -19,9 +19,7 @@ globalThis.Component.register('Nav', container => {
 		container.dispatchEvent(new CustomEvent('nav', { detail: { item, name: item.name, selected }, bubbles: false }))
 	}
 	container.clickSubitem = item => {
-		container.state.value = item.name
-		container.dispatchEvent(new CustomEvent('change', { detail: item.name, bubbles: false }))
-		container.dispatchEvent(new CustomEvent('nav', { detail: { item, name: item.name, selected: true }, bubbles: false }))
+		container.click(item)
 	}
 	container.toggleGroup = item => {
 		container.state.openName = container.state.openName === item.name ? null : item.name

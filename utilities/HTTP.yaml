@@ -23,7 +23,7 @@ options:
   method: HTTP method. request defaults to POST.
   data: Object, string, ArrayBuffer, FormData, or HTMLFormElement.
   headers: Request headers.
-  responseType: json, text, or binary. Defaults from Content-Type.
+  responseType: json, text, binary, or stream. Stream returns the response ReadableStream without buffering. Defaults from Content-Type.
   timeout: Milliseconds. Default is 10000.
 
 response:

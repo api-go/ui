@@ -48,10 +48,11 @@ const HTTP = {
                                 if (contentType.includes('application/json')) responseType = 'json'
                                 else if (/image|video|audio|pdf|zip|octet-stream/.test(contentType)) responseType = 'binary'
                                 else responseType = 'text'
-                                response.responseType = responseType
                         }
+                        response.responseType = responseType
                         if (response.ok === false) response.error = (response.statusText || 'HTTP ' + response.status + ' error') + ' for ' + url
-                        if (responseType === 'json') response.result = await resp.json()
+                        if (responseType === 'stream') response.result = resp.body
+                        else if (responseType === 'json') response.result = await resp.json()
                         else response.result = (responseType === 'binary') ? await resp.arrayBuffer() : await resp.text()
                 } catch (err) {
                         Object.assign(response, { error: err.message || String(err), ok: false })

@@ -7270,6 +7270,16 @@ url("data:font/woff;base64,d09GRgABAAAAAsBAAAsAAAAHavgAAQAAAAAAAAAAAAAAAAAAAAAAA
                             --bs-btn-disabled-bg: var(--bs-${name}) !important;
                             --bs-btn-disabled-border-color: var(--bs-${name}) !important;
                         }
+                        .btn-outline-${name} {
+                            --bs-btn-color: var(--bs-${name}) !important;
+                            --bs-btn-border-color: var(--bs-${name}) !important;
+                            --bs-btn-hover-bg: var(--bs-${name}) !important;
+                            --bs-btn-hover-border-color: var(--bs-${name}) !important;
+                            --bs-btn-active-bg: ${activeColor} !important;
+                            --bs-btn-active-border-color: ${activeColor} !important;
+                            --bs-btn-disabled-color: var(--bs-${name}) !important;
+                            --bs-btn-disabled-border-color: var(--bs-${name}) !important;
+                        }
                         .bg-${name} { background-color: var(--bs-${name}) !important; }
                         .text-${name} { color: var(--bs-${name}) !important; }
                         .border-${name} { border-color: var(--bs-${name}) !important; }

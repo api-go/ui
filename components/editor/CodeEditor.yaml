@@ -7,7 +7,8 @@ attributes:
   api: Optional Editor document endpoint; requires path for automatic loading and saving.
   version: Optional document history version passed to Editor transport.
   value: Initial source string.
-  theme: "light|dark; defaults to light."
+  theme: "auto|light|dark; defaults to auto and follows the page data-bs-theme."
+  wrap: boolean; wrap long source lines inside this editor instance.
   readonly: boolean
   mode: "source|split|preview; Markdown and HTML only, otherwise source."
   previewscripts: boolean; allow scripts in HTML preview inside a sandbox without same-origin permission.
@@ -29,6 +30,7 @@ properties:
 
 methods:
   reindent: Reindent the complete document using the active language indentation rules and return value.
+  setWrap: "setWrap(boolean) — enable or disable line wrapping for this editor instance."
   validate: Return current parser syntax diagnostics and update diagnostics.
   focus: Focus the CodeMirror editing surface.
   setMode: "setMode(source|split|preview) — switch panes and return the effective mode."
@@ -80,6 +82,7 @@ rules:
   - Preview modes are available only for Markdown and HTML; other languages remain in source mode.
   - HTML preview isolation reduces page privileges but is not a substitute for a separate origin when running untrusted hostile code.
   - AutoForm mode is a plain string control and does not enable Editor transport.
+  - Line wrapping is an instance display preference; it does not change document data or other editor instances.
   - Editor document mode is enabled only by path, api, state.path, or version and stores source text in state.data.
 
 examples:
@@ -87,7 +90,7 @@ examples:
     <CodeEditor path="scripts/app.js" value="function run(){\nconsole.log('ok')\n}"></CodeEditor>
     <button $onclick="document.querySelector('CodeEditor').reindent()">Reindent</button>
   markdown_split: |
-    <CodeEditor path="README.md" mode="split" style="height:480px" value="# Hello"></CodeEditor>
+    <CodeEditor path="README.md" mode="split" wrap style="height:480px" value="# Hello"></CodeEditor>
   html_script_preview: |
     <CodeEditor path="page.html" mode="split" previewscripts style="height:480px"></CodeEditor>
   autoform: |

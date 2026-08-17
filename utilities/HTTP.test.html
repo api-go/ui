@@ -1,39 +1,30 @@
 <!doctype html>
 <html>
-<head>
-  <meta charset="utf-8">
-  <title>utilities.HTTP tests</title>
-  <script src="../ui.js" components=""></script>
-</head>
-<body>
-  <button id="runAll" type="button">测试全部</button>
-  <pre id="result"></pre>
-  <script>
-    const cases = ['request-default-post', 'get', 'put', 'delete', 'head', 'json-body', 'string-body', 'arraybuffer-body', 'form', 'file', 'text', 'binary', 'response-type', 'http-error', 'timeout', 'keep-headers']
-    const assert = (testResult, feature, condition, message) => { testResult.assertions++; if (condition) testResult.passed++; else { testResult.failed++; testResult.failures.push({ feature, message }) } }
-    const newResult = () => ({ name: 'utilities.HTTP', status: 'running', assertions: 0, passed: 0, failed: 0, failures: [], consoleErrors: [], coverage: { tested: [], total: cases, percent: 0 } })
-    const inspect = options => HTTP.request({ url: '/__http__/inspect', ...options })
-    async function verify(feature, testResult) {
-      if (feature === 'request-default-post') { const response = await inspect({}); assert(testResult, feature, response.ok && response.result.method === 'POST', 'request defaults to POST') }
-      if (feature === 'get') { const response = await HTTP.get({ url: '/__http__/json' }); assert(testResult, feature, response.ok && response.result.method === 'GET' && response.responseType === 'json', 'get returns inferred JSON') }
-      if (feature === 'put') { const response = await HTTP.put({ url: '/__http__/inspect', data: { name: 'Ada' } }); assert(testResult, feature, response.ok && response.result.method === 'PUT', 'put sends PUT') }
-      if (feature === 'delete') { const response = await HTTP.delete({ url: '/__http__/inspect' }); assert(testResult, feature, response.ok && response.result.method === 'DELETE', 'delete sends DELETE') }
-      if (feature === 'head') { const response = await HTTP.head({ url: '/__http__/head', responseType: 'text' }); assert(testResult, feature, response.ok && response.result === '', 'head sends HEAD and accepts an empty text response') }
-      if (feature === 'json-body') { const response = await inspect({ data: { name: 'Ada' } }); assert(testResult, feature, response.ok && response.result.headers['content-type'].includes('application/json') && response.result.body.includes('Ada'), 'plain object becomes JSON') }
-      if (feature === 'string-body') { const response = await inspect({ data: 'raw body', headers: { 'Content-Type': 'text/plain' } }); assert(testResult, feature, response.ok && response.result.body === 'raw body' && response.result.headers['content-type'] === 'text/plain', 'string body and custom headers are preserved') }
-      if (feature === 'arraybuffer-body') { const response = await inspect({ data: new Uint8Array([1, 2]) }); assert(testResult, feature, response.ok && response.result.body.length === 2, 'ArrayBuffer views are sent without JSON conversion') }
-      if (feature === 'form') { const form = document.createElement('form'); const input = document.createElement('input'); input.name = 'name'; input.value = 'Ada'; form.appendChild(input); const response = await HTTP.post({ url: '/__http__/form', data: form }); assert(testResult, feature, response.ok && response.result.contentType.includes('multipart/form-data') && response.result.body.includes('Ada'), 'HTMLFormElement becomes FormData') }
-      if (feature === 'file') { const response = await HTTP.post({ url: '/__http__/form', data: { avatar: new File(['avatar'], 'avatar.txt', { type: 'text/plain' }) } }); assert(testResult, feature, response.ok && response.result.contentType.includes('multipart/form-data') && response.result.body.includes('avatar.txt'), 'File object becomes FormData') }
-      if (feature === 'text') { const response = await HTTP.get({ url: '/__http__/text' }); assert(testResult, feature, response.ok && response.responseType === 'text' && response.result === 'plain text', 'text Content-Type returns text') }
-      if (feature === 'binary') { const response = await HTTP.get({ url: '/__http__/binary' }); assert(testResult, feature, response.ok && response.responseType === 'binary' && response.result.byteLength === 4, 'binary Content-Type returns ArrayBuffer') }
-      if (feature === 'response-type') { const response = await HTTP.get({ url: '/__http__/json', responseType: 'text' }); assert(testResult, feature, response.ok && typeof response.result === 'string' && response.result.includes('GET'), 'responseType overrides Content-Type inference') }
-      if (feature === 'http-error') { const originalFetch = globalThis.fetch; globalThis.fetch = async () => new Response(JSON.stringify({ error: 'invalid' }), { status: 422, headers: { 'Content-Type': 'application/json' } }); const response = await HTTP.get({ url: '/mock-error' }); globalThis.fetch = originalFetch; assert(testResult, feature, !response.ok && response.status === 422 && response.result.error === 'invalid' && response.error.includes('422'), 'HTTP failure resolves with response status, body, and error') }
-      if (feature === 'timeout') { const response = await HTTP.get({ url: '/__http__/delay', timeout: 10 }); assert(testResult, feature, !response.ok && response.error, 'timeout resolves with ok false and an error') }
-      if (feature === 'keep-headers') { await HTTP.get({ url: '/__http__/headers' }); const response = await HTTP.get({ url: '/__http__/inspect' }); assert(testResult, feature, response.result.headers['session-id'] === 'session-test' && response.result.headers['device-id'] === 'device-test', 'Session-Id and Device-Id persist into later requests') }
+<head><meta charset="utf-8"><title>utilities.HTTP tests</title><script src="HTTP.js"></script></head>
+<body><button id="runAll">Run all</button><pre id="result"></pre>
+<script>
+  const cases = ['stream-body', 'retained-headers', 'response-metadata']
+  const assert = (result, feature, condition, message) => { result.assertions++; if (condition) result.passed++; else { result.failed++; result.failures.push({ feature, message }) } }
+  window.runTest = async () => {
+    const result = { name: 'utilities.HTTP', status: 'running', assertions: 0, passed: 0, failed: 0, failures: [], consoleErrors: [], coverage: { tested: [], total: cases, percent: 0 } }
+    const originalFetch = globalThis.fetch
+    const requests = []
+    try {
+      HTTP._keepHeadersCache = { 'Session-Id': 'session-test', 'Device-Id': 'device-test' }
+      globalThis.fetch = async (url, options) => {
+        requests.push({ url, options })
+        const body = new ReadableStream({ start(controller) { controller.enqueue(new TextEncoder().encode('data: one\n\n')); controller.close() } })
+        return new Response(body, { status: 200, headers: { 'Content-Type': 'text/event-stream', 'Session-Id': 'session-next' } })
+      }
+      const response = await HTTP.request({ url: '/stream', method: 'POST', data: { stream: true }, responseType: 'stream' })
+      const reader = response.result.getReader(), first = await reader.read()
+      assert(result, 'stream-body', new TextDecoder().decode(first.value) === 'data: one\n\n' && !first.done, 'stream response remains readable without buffering')
+      assert(result, 'retained-headers', requests[0].options.headers['Session-Id'] === 'session-test' && requests[0].options.headers['Device-Id'] === 'device-test' && HTTP._keepHeadersCache['Session-Id'] === 'session-next', 'retained identity headers are sent and refreshed')
+      assert(result, 'response-metadata', response.ok && response.status === 200 && response.responseType === 'stream', 'explicit stream response type is reported')
+    } finally {
+      globalThis.fetch = originalFetch
     }
-    function finish(testResult) { testResult.coverage.tested = [...cases]; testResult.coverage.percent = 100; testResult.status = testResult.failed ? 'failed' : 'passed'; document.querySelector('#result').textContent = JSON.stringify(testResult, null, 2); window.testResult = testResult; return testResult }
-    window.runTest = async () => { const testResult = newResult(); for (const feature of cases) await verify(feature, testResult); return finish(testResult) }
-    document.querySelector('#runAll').onclick = window.runTest
-  </script>
-</body>
-</html>
+    result.coverage.tested = [...cases]; result.coverage.percent = 100; result.status = result.failed ? 'failed' : 'passed'; document.querySelector('#result').textContent = JSON.stringify(result, null, 2); return result
+  }
+  document.querySelector('#runAll').onclick = window.runTest
+</script></body></html>

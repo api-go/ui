@@ -24,6 +24,7 @@ globalThis.Component.register('CodeEditor', container => {
   const languageCompartment = new cm.Compartment()
   const themeCompartment = new cm.Compartment()
   const readonlyCompartment = new cm.Compartment()
+	const wrapCompartment = new cm.Compartment()
   const path = () => state.path ?? container.getAttribute('path') ?? ''
   const requestedLanguage = () => cm.resolveLanguage({ lang: container.getAttribute('lang'), path: path() })
   const previewable = () => container.language === 'markdown' || container.language === 'html'
@@ -32,7 +33,9 @@ globalThis.Component.register('CodeEditor', container => {
     cm.EditorState.readOnly.of(container.hasAttribute('readonly')),
     cm.EditorView.editable.of(!container.hasAttribute('readonly'))
   ]
-  const themeExtension = () => container.getAttribute('theme') === 'dark' ? cm.oneDark : []
+	const darkTheme = () => container.getAttribute('theme') === 'dark' || ((!container.hasAttribute('theme') || container.getAttribute('theme') === 'auto') && document.documentElement.getAttribute('data-bs-theme') === 'dark')
+	const themeExtension = () => darkTheme() ? cm.oneDark : []
+	const wrapExtension = () => container.hasAttribute('wrap') ? cm.EditorView.lineWrapping : []
   const emitError = error => container.dispatchEvent(new CustomEvent('error', { detail: error, bubbles: false }))
 
   const collectDiagnostics = editorView => {
@@ -178,6 +181,11 @@ globalThis.Component.register('CodeEditor', container => {
     if (!changes.empty) view.dispatch({ changes })
     return container.value
   }
+	container.setWrap = enabled => {
+		enabled = !!enabled
+		container.toggleAttribute('wrap', enabled)
+		return enabled
+	}
   globalThis.Editor.setTools(container, [
     { id: 'source', group: 'view', label: 'Source', icon: 'code-slash', active: () => mode === 'source', hidden: () => !previewable(), run: () => container.setMode('source') },
     { id: 'split-vertical', group: 'view', label: 'Split left and right', icon: 'layout-split', active: () => mode === 'split' && container.getAttribute('split-direction') !== 'horizontal', hidden: () => !previewable(), run: () => { container.setAttribute('split-direction', 'vertical'); container.setMode('split') } },
@@ -185,6 +193,7 @@ globalThis.Component.register('CodeEditor', container => {
     { id: 'preview', group: 'view', label: 'Preview', icon: 'eye', active: () => mode === 'preview', hidden: () => !previewable(), run: () => container.setMode('preview') },
     { id: 'validate', group: 'document', label: 'Validate syntax', icon: 'check2-circle', run: () => container.validate() },
     { id: 'reindent', group: 'document', label: 'Format indentation', icon: 'text-indent-left', run: () => container.reindent() }
+	,{ id: 'wrap', group: 'view', label: 'Wrap lines', icon: 'text-wrap', active: () => container.hasAttribute('wrap'), run: () => container.setWrap(!container.hasAttribute('wrap')) }
   ])
   container.focus = () => view?.focus()
   container.addEventListener('bind', event => { container.value = event.detail })
@@ -224,6 +233,7 @@ globalThis.Component.register('CodeEditor', container => {
         languageCompartment.of([]),
         themeCompartment.of(themeExtension()),
         readonlyCompartment.of(readonlyExtensions()),
+		wrapCompartment.of(wrapExtension()),
         syntaxLinter,
         cm.lintGutter(),
         cm.EditorView.updateListener.of(update => { if (update.docChanged && !suppressChange) emitChange() })
@@ -245,6 +255,9 @@ globalThis.Component.register('CodeEditor', container => {
         view.dispatch({ effects: themeCompartment.reconfigure(themeExtension()) })
       } else if (mutation.attributeName === 'readonly' && view) {
         view.dispatch({ effects: readonlyCompartment.reconfigure(readonlyExtensions()) })
+	  } else if (mutation.attributeName === 'wrap' && view) {
+		view.dispatch({ effects: wrapCompartment.reconfigure(wrapExtension()) })
+		container.dispatchEvent(new CustomEvent('toolschange', { detail: container.getTools?.() || [], bubbles: false }))
       } else if (mutation.attributeName === 'value') {
         updateValue(container.getAttribute('value') || '')
       } else if (mutation.attributeName === 'mode') {
@@ -256,11 +269,16 @@ globalThis.Component.register('CodeEditor', container => {
       }
     }
   })
-  observer.observe(container, { attributes: true, attributeFilter: ['lang', 'path', 'theme', 'readonly', 'value', 'mode', 'toolbar', 'notoolbar', 'split-direction', 'previewscripts', 'allowhtml', 'breaks'] })
+	observer.observe(container, { attributes: true, attributeFilter: ['lang', 'path', 'theme', 'readonly', 'wrap', 'value', 'mode', 'toolbar', 'notoolbar', 'split-direction', 'previewscripts', 'allowhtml', 'breaks'] })
+	const themeObserver = new MutationObserver(() => {
+		if ((!container.hasAttribute('theme') || container.getAttribute('theme') === 'auto') && view) view.dispatch({ effects: themeCompartment.reconfigure(themeExtension()) })
+	})
+	themeObserver.observe(document.documentElement, { attributes: true, attributeFilter: ['data-bs-theme'] })
   globalThis.DOMDisposer.add(container, () => {
     destroyed = true
     clearTimeout(previewTimer)
     observer.disconnect()
+	themeObserver.disconnect()
     view?.destroy()
     view = null
     htmlPreview.srcdoc = ''
@@ -284,15 +302,18 @@ globalThis.Component.register('CodeEditor', container => {
 </div>
 `), globalThis.Util.makeDom(/*html*/`<style>
   CodeEditor { display:block; min-height:160px; border:1px solid var(--bs-border-color); border-radius:var(--bs-border-radius); overflow:hidden; background:var(--bs-body-bg); }
-  CodeEditor .code-editor-root { display:flex; flex-direction:column; width:100%; height:100%; min-height:inherit; }
-  CodeEditor .code-editor-workspace { display:grid; grid-template-columns:minmax(0, 1fr); flex:1 1 auto; min-height:0; }
+  CodeEditor.code-editor-root { display:flex; flex-direction:column; width:100%; height:100%; min-height:inherit; }
+  CodeEditor .code-editor-workspace { display:grid; grid-template-columns:minmax(0, 1fr); flex:1 1 0; width:100%; height:0; min-height:0; }
   CodeEditor[data-mode="split"] .code-editor-workspace { grid-template-columns:minmax(0, 1fr) minmax(0, 1fr); }
   CodeEditor[data-mode="split"][split-direction="horizontal"] .code-editor-workspace { grid-template-columns:minmax(0, 1fr); grid-template-rows:minmax(0, 1fr) minmax(0, 1fr); }
   CodeEditor .code-editor-source, CodeEditor .code-editor-preview { min-width:0; min-height:0; overflow:hidden; }
+  CodeEditor .code-editor-source { position:relative; }
   CodeEditor .code-editor-preview { border-left:1px solid var(--bs-border-color); background:var(--bs-body-bg); }
   CodeEditor[data-mode="split"][split-direction="horizontal"] .code-editor-preview { border-left:0; border-top:1px solid var(--bs-border-color); }
-  CodeEditor .code-editor-host, CodeEditor .cm-editor { height:100%; min-height:inherit; }
+  CodeEditor .code-editor-host { position:absolute; inset:0; }
+  CodeEditor .code-editor-host, CodeEditor .cm-editor { height:100%; min-height:0; }
   CodeEditor .cm-scroller { overflow:auto; font-family:var(--bs-font-monospace); font-size:.875rem; }
+	[data-bs-theme="dark"] CodeEditor .cm-gutters { color:var(--bs-secondary-color); background:var(--bs-tertiary-bg); border-color:var(--bs-border-color); }
   CodeEditor .cm-focused { outline:2px solid rgba(var(--bs-primary-rgb),.25); outline-offset:-2px; }
   CodeEditor .cm-cursor, CodeEditor .cm-dropCursor { border-left:2px solid var(--bs-primary) !important; filter:drop-shadow(0 0 1px var(--bs-body-bg)); }
   CodeEditor[readonly] .cm-content { cursor:default; }

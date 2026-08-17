@@ -11,7 +11,7 @@
 </head>
 <body>
   <CodeEditor id="javascript" path="src/app.js" value="function run(){&#10;console.log('ok')&#10;}"></CodeEditor>
-  <CodeEditor id="markdown" path="docs/README.md" mode="split" style="height:360px" value="# Preview&#10;&#10;**ready**"></CodeEditor>
+  <CodeEditor id="markdown" path="docs/README.md" mode="split" wrap style="height:360px" value="# Preview&#10;&#10;**ready**"></CodeEditor>
   <CodeEditor id="htmlPreview" path="pages/preview.html" mode="preview" style="height:240px"></CodeEditor>
   <div style="position:absolute;left:-10000px;top:0;width:800px">
     <CodeEditor id="json" path="config/app.json" value="{&quot;enabled&quot;:true}"></CodeEditor>
@@ -21,11 +21,12 @@
     <CodeEditor id="css" path="styles/app.css" value="body { color: red; }"></CodeEditor>
     <CodeEditor id="explicit" path="scripts/task.py" lang="css" readonly theme="dark" value="body{}"></CodeEditor>
     <CodeEditor id="documentEditor" path="scripts/local.py" value="print('local')"></CodeEditor>
+    <CodeEditor id="longDocument" path="logs/long.json" style="height:200px"></CodeEditor>
     <AutoForm id="form" nobutton $.state.data="formData" $.state.schema="formSchema"></AutoForm>
   </div>
   <button id="runAll" type="button">测试全部</button><pre id="result"></pre>
   <script>
-    const cases = ['languages', 'highlight', 'path-detection', 'lang-precedence', 'value', 'ready-view-focus', 'readonly-theme', 'change-input', 'diagnostics', 'reindent', 'autoform-code', 'editor-document', 'registry', 'on-demand-bundles', 'markdown-preview', 'markdown-options', 'preview-modes', 'preview-events', 'html-sandbox', 'html-script-opt-in', 'html-script-manual-refresh', 'html-script-auto']
+    const cases = ['languages', 'highlight', 'path-detection', 'lang-precedence', 'value', 'ready-view-focus', 'readonly-theme', 'line-wrap', 'long-document-scroll', 'change-input', 'diagnostics', 'reindent', 'autoform-code', 'editor-document', 'registry', 'on-demand-bundles', 'markdown-preview', 'markdown-options', 'preview-modes', 'preview-events', 'html-sandbox', 'html-script-opt-in', 'html-script-manual-refresh', 'html-script-auto']
     const assert = (result, feature, condition, message) => { result.assertions++; if (condition) result.passed++; else { result.failed++; result.failures.push({ feature, message }) } }
     const tick = (ms = 80) => new Promise(resolve => setTimeout(resolve, ms))
     window.runTest = async () => {
@@ -47,6 +48,14 @@
       assert(result, 'ready-view-focus', javascript.view && javascript.ready instanceof Promise && javascript.view.hasFocus, `ready exposes EditorView and focus focuses it; active=${document.activeElement?.className}`)
       const darkColor = getComputedStyle(explicit.view.dom).backgroundColor, lightColor = getComputedStyle(json.view.dom).backgroundColor
       assert(result, 'readonly-theme', explicit.view.state.readOnly && darkColor !== lightColor, `readonly and dark theme configure the view; readonly=${explicit.view.state.readOnly}, colors=${darkColor}/${lightColor}`)
+	  const markdown = document.querySelector('#markdown')
+	  assert(result, 'line-wrap', markdown.view.lineWrapping && !javascript.view.lineWrapping, 'wrap affects only the configured editor instance')
+	  markdown.setWrap(false); await tick(); assert(result, 'line-wrap', !markdown.view.lineWrapping && !markdown.hasAttribute('wrap'), 'setWrap updates the instance extension and attribute')
+	  markdown.setWrap(true); await tick()
+      const longDocument = document.querySelector('#longDocument'); longDocument.value = Array.from({ length: 120 }, (_, index) => `{"line":${index}}`).join('\n'); await tick()
+      const longScroller = longDocument.querySelector('.cm-scroller')
+      const longRoot = longDocument, longWorkspace = longDocument.querySelector('.code-editor-workspace'), longSource = longDocument.querySelector('.code-editor-source'), longHost = longDocument.querySelector('.code-editor-host')
+      assert(result, 'long-document-scroll', longDocument.clientHeight >= 190 && longDocument.clientHeight <= 200 && longScroller.clientHeight > 0 && longScroller.clientHeight < longScroller.scrollHeight, `long documents keep the configured editor height and scroll internally; editor=${longDocument.clientHeight}, root=${longRoot.clientHeight}, workspace=${longWorkspace.clientHeight}, source=${longSource.clientHeight}, host=${longHost.clientHeight}, scroller=${longScroller.clientHeight}/${longScroller.scrollHeight}`)
       let changeDetail, inputCount = 0
       javascript.addEventListener('change', event => { changeDetail = event.detail }, { once: true })
       javascript.addEventListener('input', () => { inputCount++ }, { once: true })
@@ -70,7 +79,6 @@
       assert(result, 'registry', ['js', 'json', 'yaml', 'py', 'html', 'css', 'md'].every(extension => Editor.resolve({ path: `file.${extension}` })?.component === 'CodeEditor'), 'Editor registry resolves every supported extension')
       const resources = performance.getEntriesByType('resource').map(entry => new URL(entry.name).pathname)
       assert(result, 'on-demand-bundles', languages.every(name => resources.some(path => path.endsWith(`/libraries/CodeMirror${{ javascript: 'JavaScript', json: 'JSON', yaml: 'YAML', python: 'Python', html: 'HTML', css: 'CSS', markdown: 'Markdown' }[name]}.js`))), 'each requested language loads its independent classic-script bundle')
-      const markdown = document.querySelector('#markdown')
       await markdown.refreshPreview()
       assert(result, 'markdown-preview', markdown.querySelector('.code-editor-markdown h1')?.textContent === 'Preview' && markdown.querySelector('.code-editor-markdown strong')?.textContent === 'ready', 'Markdown split preview uses the shared safe renderer')
       markdown.value = '# Updated'

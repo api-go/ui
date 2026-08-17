@@ -214,6 +214,17 @@ globalThis.Component.register('List', container => {
 		container.dispatchEvent(new CustomEvent('groupclick', { bubbles: false, detail: { item, index } }))
 	}
 	container.toggleCollapse = (item) => { if (container.collapsible && item._hasChildren) { container.collapsed[item[container.idfield]] = !container.collapsed[item[container.idfield]]; updateFlatList(); } }
+	container.collapseAll = () => {
+		if (container.mode !== 'tree' || !container.collapsible) return
+		const parents = new Set((container.state.list || []).map(item => item[container.parentfield]).filter(Boolean))
+		parents.forEach(id => { container.collapsed[id] = true })
+		updateFlatList()
+	}
+	container.expandAll = () => {
+		if (container.mode !== 'tree' || !container.collapsible) return
+		Object.keys(container.collapsed).forEach(id => { container.collapsed[id] = false })
+		updateFlatList()
+	}
 	container.itemIcon = item => (container.iconfield && item?.[container.iconfield]) || container.itemicon
 
 	Object.defineProperty(container, 'filterFunc', {

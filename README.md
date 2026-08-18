@@ -7,7 +7,7 @@
 Pages load `ui.js` directly from a CDN and explicitly declare required public APIs:
 
 ```html
-<script src="https://cdn.jsdelivr.net/npm/@apigo.cc/ui@1.0.4/ui.js" components="base,form"></script>
+<script src="https://cdn.jsdelivr.net/npm/@apigo.cc/ui@1.0.5/ui.js" components="base,form"></script>
 ```
 
 `ui.js` always loads the framework and core utilities. Specialized utilities and embedded libraries are resolved automatically from component dependencies. The `components` attribute accepts public component names and the `base`, `form`, `data`, and `editor` categories; both forms can be mixed.

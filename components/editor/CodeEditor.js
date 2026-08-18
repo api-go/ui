@@ -242,9 +242,8 @@ globalThis.Component.register('CodeEditor', container => {
     parent: host
   })
   updatePreviewAvailability()
-  container.ready = Promise.resolve(container)
-  container.dispatchEvent(new CustomEvent('ready', { detail: container, bubbles: false }))
-  installLanguage(container.language).catch(emitError)
+  container.ready = installLanguage(container.language).then(() => container).catch(error => { emitError(error); return container })
+  container.ready.then(() => container.dispatchEvent(new CustomEvent('ready', { detail: container, bubbles: false })))
 
   const observer = new MutationObserver(mutations => {
     for (const mutation of mutations) {

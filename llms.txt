@@ -35,6 +35,7 @@ Load the chosen URL in `<head>` without `async`, `defer`, or `type="module"`. A 
 - Resolve every relative link from the URL of this file. Linked YAML files are authoritative API contracts.
 - Do not preload every linked document. Follow `related` and `tests` references only when they are relevant to the task.
 - Preserve declarative bindings when extending a component.
+- Use `$.state.*` for reactive component-property expressions, including asynchronous API result bindings such as `<List $.state.list="usersApi.result.list">`; do not omit `$`.
 - Do not change framework internals unless framework changes are requested.
 - Add or update a regression test for every public behavior change.
 - Before declaring a public API complete, compare its YAML attributes, properties, methods, events, slots, state fields, options, and rules against named test assertions and examples. Every documented item needs coverage; examples must visibly demonstrate the core behavior declaratively.

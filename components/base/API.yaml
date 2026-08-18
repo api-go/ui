@@ -37,6 +37,7 @@ rules:
   - request.url is required before calling do.
   - Without request.method, API uses POST when request.data is present and GET otherwise.
   - Bind request with $.request when external state owns request configuration.
+  - Bind asynchronous result fields directly to component state, for example `$.state.list="usersApi.result.list"`.
 
 examples:
   auto: |

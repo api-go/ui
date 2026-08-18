@@ -1,6 +1,10 @@
 name: List
 purpose: Render flat, grouped, tree, or virtualized item lists with declarative selection and slots.
 
+appearance:
+  default: Compact borderless rows with a transparent background and small text.
+  selected: Theme-primary text emphasis without a filled active background.
+
 attributes:
   mode: [normal, group, tree]
   fast: "boolean — virtual scrolling"

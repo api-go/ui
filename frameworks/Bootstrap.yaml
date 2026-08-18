@@ -7,7 +7,7 @@ provided:
   Bootstrap: 'apigo helper API for theme configuration.'
 
 config:
-  colors: 'Bootstrap.config({ primary: "#6f42c1", success: "#198754" }) patches CSS variables and related component colors.'
+  colors: 'Bootstrap.config({ primary: "#6f42c1", success: "#198754" }) patches CSS variables and related component colors; primary also drives links and btn-link states.'
   dark_mode: 'Bootstrap.config({ darkMode: true }) sets data-bs-theme.'
   bind_dark_mode: 'Bootstrap.config({ bindDarkMode: [LocalStorage, "darkMode"] }) reacts to a state key.'
 

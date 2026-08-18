@@ -22,7 +22,7 @@ createServer((request, response) => {
   const pathname = decodeURIComponent(new URL(request.url, `http://${request.headers.host}`).pathname);
   if (pathname.startsWith('/__http__/')) {
     const send = (status, headers, body) => response.writeHead(status, headers).end(body);
-    if (pathname === '/__http__/json') return send(200, { 'Content-Type': 'application/json' }, JSON.stringify({ ok: true, method: request.method }));
+    if (pathname === '/__http__/json') return send(200, { 'Content-Type': 'application/json' }, JSON.stringify({ ok: true, method: request.method, items: [{ id: 'api-item', label: 'API item' }] }));
     if (pathname === '/__http__/api-error') return send(200, { 'Content-Type': 'application/json' }, JSON.stringify({ error: 'application failed' }));
     if (pathname === '/__http__/text') return send(200, { 'Content-Type': 'text/plain' }, 'plain text');
     if (pathname === '/__http__/head') return send(200, { 'Content-Type': 'text/plain' }, '');

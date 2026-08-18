@@ -7345,6 +7345,22 @@ url("data:font/woff;base64,d09GRgABAAAAAsBAAAsAAAAHavgAAQAAAAAAAAAAAAAAAAAAAAAAA
           }
         }
       });
+      if (options.primary) {
+        const rgb = Bootstrap._hexToRgb(options.primary);
+        const hoverColor = Bootstrap._shadeColor(options.primary, 0.15);
+        const activeColor = Bootstrap._shadeColor(options.primary, 0.2);
+        root.style.setProperty("--bs-link-color", options.primary);
+        root.style.setProperty("--bs-link-hover-color", hoverColor);
+        if (rgb) root.style.setProperty("--bs-link-color-rgb", `${rgb.r}, ${rgb.g}, ${rgb.b}`);
+        cssPatch += `
+				.btn-link {
+					--bs-btn-color: var(--bs-primary) !important;
+					--bs-btn-hover-color: ${hoverColor} !important;
+					--bs-btn-active-color: ${activeColor} !important;
+					--bs-btn-disabled-color: rgba(var(--bs-primary-rgb), .65) !important;
+				}
+			`;
+      }
       if (cssPatch) {
         let styleEl = document.getElementById("bs-config-patch");
         if (!styleEl) {

@@ -55,7 +55,7 @@ globalThis.Component.register('List', container => {
 
 	const updateFlatList = () => {
 		globalThis.Util.updateDefaults(container, defaultSets)
-		let list = container.state.list || []
+		let list = Array.isArray(container.state.list) ? container.state.list : []
 		let filter = container.state.filter
 		let order = container.state.order
 		const filterFunc = container._filterFunc
@@ -90,7 +90,7 @@ globalThis.Component.register('List', container => {
 			const filteredList = list.filter(item => matchesItem(item, filter, filterFunc))
 			const itemMap = {}
 			filteredList.forEach(item => (itemMap[item[container.groupfield]] ??= []).push(item));
-			(container.state.groups || []).forEach(group => {
+			(Array.isArray(container.state.groups) ? container.state.groups : []).forEach(group => {
 				const items = itemMap[group[container.groupidfield]]
 				let groupMatches = false
 				if (filter !== undefined && filter !== null && filter !== '') {
@@ -216,7 +216,7 @@ globalThis.Component.register('List', container => {
 	container.toggleCollapse = (item) => { if (container.collapsible && item._hasChildren) { container.collapsed[item[container.idfield]] = !container.collapsed[item[container.idfield]]; updateFlatList(); } }
 	container.collapseAll = () => {
 		if (container.mode !== 'tree' || !container.collapsible) return
-		const parents = new Set((container.state.list || []).map(item => item[container.parentfield]).filter(Boolean))
+		const parents = new Set((Array.isArray(container.state.list) ? container.state.list : []).map(item => item[container.parentfield]).filter(Boolean))
 		parents.forEach(id => { container.collapsed[id] = true })
 		updateFlatList()
 	}
@@ -241,7 +241,7 @@ globalThis.Component.register('List', container => {
 <div class="list-group overflow-auto" onscroll="this.refresh()" style="overflow-anchor:none">
         <div class="vs-pad-top flex-shrink-0" style="height:0px;"></div>
         <template slot-id="item" $each="this.state.renderedList">
-                <div $onupdate="this.onItemUpdate(index, thisNode)" $class="list-group-item d-inline-flex align-items-center w-100 pe-2 \${item.type==='group'?'bg-body-tertiary fw-bold ps-2':'list-group-item-action ' + (this.mode==='group'?'ps-4':'ps-2')} \${item.type==='group'?(this.state?.selectedGroup===item[this.groupidfield]?'active':''):(this.state?.selectedItem===item[this.idfield]?'active':'')}" $onclick="item.type==='group'?this.selectGroup(item,index):this.selectItem(item,index)">
+                <div $onupdate="this.onItemUpdate(index, thisNode)" $class="list-group-item border-0 bg-transparent small py-1 d-inline-flex align-items-center w-100 pe-2 \${item.type==='group'?'fw-semibold ps-2':'list-group-item-action ' + (this.mode==='group'?'ps-4':'ps-2')} \${item.type==='group'?(this.state?.selectedGroup===item[this.groupidfield]?'text-primary fw-semibold':''):(this.state?.selectedItem===item[this.idfield]?'text-primary fw-semibold':'')}" $onclick="item.type==='group'?this.selectGroup(item,index):this.selectItem(item,index)">
                         <template $if="item.type === 'group'">
                                 <template $if="this.groupicon">
                                         <span $class="bi bi-\${this.groupicon} text-body"></span>

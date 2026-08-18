@@ -4,8 +4,8 @@ purpose: Render flat, grouped, tree, or virtualized item lists with declarative 
 appearance:
   default: Compact borderless rows with a transparent background and small text.
   selected: Theme-primary text emphasis without a filled active background.
-  summary: Uses opacity so it stays visually secondary while inheriting the selected row color.
-  tree: Uses tighter vertical spacing; expandable parent nodes use the caret without a second folder icon.
+  summary: Uses opacity-75 so it stays visually secondary while inheriting the selected row color.
+  tree: Uses compact pt-1/pb-0 spacing; expandable parent nodes use the caret without a second folder icon.
 
 attributes:
   mode: [normal, group, tree]

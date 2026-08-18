@@ -2,6 +2,12 @@
  * Modal Component Module
  */
 globalThis.Component.register('Modal', container => {
+	const dialog = container.querySelector('.modal-dialog')
+	const body = container.querySelector('.modal-body')
+	if (container.hasAttribute('width')) dialog.style.width = container.getAttribute('width')
+	if (container.hasAttribute('max-width')) dialog.style.maxWidth = container.getAttribute('max-width')
+	if (container.hasAttribute('body-height')) body.style.height = container.getAttribute('body-height')
+	if (container.hasAttribute('body-min-height')) body.style.minHeight = container.getAttribute('body-min-height')
         const staticDismiss = container.getAttribute('data-bs-backdrop') === 'static' || container.hasAttribute('static')
         container.guardDirty = container.hasAttribute('guard-dirty')
         container.dirty = false

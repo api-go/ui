@@ -4,6 +4,8 @@ purpose: Render flat, grouped, tree, or virtualized item lists with declarative 
 appearance:
   default: Compact borderless rows with a transparent background and small text.
   selected: Theme-primary text emphasis without a filled active background.
+  summary: Uses opacity so it stays visually secondary while inheriting the selected row color.
+  tree: Uses tighter vertical spacing; expandable parent nodes use the caret without a second folder icon.
 
 attributes:
   mode: [normal, group, tree]
@@ -36,6 +38,8 @@ properties:
 methods:
   collapseAll: "Collapse every parent node when mode=tree and collapsible is enabled."
   expandAll: "Expand every parent node when mode=tree and collapsible is enabled."
+  isAllCollapsed: "Return whether every expandable tree node is collapsed."
+  toggleAll: "Expand a fully collapsed tree, otherwise collapse all expandable nodes."
 
 events:
   change:
@@ -55,7 +59,7 @@ rules:
   - Use event.stopPropagation() for action controls that must not select the row.
   - 'Non-default field mapping is declarative: `idfield="key" labelfield="title" summaryfield="desc"`.'
   - 'Per-item icons are opt-in: set `iconfield="icon"`; values such as `person` render the `bi-person` class and empty values fall back to itemicon.'
-  - 'Tree toolbars may call `collapseAll()` and `expandAll()`; both methods are no-ops outside a collapsible tree.'
+  - 'Tree toolbars may call `collapseAll()`, `expandAll()`, or `toggleAll()`; these methods are no-ops outside a collapsible tree.'
   - Default label and summary areas truncate to one line. Slotted item-actions and group-actions preserve application-provided layout classes, including wrapping behavior.
 
 examples: |

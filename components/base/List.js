@@ -220,6 +220,12 @@ globalThis.Component.register('List', container => {
 		parents.forEach(id => { container.collapsed[id] = true })
 		updateFlatList()
 	}
+	container.isAllCollapsed = () => {
+		if (container.mode !== 'tree' || !container.collapsible) return false
+		const parents = new Set((Array.isArray(container.state.list) ? container.state.list : []).map(item => item[container.parentfield]).filter(Boolean))
+		return parents.size > 0 && [...parents].every(id => container.collapsed[id])
+	}
+	container.toggleAll = () => container.isAllCollapsed() ? container.expandAll() : container.collapseAll()
 	container.expandAll = () => {
 		if (container.mode !== 'tree' || !container.collapsible) return
 		Object.keys(container.collapsed).forEach(id => { container.collapsed[id] = false })
@@ -241,13 +247,13 @@ globalThis.Component.register('List', container => {
 <div class="list-group overflow-auto" onscroll="this.refresh()" style="overflow-anchor:none">
         <div class="vs-pad-top flex-shrink-0" style="height:0px;"></div>
         <template slot-id="item" $each="this.state.renderedList">
-                <div $onupdate="this.onItemUpdate(index, thisNode)" $class="list-group-item border-0 bg-transparent small py-1 d-inline-flex align-items-center w-100 pe-2 \${item.type==='group'?'fw-semibold ps-2':'list-group-item-action ' + (this.mode==='group'?'ps-4':'ps-2')} \${item.type==='group'?(this.state?.selectedGroup===item[this.groupidfield]?'text-primary fw-semibold':''):(this.state?.selectedItem===item[this.idfield]?'text-primary fw-semibold':'')}" $onclick="item.type==='group'?this.selectGroup(item,index):this.selectItem(item,index)">
+                <div $onupdate="this.onItemUpdate(index, thisNode)" $style="cursor:\${item.type==='group'?(this.hasAttribute('auto-select-group')?'pointer':'default'):(this.hasAttribute('auto-select')?'pointer':'default')}" $class="list-group-item border-0 bg-transparent small \${this.mode==='tree'?'py-0':'py-1'} d-inline-flex align-items-center w-100 pe-2 \${item.type==='group'?'fw-semibold ps-2':'list-group-item-action ' + (this.mode==='group'?'ps-4':'ps-2')} \${item.type==='group'?(this.state?.selectedGroup===item[this.groupidfield]?'text-primary fw-semibold':''):(this.state?.selectedItem===item[this.idfield]?'text-primary fw-semibold':'')}" $onclick="item.type==='group'?this.selectGroup(item,index):this.selectItem(item,index)">
                         <template $if="item.type === 'group'">
                                 <template $if="this.groupicon">
                                         <span $class="bi bi-\${this.groupicon} text-body"></span>
                                 </template>
                                 <div class="flex-fill text-truncate px-1" $text="\${item[this.grouplabelfield]}"></div>
-                                <div class="text-muted small flex-fill text-truncate text-end" $text="\${item[this.groupsummaryfield] || ''}"></div>
+                                <div class="opacity-50 small flex-fill text-truncate text-end" $text="\${item[this.groupsummaryfield] || ''}"></div>
                                 <div slot-id="group-actions"></div>
                         </template>
                         <template $if="item.type === 'item'">
@@ -258,14 +264,14 @@ globalThis.Component.register('List', container => {
                                                 </template>
                                         </div>
                                 </template>
-						<template $if="this.mode === 'tree' && (item._hasChildren ? this.groupicon : this.itemIcon(item))">
-								<span $class="text-muted bi bi-\${item._hasChildren ? this.groupicon : this.itemIcon(item)}"></span>
+						<template $if="this.mode === 'tree' && !item._hasChildren && this.itemIcon(item)">
+								<span $class="opacity-50 bi bi-\${this.itemIcon(item)}"></span>
 						</template>
 						<template $if="this.mode !== 'tree' && this.itemIcon(item)">
 								<span $class="bi bi-\${this.itemIcon(item)} text-body"></span>
                                 </template>
                                 <div class="flex-fill text-truncate px-1" $text="\${item[this.labelfield] || ''}"></div>
-                                <div class="text-muted fs-7 small ms-2 flex-fill text-truncate text-end" $text="\${item[this.summaryfield] || ''}"></div>
+                                <div class="opacity-50 fs-7 small ms-2 flex-fill text-truncate text-end" $text="\${item[this.summaryfield] || ''}"></div>
                                 <div slot-id="item-actions"></div>
                         </template>
                 </div>

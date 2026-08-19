@@ -16,6 +16,7 @@
   <div style="position:absolute;left:-10000px;top:0;width:800px">
     <CodeEditor id="json" path="config/app.json" value="{&quot;enabled&quot;:true}"></CodeEditor>
     <CodeEditor id="yaml" path="config/app.yml" value="enabled: true"></CodeEditor>
+    <CodeEditor id="llmYaml" path="config/llm.yaml"></CodeEditor>
     <CodeEditor id="python" path="scripts/task.py" value="def run():&#10;  return True"></CodeEditor>
     <CodeEditor id="html" path="pages/index.htm" value="&lt;main&gt;Hello&lt;/main&gt;"></CodeEditor>
     <CodeEditor id="css" path="styles/app.css" value="body { color: red; }"></CodeEditor>
@@ -44,6 +45,7 @@
       assert(result, 'lang-precedence', explicit.language === 'css', 'explicit lang overrides the path extension')
       const javascript = document.querySelector('#javascript')
       assert(result, 'value', javascript.value.includes("console.log('ok')") && javascript.getAttribute('value').includes('function'), 'value exposes source text without rewriting the initial attribute')
+      assert(result, 'diagnostics', languages.every(name => document.querySelector(`#${name}`).validate().length === 0), 'valid JavaScript, JSON, YAML, Python, HTML, CSS, and Markdown have no parser diagnostics')
       javascript.focus(); await tick()
       assert(result, 'ready-view-focus', javascript.view && javascript.ready instanceof Promise && javascript.view.hasFocus, `ready exposes EditorView and focus focuses it; active=${document.activeElement?.className}`)
       const darkColor = getComputedStyle(explicit.view.dom).backgroundColor, lightColor = getComputedStyle(json.view.dom).backgroundColor
@@ -64,6 +66,31 @@
       json.value = '{"enabled":}'
       await tick(260)
       assert(result, 'diagnostics', json.validate().length > 0 && json.diagnostics.length > 0 && CodeMirror.diagnosticCount(json.view.state) > 0, 'parser errors update diagnostics and the lint state')
+      const llmYaml = document.querySelector('#llmYaml')
+      llmYaml.value = `# Unified LLM contract
+name: LLM
+abstract: true
+method: POST
+filters: [LLMSession, LLM]
+reasoning:
+  supported: true
+  levels: [none, low, medium, high]
+requestSchema:
+  - {name: model, label: Model, type: select, options: []}
+  - {name: messages, label: Messages, type: textarea, json: true}
+test:
+  request:
+    model: ""
+    messages:
+      - role: user
+        contents:
+          - type: text
+            content: "Hello"
+creation:
+  providerProtocols: [openai.chat, openai.responses, anthropic.messages, google.gemini]
+`
+      await tick(260)
+      assert(result, 'diagnostics', llmYaml.validate().length === 0 && llmYaml.diagnostics.length === 0, `valid nested and flow-style YAML has no parser errors; diagnostics=${JSON.stringify(llmYaml.diagnostics)}`)
       javascript.value = "function run(){\nconsole.log('ok')\n}"
       javascript.reindent()
       assert(result, 'reindent', javascript.value.split('\n')[1].startsWith('  '), 'reindent applies language indentation to the complete document')

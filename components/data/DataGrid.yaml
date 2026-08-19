@@ -19,6 +19,12 @@ state:
   selectedRowCount: Selected row count.
   isDirty: Whether edits are pending save.
 
+slots:
+  toolbar-start: Content rendered at the far left of the top toolbar, before the selection count and built-in actions.
+  toolbar-end: Content rendered near the right edge of the top toolbar, before save status.
+  footer-start: Compatibility alias rendered after the built-in actions in the top toolbar.
+  footer-end: Compatibility alias rendered near the right edge of the top toolbar.
+
 editing:
   formTypes: [text, number, select, checkbox, radio, switch, textarea, date, datetime, TagsInput, DatePicker, ColorPicker, IconPicker]
   rule: Double-click an editable cell, then click outside the editor or press Enter to save its bound value.
@@ -73,10 +79,10 @@ api:
   behavior: Sorting and filters build validated filter plus sort structures and reload from the server. Pending edits require confirmation before a reload.
   field_layout: Header drag reorder writes Field.priority; completed column resize writes settings.width. API-backed grids immediately call setField with complete field records, so these metadata-only operations do not make the row Save button dirty.
   row_order: A real data field named priority with database type ff becomes a 42px drag handle. It follows the same optional Pin Column setting as ordinary fields and is not pinned implicitly. Reordering is available only with no active user sort or filter. Normally only the moved row is saved with a midpoint priority; exhausted floating-point gaps re-space at most 21 nearby rows rather than the whole table.
-  empty_table: When fields returns an empty array, DataGrid does not query the not-yet-created physical table and shows Add Field in the footer.
+  empty_table: When fields returns an empty array, DataGrid does not query the not-yet-created physical table and shows Add Field in the toolbar.
 
 advanced_mode:
-  behavior: The footer toggle appends read-only internal columns id, creator, createTime, updater, and updateTime. They are not added to fields or included in field save requests.
+  behavior: The toolbar toggle appends read-only internal columns id, creator, createTime, updater, and updateTime. They are not added to fields or included in field save requests.
 
 global:
   DataGrid:
@@ -101,6 +107,8 @@ rules:
   - DataGrid only supports data-API field definitions; use datatable for generic tabular display.
   - Async fields and list bindings may be undefined before an API response; DataGrid waits for arrays.
   - Give the DataGrid or its parent an explicit height so virtual scrolling has a viewport.
+  - DataGrid contains its intrinsic inline size so wide columns scroll inside .dt-main instead of widening the host or its toolbar.
+  - The top toolbar has a stable 48px height so host modules can align their primary toolbars consistently.
   - Treat underscore-prefixed state fields as internal read-only diagnostics.
   - Custom field editors must be registered in AutoForm before use.
   - The trailing row editor is the tinted row div background after the last real field, not a synthetic field or pseudo-element. Real cells paint their own background, so cell and row-background double-clicks remain distinct without an event-capturing overlay.

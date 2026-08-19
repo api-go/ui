@@ -1226,8 +1226,9 @@ globalThis.Component.register('DataGrid', container => {
 			</div>
 		</Modal>
 
-        <div class="dt-footer border-top bg-body-tertiary d-flex align-items-center px-3 py-1 shadow-sm text-nowrap" $.="this.ensureFooterHost(thisNode)" style="position:absolute; left:0; right:0; bottom:0; height:40px; z-index:30; overflow:hidden">
+        <div class="dt-toolbar border-bottom bg-body-tertiary d-flex align-items-center px-3 py-1 shadow-sm text-nowrap" $.="this.ensureFooterHost(thisNode)" style="position:absolute; left:0; right:0; top:0; height:48px; z-index:30; overflow:hidden">
                 <div class="d-flex align-items-center gap-3 flex-grow-1">
+                        <div slot-id="toolbar-start" class="d-flex align-items-center gap-2"></div>
                         <div class="d-flex align-items-center gap-1 text-muted" style="font-size: 0.75rem">
                                 <i class="bi bi-check-all fs-6"></i><span $text="(this.state?.selectedRowCount || 0) + ' / ' + (this.apiUrl ? (this.state?.total || 0) : (this.state?.list?.length || 0))"></span>
                         </div>
@@ -1239,28 +1240,28 @@ globalThis.Component.register('DataGrid', container => {
                         <label $if="this.state?.showAdvanced" class="small d-flex align-items-center mb-0 text-nowrap" title="System Fields"><input class="form-check-input" type="checkbox" $bind="this.state.advancedMode"><i class="bi bi-eye mx-1 dt-toolbar-icon"></i><span class="dt-toolbar-label ms-1">System Fields</span></label>
 						<div slot-id="footer-start" class="d-flex align-items-center gap-2"></div>
                 </div>
+				<div slot-id="toolbar-end" class="d-flex align-items-center gap-2"></div>
 				<div slot-id="footer-end" class="d-flex align-items-center gap-2"></div>
                 <div $if="this.state?.editable && !this.state?.readonly" class="d-flex align-items-center gap-2">
-                        <button $if="this.state?.isDirty" class="btn btn-sm btn-primary border-0 px-3 shadow-sm d-flex align-items-center fw-bold text-nowrap" $onclick="this.saveChanges()"><i class="bi bi-cloud-upload"></i><span class="dt-toolbar-label ms-1">Save</span></button>
-                        <button $if="!this.state?.isDirty" class="btn btn-sm btn-outline-secondary border-0 px-3 text-body-secondary disabled d-flex align-items-center text-nowrap" disabled><i class="bi bi-cloud-check"></i><span class="dt-toolbar-label ms-1">Saved</span></button>
+                        <button class="btn btn-sm btn-primary px-3" $disabled="!this.state?.isDirty" $onclick="this.saveChanges()"><i class="bi bi-floppy me-1"></i>Save</button>
                 </div>
         </div>
 </div>
 `), globalThis.Util.makeDom(/*html*/`
 <style>
-        DataGrid { display: block; }
+        DataGrid { display: block; contain: inline-size; }
         .dt-root { font-size: 0.875rem; }
 		.dt-row, .dt-header-row { display: grid; grid-template-columns: var(--dt-grid-template); width: var(--dt-row-width, max-content); min-width: 0; height: 40px; box-sizing: content-box; position: relative; }
 		DataGrid, .dt-root { width: 100%; min-width: 0; max-width: 100%; overflow: hidden !important; }
-		.dt-main { position: relative; min-height: 0; min-width: 0; width: 100%; max-width: 100%; flex: 1 1 auto; padding-bottom: 40px; overflow-x: auto; overflow-y: auto; }
-		.dt-footer { flex: 0 0 40px; overflow: visible !important; }
+		.dt-main { position: relative; min-height: 0; min-width: 0; width: 100%; max-width: 100%; flex: 1 1 auto; padding-top: 48px; overflow-x: auto; overflow-y: auto; }
+		.dt-toolbar { flex: 0 0 48px; overflow: visible !important; }
 		.dt-header-row { background-color: rgba(var(--bs-secondary-rgb), 0.08); }
 		.dt-body-row { background-color: rgba(var(--bs-secondary-rgb), 0.08) !important; cursor: pointer; }
 		.dt-body-row .dt-cell { background-color: var(--bs-body-bg); cursor: default; border-bottom: 1px solid var(--bs-border-color); }
 		.dt-header-row .dt-cell { background-color: var(--bs-tertiary-bg); cursor: default; border-bottom: 1px solid var(--bs-border-color); }
 		.dt-cell { white-space: nowrap; flex-shrink: 0; contain: content; }
 		.dt-toolbar-icon { display: none; }
-		@media (max-width: 1100px) { .dt-toolbar-label { display: none; } .dt-toolbar-icon { display: inline-block; } .dt-footer { padding-left: .5rem !important; padding-right: .5rem !important; } .dt-footer .gap-3 { gap: .5rem !important; } }
+		@media (max-width: 1100px) { .dt-toolbar-label { display: none; } .dt-toolbar-icon { display: inline-block; } .dt-toolbar { padding-left: .5rem !important; padding-right: .5rem !important; } .dt-toolbar .gap-3 { gap: .5rem !important; } }
         .dt-cell-selected { background-color: rgba(var(--bs-primary-rgb), 0.15) !important; outline: 1px solid var(--bs-primary); outline-offset: -1px; }
 		.dt-body-row:hover { background-color: var(--bs-secondary-bg) !important; }
 		.dt-drop-before { box-shadow: inset 3px 0 0 var(--bs-primary) !important; }

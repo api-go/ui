@@ -354,7 +354,7 @@ globalThis.AutoForm?.register('CodeEditor', 'code')
 globalThis.Editor?.register({
   name: 'CodeEditor',
   component: 'CodeEditor',
-  extensions: ['js', 'mjs', 'cjs', 'json', 'yaml', 'yml', 'py', 'html', 'htm', 'css', 'md', 'markdown'],
+  extensions: ['js', 'mjs', 'cjs', 'json', 'yaml', 'yml', 'py', 'html', 'htm', 'css', 'md', 'markdown', 'txt', 'text', 'log', 'conf', 'config', 'ini', 'env', 'csv', 'xml', 'sql', 'sh', 'bash'],
   types: ['code', 'javascript', 'json', 'yaml', 'python', 'html', 'css', 'markdown'],
   mimeTypes: ['text/javascript', 'application/javascript', 'application/json', 'application/yaml', 'text/yaml', 'text/x-python', 'text/html', 'text/css', 'text/markdown']
 })

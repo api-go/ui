@@ -15,6 +15,9 @@ binding:
 layout:
   behavior: Long body content scrolls inside the modal; the header and footer remain visible.
 
+accessibility:
+  focus: Hiding releases focus before the modal becomes aria-hidden, makes the hidden modal inert, and restores focus to the element that was active before opening when it remains available.
+
 state:
   title: Default header title.
   type: Bootstrap contextual type. Default is primary.

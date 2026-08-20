@@ -3,6 +3,8 @@
  */
 globalThis.Component.register('List', container => {
 	container.mode = container.getAttribute('mode') || 'normal'
+	container.activeMode = container.getAttribute('activemode') || 'background'
+	if (!document.getElementById('apigo-list-active-mode')) { const style = document.createElement('style'); style.id = 'apigo-list-active-mode'; style.textContent = 'List .list-active-background.active,List .list-active-background.text-primary,List .list-active-rounded.active,List .list-active-rounded.text-primary{background:transparent!important;color:inherit!important;position:relative}List .list-active-background.active::before,List .list-active-background.text-primary::before,List .list-active-rounded.active::before,List .list-active-rounded.text-primary::before{content:"";position:absolute;z-index:0;inset:0;background:rgba(var(--bs-secondary-rgb),.18)}List .list-active-rounded.active::before,List .list-active-rounded.text-primary::before{inset:0 .25rem;border-radius:.5rem}List .list-active-background.active>* ,List .list-active-background.text-primary>* ,List .list-active-rounded.active>* ,List .list-active-rounded.text-primary>*{position:relative;z-index:1}List .list-active-text.active,List .list-active-text.text-primary{background:transparent!important;color:var(--bs-primary)!important}'; document.head.appendChild(style) }
 	container.fast = container.hasAttribute('fast')
 	container.collapsible = container.hasAttribute('collapsible')
 
@@ -247,7 +249,7 @@ globalThis.Component.register('List', container => {
 <div class="list-group overflow-auto" onscroll="this.refresh()" style="overflow-anchor:none">
         <div class="vs-pad-top flex-shrink-0" style="height:0px;"></div>
         <template slot-id="item" $each="this.state.renderedList">
-				<div $onupdate="this.onItemUpdate(index, thisNode)" $class="list-group-item border-0 bg-transparent small \${this.mode==='tree'?'pt-1 pb-0':'py-1'} d-inline-flex align-items-center w-100 pe-2 \${item.type==='group'?'fw-semibold ps-2':'list-group-item-action ' + (this.mode==='group'?'ps-4':'ps-2')} \${item.type==='group'?(this.state?.selectedGroup===item[this.groupidfield]?'text-primary fw-semibold':''):(this.state?.selectedItem===item[this.idfield]?'text-primary fw-semibold':'')}" $onclick="item.type==='group'?this.selectGroup(item,index):this.selectItem(item,index)">
+			<div $onupdate="this.onItemUpdate(index, thisNode)" $style="(this.mode==='tree'?'padding-top:2px;padding-bottom:2px;':'')+'cursor:default;user-select:none'" $class="list-group-item border-0 bg-transparent small \${this.mode==='tree'?'':'py-1'} d-inline-flex align-items-center w-100 px-3 \${item.type==='group'?'fw-semibold':'list-group-item-action ' + (this.mode==='group'?'ps-4':'')} \${item.type==='group'?(this.state?.selectedGroup===item[this.groupidfield]?'text-primary fw-semibold':''):(this.state?.selectedItem===item[this.idfield]?'text-primary fw-semibold':'')} list-active-\${this.activeMode}" $onclick="item.type==='group'?this.selectGroup(item,index):this.selectItem(item,index)">
                         <template $if="item.type === 'group'">
                                 <template $if="this.groupicon">
                                         <span $class="bi bi-\${this.groupicon} text-body"></span>
@@ -258,7 +260,7 @@ globalThis.Component.register('List', container => {
                         </template>
                         <template $if="item.type === 'item'">
                                 <template $if="this.mode === 'tree'">
-                                        <div $style="width:\${item._level * 16 + (this.collapsible ? 16 : 0)}px; cursor:\${this.collapsible ? 'pointer' : 'default'}" class="text-end text-muted flex-shrink-0" $onclick="event.stopPropagation(); this.toggleCollapse(item)">
+                                        <div $style="width:\${item._level * 8 + (this.collapsible ? 16 : 0)}px; cursor:\${this.collapsible ? 'pointer' : 'default'}" class="text-end text-muted flex-shrink-0" $onclick="event.stopPropagation(); this.toggleCollapse(item)">
                                                 <template $if="this.collapsible && item._hasChildren">
                                                         <i $class="bi \${this.collapsed[item[this.idfield]] ? 'bi-caret-right-fill' : 'bi-caret-down-fill'}"></i>
                                                 </template>

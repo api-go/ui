@@ -12,6 +12,7 @@ globalThis.Component.register('Modal', container => {
         container.guardDirty = container.hasAttribute('guard-dirty')
         container.dirty = false
         container._forceClose = false
+	container._returnFocus = null
         container.modal = new bootstrap.Modal(container, { backdrop: staticDismiss ? 'static' : true, keyboard: !staticDismiss })
 	const handleGlobalEscape = event => {
 		if (event.key !== 'Escape' || staticDismiss || !container.classList.contains('show') || container.contains(document.activeElement)) return
@@ -23,11 +24,19 @@ globalThis.Component.register('Modal', container => {
         container.addEventListener('bind', e => {
                 e.detail ? container.modal.show() : container.modal.hide()
         })
+	container.addEventListener('show.bs.modal', event => {
+		const active = event.relatedTarget || document.activeElement
+		container._returnFocus = active && active !== document.body && !container.contains(active) ? active : null
+		container.inert = false
+	})
         container.addEventListener('hide.bs.modal', event => {
                 if (container.guardDirty && container.dirty && !container._forceClose) {
                         event.preventDefault()
                         container.dispatchEvent(new CustomEvent('dismissblocked', { bubbles: false }))
+			return
                 }
+		if (container.contains(document.activeElement)) document.activeElement.blur()
+		container.inert = true
         })
 	container.addEventListener('shown.bs.modal', () => {
 		container.dirty = false
@@ -35,7 +44,8 @@ globalThis.Component.register('Modal', container => {
 	})
         container.addEventListener('hidden.bs.modal', () => {
 		document.removeEventListener('keydown', handleGlobalEscape, true)
-                document.activeElement?.blur()
+		if (container._returnFocus?.isConnected && !container._returnFocus.closest?.('[inert]')) container._returnFocus.focus({ preventScroll: true })
+		container._returnFocus = null
                 container._forceClose = false
                 container.dispatchEvent(new CustomEvent('change', { bubbles: false, detail: false }))
         })

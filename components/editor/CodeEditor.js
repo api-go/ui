@@ -181,6 +181,14 @@ globalThis.Component.register('CodeEditor', container => {
     if (!changes.empty) view.dispatch({ changes })
     return container.value
   }
+	container.pretty = () => {
+		const language = String(container.language || requestedLanguage()).toLowerCase()
+		if (language === 'json') {
+			try { container.value = JSON.stringify(JSON.parse(container.value), null, 2) } catch (_) { return container.reindent() }
+			return container.value
+		}
+		return container.reindent()
+	}
 	container.setWrap = enabled => {
 		enabled = !!enabled
 		container.toggleAttribute('wrap', enabled)
@@ -192,15 +200,19 @@ globalThis.Component.register('CodeEditor', container => {
     { id: 'split-horizontal', group: 'view', label: 'Split top and bottom', icon: 'view-stacked', active: () => mode === 'split' && container.getAttribute('split-direction') === 'horizontal', hidden: () => !previewable(), run: () => { container.setAttribute('split-direction', 'horizontal'); container.setMode('split') } },
     { id: 'preview', group: 'view', label: 'Preview', icon: 'eye', active: () => mode === 'preview', hidden: () => !previewable(), run: () => container.setMode('preview') },
     { id: 'validate', group: 'document', label: 'Validate syntax', icon: 'check2-circle', run: () => container.validate() },
-    { id: 'reindent', group: 'document', label: 'Format indentation', icon: 'text-indent-left', run: () => container.reindent() }
+		{ id: 'pretty', group: 'document', label: 'Pretty', icon: 'stars', run: () => container.pretty() }
 	,{ id: 'wrap', group: 'view', label: 'Wrap lines', icon: 'text-wrap', active: () => container.hasAttribute('wrap'), run: () => container.setWrap(!container.hasAttribute('wrap')) }
   ])
   container.focus = () => view?.focus()
-  container.addEventListener('bind', event => { container.value = event.detail })
+  container.addEventListener('bind', event => {
+    // A module switch may briefly unbind the control with an undefined value.
+    // Do not erase the live editor document during that transient state.
+    if (event.detail !== undefined && event.detail !== null) container.value = event.detail
+  })
   // Reconcile explicitly after document transport completes. This also covers
   // host state implementations that coalesce a rapid path/data update.
   container.addEventListener('loaded', () => {
-    updateValue(state.data)
+    if (state.data !== undefined && state.data !== null) updateValue(state.data)
     requestAnimationFrame(() => view?.requestMeasure())
   })
   modeButtons.forEach(button => button.addEventListener('click', () => { container.mode = button.dataset.mode }))
@@ -213,8 +225,10 @@ globalThis.Component.register('CodeEditor', container => {
       defaultData: value,
       normalize: next => typeof next === 'string' ? next : JSON.stringify(next ?? {}, null, 2)
     })
-    state.__watch('data', updateValue)
-    updateValue(state.data)
+    state.__watch('data', next => {
+      if (next !== undefined && next !== null) updateValue(next)
+    })
+    if (state.data !== undefined && state.data !== null) updateValue(state.data)
   }
   state.__watch('path', () => {
     if (container.hasAttribute('lang')) return
@@ -300,7 +314,7 @@ globalThis.Component.register('CodeEditor', container => {
   </div>
 </div>
 `), globalThis.Util.makeDom(/*html*/`<style>
-  CodeEditor { display:block; min-height:160px; border:1px solid var(--bs-border-color); border-radius:var(--bs-border-radius); overflow:hidden; background:var(--bs-body-bg); }
+  CodeEditor { display:block; min-height:160px; overflow:hidden; background:var(--bs-body-bg); }
   CodeEditor.code-editor-root { display:flex; flex-direction:column; width:100%; height:100%; min-height:inherit; }
   CodeEditor .code-editor-workspace { display:grid; grid-template-columns:minmax(0, 1fr); flex:1 1 0; width:100%; height:0; min-height:0; }
   CodeEditor[data-mode="split"] .code-editor-workspace { grid-template-columns:minmax(0, 1fr) minmax(0, 1fr); }

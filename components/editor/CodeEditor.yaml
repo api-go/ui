@@ -70,7 +70,7 @@ preview:
   responsive: Split mode uses equal columns and changes to stacked equal regions below the Bootstrap md breakpoint.
 
 validation:
-  scope: Parser-level syntax errors only; no code execution, semantic lint, type checking, or full formatter.
+  scope: Parser-level syntax errors only; no code execution, semantic lint, or type checking.
   timing: Diagnostics refresh after editing becomes idle; validate performs an immediate read of the current syntax tree.
 
 reindent:

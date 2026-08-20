@@ -32,5 +32,5 @@ globalThis.Component.register('Resizer', container => {
                 })
         })
 }, globalThis.Util.makeDom(/*html*/`
-<div $class="border-\${this.isVertical?'top':'start'} flex-shrink-0" $style="\${this.isVertical?'height':'width'}:3px;\${!this.isVertical?'height':'width'}:100%;cursor:\${this.isVertical?'row-resize':'col-resize'}"></div>
+<div class="flex-shrink-0" $style="\${this.isVertical?'height':'width'}:3px;\${!this.isVertical?'height':'width'}:100%;cursor:\${this.isVertical?'row-resize':'col-resize'};background:linear-gradient(\${this.isVertical?'to bottom':'to right'}, var(--bs-border-color) 0, var(--bs-border-color) 1px, transparent 1px)"></div>
 `))

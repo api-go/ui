@@ -26,10 +26,10 @@ slots:
   footer-end: Compatibility alias rendered near the right edge of the top toolbar.
 
 editing:
-  formTypes: [text, number, select, checkbox, radio, switch, textarea, date, datetime, TagsInput, DatePicker, ColorPicker, IconPicker]
+  formTypes: [text, number, select, checkbox, radio, switch, textarea, code, date, datetime, TagsInput, DatePicker, ColorPicker, IconPicker]
   rule: Double-click an editable cell, then click outside the editor or press Enter to save its bound value.
-  field_settings: Field Name, Field Type, and type-specific options are shown first. Advanced mode exposes a friendly Database Type selector covering i/ui/bi/ubi/ti/v[N]/c[N]/t/dt/d/tm/f/ff/b/bb; VARCHAR and CHAR show an inline length input and still submit one encoded type string. It also exposes Index, Memo, AutoForm Control Attributes JSON, and Display Condition.
-  row_form: Double-click the trailing tinted background of a row to open an AutoForm bound to that local row. Previous/Next and Ctrl/Cmd+ArrowLeft/ArrowRight switch rows. Changes remain local until the grid Save action.
+  field_settings: Field Name, Field Type, and type-specific options are shown first. Advanced mode exposes a friendly Database Type selector covering i/ui/bi/ubi/ti/v[N]/c[N]/t/o/dt/d/tm/f/ff/b/bb; Object fields use a larger JSON code editor for cell editing, and its outer editing surface can be resized from the bottom-right corner. VARCHAR and CHAR show an inline length input and still submit one encoded type string. It also exposes Index, Memo, AutoForm Control Attributes JSON, and Display Condition.
+  row_form: Double-click the trailing tinted background of a row to open an AutoForm bound to that local row. Object fields are presented as pretty JSON code and parsed back to objects after valid edits. Previous/Next and Ctrl/Cmd+ArrowLeft/ArrowRight switch rows. Changes remain local until the grid Save action.
 
 filtering:
   rule: Click a column header, enter a value in its menu, and the grid filters immediately. Use the menu controls for sort and reset.

@@ -28,7 +28,7 @@ const DataGridConfig = {
 
 const DB_EDITOR_TYPE_MAP = {
 	i: 'number', ui: 'number', bi: 'number', ubi: 'number', ti: 'number', f: 'number', ff: 'number',
-	b: 'switch', d: 'date', dt: 'datetime', t: 'textarea'
+	b: 'switch', d: 'date', dt: 'datetime', t: 'textarea', o: 'code'
 };
 const getDataKey = field => field?.name;
 // settings.type is the authoritative application/editor type. field.type is a
@@ -111,6 +111,14 @@ DataGridConfig.registerFieldType({
 	value: 'textarea', label: '{#Long Text#}', typeForDB: 't',
 	schema: [{ name: 'placeholder', label: 'Placeholder', type: 'text', if: 'this.data.user_type=="textarea"' }]
 });
+DataGridConfig.registerFieldType({
+	value: 'code', label: '{#Code#}', typeForDB: 'o', schema: [],
+	formatter: (val) => {
+		if (val == null || val === '') return '';
+		if (typeof val !== 'object') return String(val);
+		try { return JSON.stringify(val, null, 2); } catch (_) { return String(val); }
+	}
+});
 
 const getDefaultDbType = (editorType, decimals = 0) => {
 	const typeInfo = DataGridConfig._fieldTypes.get(editorType);
@@ -119,7 +127,7 @@ const getDefaultDbType = (editorType, decimals = 0) => {
 
 const DB_TYPE_OPTIONS = [
 	['i', 'Integer'], ['ui', 'Unsigned Integer'], ['bi', 'Big Integer'], ['ubi', 'Unsigned Big Integer'], ['ti', 'Tiny Integer'],
-	['v', 'Text (VARCHAR)'], ['c', 'Fixed Text (CHAR)'], ['t', 'Long Text'], ['dt', 'Date & Time'], ['d', 'Date'], ['tm', 'Time'],
+	['v', 'Text (VARCHAR)'], ['c', 'Fixed Text (CHAR)'], ['t', 'Long Text'], ['o', 'Object (JSON)'], ['dt', 'Date & Time'], ['d', 'Date'], ['tm', 'Time'],
 	['f', 'Float'], ['ff', 'Double'], ['b', 'Boolean'], ['bb', 'Binary (BLOB)']
 ];
 
@@ -551,13 +559,13 @@ globalThis.Component.register('DataGrid', container => {
 		container.dispatchEvent(new CustomEvent('reorderfields', { detail: fields }));
 	};
 
-	let _editorOverlay, currentEditingNode = null;
+	let _editorOverlay, currentEditingNode = null, currentEditingRow = null;
 
 	container.format = (val, field) => {
 		if (field.formatter) return field.formatter(val, field);
 		const typeInfo = DataGridConfig._fieldTypes.get(getEditorType(field));
 		if (typeInfo && typeInfo.formatter) return typeInfo.formatter(val, field);
-		return val == null ? '' : (typeof val === 'object' ? JSON.stringify(val) : String(val));
+		return val == null ? '' : (typeof val === 'object' ? JSON.stringify(val, null, 2) : String(val));
 	};
 
 	container.onScroll = () => {
@@ -723,24 +731,37 @@ globalThis.Component.register('DataGrid', container => {
 		const main = container.querySelector('.dt-main');
 		const overlay = container.querySelector('.dt-editor-overlay'), rect = cellNode.getBoundingClientRect(), mainRect = main.getBoundingClientRect();
 		currentEditingNode = cellNode;
+		currentEditingRow = row;
 		const formType = getEditorType(field);
+		const isCode = formType === 'code';
+		const isSimple = ['text', 'number', 'select', 'date', 'datetime'].includes(formType);
+		const isComplex = ['textarea', 'TagsInput', 'checkbox', 'radio'].includes(formType);
+		overlay.classList.toggle('dt-editor-code', isCode);
+		overlay.classList.toggle('dt-editor-simple', isSimple);
 		const form = overlay.querySelector('AutoForm');
 		if (form) {
 			// Assign the schema first, then the cloned row data. This keeps a
 			// native select from exposing its first option before its model value.
 			const setting = { ...(field.settings?.attrs || {}), required: !!(field.settings?.required || field.settings?.attrs?.required) };
+			if (isCode) { setting.lang = 'json'; setting.style = 'height:100%;min-height:240px;align-self:stretch;flex:1 1 auto;'; }
 			const pattern = field.settings?.pattern || field.settings?.attrs?.pattern;
 			if (pattern) setting.pattern = pattern;
 			else delete setting.pattern;
 			form.state.schema = [{ name: getDataKey(field), label: '', type: formType, options: field.settings?.options || field.options, setting }];
-			form.state.data = globalThis.NewState(globalThis.Util.clone(row));
+			const editData = globalThis.Util.clone(row);
+			if (formType === 'code' && editData[getDataKey(field)] != null && typeof editData[getDataKey(field)] === 'object') {
+				editData[getDataKey(field)] = JSON.stringify(editData[getDataKey(field)], null, 2);
+			}
+			form.state.data = globalThis.NewState(editData);
 		}
-		const isComplex = ['textarea', 'TagsInput', 'checkbox', 'radio'].includes(formType);
-		let topPos = rect.top - mainRect.top + main.scrollTop - 1;
+		const mainPaddingTop = parseFloat(getComputedStyle(main).paddingTop) || 0;
+		let topPos = rect.top - mainRect.top + main.scrollTop - mainPaddingTop - 1;
 		let leftPos = rect.left - mainRect.left + main.scrollLeft - 1;
-		let editorWidth = Math.max(rect.width + 2, isComplex ? 300 : 0);
+		const maxVisibleWidth = Math.max(rect.width + 2, main.clientWidth - 16);
+		let editorWidth = Math.min(Math.max(rect.width + 2, isCode ? 560 : (isComplex ? 300 : 0)), maxVisibleWidth);
+		const editorHeight = isCode ? Math.min(320, Math.max(240, main.clientHeight - Math.max(0, rect.top - mainRect.top) - 8)) : null;
 
-		const maxLeft = main.scrollWidth - editorWidth - 5;
+		const maxLeft = Math.min(main.scrollWidth - editorWidth - 5, main.scrollLeft + main.clientWidth - editorWidth - 5);
 		if (leftPos > maxLeft) leftPos = Math.max(0, maxLeft);
 
 		Object.assign(overlay.style, {
@@ -748,10 +769,11 @@ globalThis.Component.register('DataGrid', container => {
 			left: leftPos + 'px',
 			top: topPos + 'px',
 			width: editorWidth + 'px',
-			height: 'auto',
-			minHeight: (rect.height + 2) + 'px',
+			height: isCode ? editorHeight + 'px' : (isSimple ? rect.height + 2 + 'px' : 'auto'),
+			minHeight: (isCode ? 240 : rect.height + 2) + 'px',
 			maxHeight: Math.max(100, mainRect.height - (rect.top - mainRect.top) - 5) + 'px',
 			overflow: 'auto',
+			resize: isCode ? 'both' : 'none',
 			padding: '0'
 		});
 		setTimeout(() => overlay.querySelector('input, textarea, select, .form-control')?.focus(), 30);
@@ -767,14 +789,21 @@ globalThis.Component.register('DataGrid', container => {
 			if (form.form && !form.form.reportValidity()) return false;
 
 			let hasChanges = false;
+			let invalidEditorValue = false;
 			const schema = form.state.schema || [];
 			schema.forEach(field => {
-				const row = currentEditingNode?.closest('.dt-row')?._ref?.item;
-				if (row && JSON.stringify(row[field.name]) !== JSON.stringify(form.data[field.name])) {
-					row[field.name] = form.data[field.name];
+				const row = currentEditingRow;
+				let nextValue = form.data[field.name];
+				if (row && field.type === 'code') {
+					try { nextValue = nextValue == null || nextValue === '' ? null : JSON.parse(nextValue); }
+					catch (_) { invalidEditorValue = true; }
+				}
+				if (row && JSON.stringify(row[field.name]) !== JSON.stringify(nextValue)) {
+					row[field.name] = nextValue;
 					hasChanges = true;
 				}
 			});
+			if (invalidEditorValue) { globalThis.Toast?.show('Invalid JSON', { type: 'danger' }); return false; }
 
 			if (state.isBulkEdit) {
 				const { minRow, maxRow, fIdx } = state.isBulkEdit;
@@ -793,7 +822,7 @@ globalThis.Component.register('DataGrid', container => {
 		}
 		_editorOverlay.style.display = 'none';
 		if (form) { form.state.schema = []; form.state.data = globalThis.NewState({}); form.data = null; }
-		currentEditingNode = null; state.isBulkEdit = null; container.focus();
+		currentEditingNode = null; currentEditingRow = null; state.isBulkEdit = null; container.focus();
 		return true;
 	};
 
@@ -851,14 +880,24 @@ globalThis.Component.register('DataGrid', container => {
 		const settings = field.settings || {};
 		const setting = { ...(settings.attrs || {}), required: !!(settings.required || settings.attrs?.required) };
 		if (settings.pattern || settings.attrs?.pattern) setting.pattern = settings.pattern || settings.attrs.pattern;
-		return { name: getDataKey(field), label: field.memo || field.label || field.name, type: getEditorType(field), options: settings.options || field.options, setting };
+		const type = getEditorType(field);
+		if (type === 'code') { setting.lang = 'json'; setting.style = 'height:320px;min-height:240px;'; }
+		return { name: getDataKey(field), label: field.memo || field.label || field.name, type, options: settings.options || field.options, setting };
 	});
+	const rowFormData = row => {
+		const data = globalThis.Util.clone(row);
+		for (const field of state.fields) {
+			const key = getDataKey(field), value = data[key];
+			if (getEditorType(field) === 'code' && value != null && typeof value === 'object') data[key] = JSON.stringify(value, null, 2);
+		}
+		return globalThis.NewState(data);
+	};
 	container.showRowFormAt = index => {
 		if (index < 0 || index >= state.list.length) return;
 		state.rowFormIndex = index;
 		const modal = container.querySelector(`#${CSS.escape(container.id + '_row_modal')}`);
 		const form = modal?.querySelector('AutoForm');
-		if (form) { form.state.schema = container.rowFormSchema(); form.state.data = state.list[index]; }
+		if (form) { form.state.schema = container.rowFormSchema(); form.state.data = rowFormData(state.list[index]); }
 	};
 	container.openRowForm = index => {
 		if (state.readonly) return;
@@ -890,7 +929,12 @@ globalThis.Component.register('DataGrid', container => {
 		if (!form?.data || !row) return;
 		for (const field of state.fields) {
 			const key = getDataKey(field);
-			if (JSON.stringify(row[key]) !== JSON.stringify(form.data[key])) row[key] = form.data[key];
+			let value = form.data[key];
+			if (getEditorType(field) === 'code') {
+				try { value = value == null || value === '' ? null : JSON.parse(value); }
+				catch (_) { continue; }
+			}
+			if (JSON.stringify(row[key]) !== JSON.stringify(value)) row[key] = value;
 		}
 		state.isDirty = container.hasRowChanges();
 		// The form edits the existing row object. Force only the current virtual
@@ -1129,7 +1173,7 @@ globalThis.Component.register('DataGrid', container => {
 
 	state._MODE_ICONS = MODE_ICONS;
 }, globalThis.Util.makeDom(/*html*/`
-<div class="dt-root d-flex flex-column h-100 w-100 border bg-body text-body overflow-hidden" style="position:relative; user-select:none; outline: none; min-height: 0" tabindex="0">
+<div class="dt-root d-flex flex-column h-100 w-100 bg-body text-body overflow-hidden" style="position:relative; user-select:none; outline: none; min-height: 0" tabindex="0">
 		<div class="dt-main flex-grow-1 overflow-auto" $onscroll="this.onScroll()" 
                 $onmousedown="this.onMainMouseDown(event)" $onmouseover="this.onMainMouseOver(event)" $ondblclick="this.onMainDblClick(event)"
                 style="overflow-anchor:none; min-height: 0">
@@ -1226,7 +1270,7 @@ globalThis.Component.register('DataGrid', container => {
 			</div>
 		</Modal>
 
-        <div class="dt-toolbar border-bottom bg-body-tertiary d-flex align-items-center px-3 py-1 shadow-sm text-nowrap" $.="this.ensureFooterHost(thisNode)" style="position:absolute; left:0; right:0; top:0; height:48px; z-index:30; overflow:hidden">
+        <div class="dt-toolbar border-bottom d-flex align-items-center px-3 py-1 shadow-sm text-nowrap" $.="this.ensureFooterHost(thisNode)" style="position:absolute; left:0; right:0; top:0; height:48px; z-index:30; overflow:hidden">
                 <div class="d-flex align-items-center gap-3 flex-grow-1">
                         <div slot-id="toolbar-start" class="d-flex align-items-center gap-2"></div>
                         <div class="d-flex align-items-center gap-1 text-muted" style="font-size: 0.75rem">
@@ -1280,6 +1324,9 @@ globalThis.Component.register('DataGrid', container => {
         .menu-item-row:hover .only-btn { opacity: 1; }
         .dt-editor-overlay .auto-form-root form { gap: 0 !important; margin: 0 !important; height: 100%; }
         .dt-editor-overlay [control-wrapper] { width: 100%; margin: 0 !important; min-height: 100% !important; align-items: stretch !important; }
+        .dt-editor-overlay.dt-editor-code [control-wrapper] { height: 100%; }
+		.dt-editor-overlay.dt-editor-simple [control-wrapper] { height: 100%; }
+		.dt-editor-overlay:not(.dt-editor-code) input.form-control { height: 100%; padding: 0 .5rem; border: 0; border-radius: 0; font: inherit; }
         .dt-editor-overlay [control-wrapper] > .d-flex { padding: 0.375rem 0.5rem; justify-content: flex-start !important; align-items: center !important; }
         .dt-editor-overlay [control-wrapper] > .form-switch { padding-left: 2.5rem !important; }
         .dt-editor-overlay [control-wrapper] > textarea { min-height: 100px; resize: vertical; }

@@ -9,7 +9,10 @@ globalThis.Component.register('CodeEditor', container => {
   const markdownPreview = container.querySelector('.code-editor-markdown')
   const htmlPreview = container.querySelector('.code-editor-html')
   const toolbar = container.querySelector('.code-editor-toolbar')
+  const previewTools = container.querySelector('.code-editor-preview-tools')
   const modeButtons = [...container.querySelectorAll('[data-mode]')]
+  const viewButtons = [...container.querySelectorAll('[data-view-tool]')]
+  const toolButtons = [...container.querySelectorAll('[data-tool]')]
   const state = container.state
   let view = null
   let value = container.getAttribute('value') || ''
@@ -110,6 +113,7 @@ globalThis.Component.register('CodeEditor', container => {
     mode = next
     container.dataset.mode = mode
     modeButtons.forEach(button => button.classList.toggle('active', button.dataset.mode === mode))
+    viewButtons.forEach(button => button.classList.toggle('active', button.dataset.viewTool === mode || (mode === 'split' && button.dataset.viewTool === `split-${container.getAttribute('split-direction') === 'horizontal' ? 'horizontal' : 'vertical'}`)))
     sourcePane.hidden = mode === 'preview'
     previewPane.hidden = mode === 'source'
     if (mode !== 'source') renderPreview().catch(emitError)
@@ -120,9 +124,12 @@ globalThis.Component.register('CodeEditor', container => {
   }
   const updatePreviewAvailability = () => {
     const available = previewable()
-    toolbar.hidden = !available || !container.hasAttribute('toolbar') || container.hasAttribute('notoolbar')
+    const previousMode = mode
+    toolbar.hidden = !container.hasAttribute('toolbar') || container.hasAttribute('notoolbar')
+    if (previewTools) previewTools.hidden = !available
     if (!available) applyMode('source')
     else applyMode(requestedMode())
+    if (mode === previousMode && container.getTools) container.dispatchEvent(new CustomEvent('toolschange', { detail: container.getTools(), bubbles: false }))
   }
   const updateValue = next => {
     next = String(next ?? '')
@@ -194,6 +201,11 @@ globalThis.Component.register('CodeEditor', container => {
 		container.toggleAttribute('wrap', enabled)
 		return enabled
 	}
+	container.toggleFullscreen = async () => {
+		container.classList.toggle('code-editor-fullscreen')
+		container.dispatchEvent(new CustomEvent('toolschange', { detail: container.getTools?.() || [], bubbles: false }))
+		return container.classList.contains('code-editor-fullscreen')
+	}
   globalThis.Editor.setTools(container, [
     { id: 'source', group: 'view', label: 'Source', icon: 'code-slash', active: () => mode === 'source', hidden: () => !previewable(), run: () => container.setMode('source') },
     { id: 'split-vertical', group: 'view', label: 'Split left and right', icon: 'layout-split', active: () => mode === 'split' && container.getAttribute('split-direction') !== 'horizontal', hidden: () => !previewable(), run: () => { container.setAttribute('split-direction', 'vertical'); container.setMode('split') } },
@@ -201,7 +213,8 @@ globalThis.Component.register('CodeEditor', container => {
     { id: 'preview', group: 'view', label: 'Preview', icon: 'eye', active: () => mode === 'preview', hidden: () => !previewable(), run: () => container.setMode('preview') },
     { id: 'validate', group: 'document', label: 'Validate syntax', icon: 'check2-circle', run: () => container.validate() },
 		{ id: 'pretty', group: 'document', label: 'Pretty', icon: 'stars', run: () => container.pretty() }
-	,{ id: 'wrap', group: 'view', label: 'Wrap lines', icon: 'text-wrap', active: () => container.hasAttribute('wrap'), run: () => container.setWrap(!container.hasAttribute('wrap')) }
+	,{ id: 'wrap', group: 'view', label: 'Wrap lines', icon: 'text-wrap', active: () => container.hasAttribute('wrap'), run: () => container.setWrap(!container.hasAttribute('wrap')) },
+	{ id: 'fullscreen', group: 'view', label: 'Fullscreen', icon: 'arrows-fullscreen', run: () => container.toggleFullscreen() }
   ])
   container.focus = () => view?.focus()
   container.addEventListener('bind', event => {
@@ -216,6 +229,7 @@ globalThis.Component.register('CodeEditor', container => {
     requestAnimationFrame(() => view?.requestMeasure())
   })
   modeButtons.forEach(button => button.addEventListener('click', () => { container.mode = button.dataset.mode }))
+  toolButtons.forEach(button => button.addEventListener('click', () => container.runTool?.(button.dataset.tool)))
 
   const documentMode = container.hasAttribute('path') || container.hasAttribute('api') || state.path !== undefined || state.version !== undefined
   container.documentMode = documentMode
@@ -299,10 +313,17 @@ globalThis.Component.register('CodeEditor', container => {
 }, globalThis.Util.makeDom(/*html*/`
 <div class="code-editor-root">
   <div class="code-editor-toolbar btn-toolbar border-bottom p-1 gap-1" hidden>
-    <div class="btn-group btn-group-sm" role="group" aria-label="Preview mode">
-      <button type="button" class="btn btn-outline-secondary" data-mode="source">Source</button>
-      <button type="button" class="btn btn-outline-secondary" data-mode="split">Split</button>
-      <button type="button" class="btn btn-outline-secondary" data-mode="preview">Preview</button>
+    <div class="btn-group btn-group-sm code-editor-preview-tools" role="group" aria-label="Preview mode">
+      <button type="button" class="btn btn-sm" data-tool="source" data-view-tool="source" title="Source"><i class="bi bi-code-slash"></i></button>
+      <button type="button" class="btn btn-sm" data-tool="split-vertical" data-view-tool="split-vertical" title="Split left and right"><i class="bi bi-layout-split"></i></button>
+      <button type="button" class="btn btn-sm" data-tool="split-horizontal" data-view-tool="split-horizontal" title="Split top and bottom"><i class="bi bi-view-stacked"></i></button>
+      <button type="button" class="btn btn-sm" data-tool="preview" data-view-tool="preview" title="Preview"><i class="bi bi-eye"></i></button>
+    </div>
+    <div class="btn-group btn-group-sm" role="group" aria-label="Code tools">
+      <button type="button" class="btn btn-sm btn-link text-body-secondary" data-tool="validate" title="Validate"><i class="bi bi-check2-circle"></i></button>
+      <button type="button" class="btn btn-sm btn-link text-body-secondary" data-tool="pretty" title="Pretty"><i class="bi bi-stars"></i></button>
+      <button type="button" class="btn btn-sm btn-link text-body-secondary" data-tool="wrap" title="Wrap lines"><i class="bi bi-text-wrap"></i></button>
+      <button type="button" class="btn btn-sm btn-link text-body-secondary" data-tool="fullscreen" title="Fullscreen"><i class="bi bi-arrows-fullscreen"></i></button>
     </div>
   </div>
   <div class="code-editor-workspace">
@@ -316,6 +337,12 @@ globalThis.Component.register('CodeEditor', container => {
 `), globalThis.Util.makeDom(/*html*/`<style>
   CodeEditor { display:block; min-height:160px; overflow:hidden; background:var(--bs-body-bg); }
   CodeEditor.code-editor-root { display:flex; flex-direction:column; width:100%; height:100%; min-height:inherit; }
+	CodeEditor .code-editor-toolbar { min-height:28px; height:28px; justify-content:flex-end; padding:.05rem .25rem !important; }
+	CodeEditor .code-editor-toolbar .btn { font-size:.75rem; line-height:1; padding:.2rem .3rem; }
+	CodeEditor .code-editor-preview-tools .btn { position:relative; border:0; border-radius:0; color:var(--bs-secondary-color); background:transparent; }
+	CodeEditor .code-editor-preview-tools .btn + .btn::before { content:''; position:absolute; left:0; top:25%; height:50%; border-left:1px solid var(--bs-border-color); }
+	CodeEditor .code-editor-preview-tools .btn.active, CodeEditor .code-editor-preview-tools .btn:hover { color:var(--bs-primary); background:transparent; }
+	CodeEditor .code-editor-toolbar [data-tool="fullscreen"] i { display:inline-block; font-size:.8em; }
   CodeEditor .code-editor-workspace { display:grid; grid-template-columns:minmax(0, 1fr); flex:1 1 0; width:100%; height:0; min-height:0; }
   CodeEditor[data-mode="split"] .code-editor-workspace { grid-template-columns:minmax(0, 1fr) minmax(0, 1fr); }
   CodeEditor[data-mode="split"][split-direction="horizontal"] .code-editor-workspace { grid-template-columns:minmax(0, 1fr); grid-template-rows:minmax(0, 1fr) minmax(0, 1fr); }
@@ -325,6 +352,7 @@ globalThis.Component.register('CodeEditor', container => {
   CodeEditor[data-mode="split"][split-direction="horizontal"] .code-editor-preview { border-left:0; border-top:1px solid var(--bs-border-color); }
   CodeEditor .code-editor-host { position:absolute; inset:0; }
   CodeEditor .code-editor-host, CodeEditor .cm-editor { height:100%; min-height:0; }
+	CodeEditor.code-editor-fullscreen { position:fixed !important; inset:0 !important; z-index:2147483647 !important; width:100vw !important; height:100vh !important; min-height:0; background:var(--bs-body-bg); transform:none !important; }
   CodeEditor .cm-scroller { overflow:auto; font-family:var(--bs-font-monospace); font-size:.875rem; }
 	[data-bs-theme="dark"] CodeEditor .cm-gutters { color:var(--bs-secondary-color); background:var(--bs-tertiary-bg); border-color:var(--bs-border-color); }
   CodeEditor .cm-focused { outline:2px solid rgba(var(--bs-primary-rgb),.25); outline-offset:-2px; }

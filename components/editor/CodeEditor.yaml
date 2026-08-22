@@ -51,7 +51,7 @@ events:
   save: In document mode, cancelable with detail equal to the outgoing document envelope.
   saved: In document mode, detail is the save response.
   error: "detail=Error from language, preview, or Editor transport loading."
-  toolschange: "detail=resolved toolbar descriptors after capabilities or active state change."
+  toolschange: "detail=resolved toolbar descriptors after capabilities, preview availability, or active state change."
 
 languages:
   javascript: ".js|.mjs|.cjs; aliases js and javascript."
@@ -83,6 +83,7 @@ rules:
   - HTML preview isolation reduces page privileges but is not a substitute for a separate origin when running untrusted hostile code.
   - AutoForm mode is a plain string control and does not enable Editor transport.
   - Line wrapping is an instance display preference; it does not change document data or other editor instances.
+  - The optional compact toolbar presents source, vertical split, horizontal split, and preview as an icon-only exclusive view group.
   - Editor document mode is enabled only by path, api, state.path, or version and stores source text in state.data.
 
 examples:

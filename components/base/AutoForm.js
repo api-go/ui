@@ -35,6 +35,7 @@ const AUTOFORM_BLUEPRINT = globalThis.Util.makeDom(/*html*/`
 
           <template $if="item.type === 'textarea'"><textarea $name="item.name" class="form-control" $.="item.setting || {}" $$readonly="typeof item.setting?.readonly === 'string' ? item.setting.readonly : !!item.setting?.readonly" $$disabled="typeof item.setting?.disabled === 'string' ? item.setting.disabled : !!item.setting?.disabled" $$required="typeof item.setting?.required === 'string' ? item.setting.required : !!item.setting?.required" $bind="this.state.data[item.name]"></textarea></template>
 
+
           <template $if="item.type === 'label'"><span $name="item.name" $.="item.setting || {}" $text="item.value ?? this.state.data[item.name] ?? ''" class="form-control-plaintext text-break py-1"></span></template>
         </div>
     </div>
@@ -161,7 +162,8 @@ const AutoForm = {
     _addAutoFormComponent: (name, type) => {
         const wrapper = findAnchorInBlueprint(AUTOFORM_BLUEPRINT)
         if (wrapper) {
-            const node = globalThis.Util.makeDom(`<template $if="item.type?.toLowerCase() === '${type.toLowerCase()}'"><${name} $name="item.name" $.="item.setting || {}" $bind="thisNode.closest('AutoForm').data[item.name]" class="w-100"></${name}></template>`)
+            const toolbar = name === 'CodeEditor' ? ' $$toolbar="item.setting?.toolbar !== false"' : ''
+            const node = globalThis.Util.makeDom(`<template $if="item.type?.toLowerCase() === '${type.toLowerCase()}'"><${name} $name="item.name" $.="item.setting || {}"${toolbar} $bind="thisNode.closest('AutoForm').data[item.name]" class="w-100"></${name}></template>`)
             wrapper.appendChild(node)
         }
     }

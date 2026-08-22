@@ -255,8 +255,8 @@ globalThis.Component.register('List', container => {
                                 <template $if="this.groupicon">
                                         <span $class="bi bi-\${this.groupicon} text-body"></span>
                                 </template>
-                                <div class="flex-fill text-truncate px-1" $text="\${item[this.grouplabelfield]}"></div>
-                                <div class="opacity-75 small flex-fill text-truncate text-end" $text="\${item[this.groupsummaryfield] || ''}"></div>
+                                <div class="list-primary-text text-truncate px-1" $text="\${item[this.grouplabelfield]}"></div>
+                                <div class="list-summary-text opacity-75 small text-truncate text-end" $text="\${item[this.groupsummaryfield] || ''}"></div>
                                 <div slot-id="group-actions"></div>
                         </template>
                         <template $if="item.type === 'item'">
@@ -273,12 +273,14 @@ globalThis.Component.register('List', container => {
 						<template $if="this.mode !== 'tree' && this.itemIcon(item)">
 								<span $class="bi bi-\${this.itemIcon(item)} text-body"></span>
                                 </template>
-                                <div class="flex-fill text-truncate px-1" $text="\${item[this.labelfield] || ''}"></div>
-                                <div class="opacity-75 fs-7 small ms-2 flex-fill text-truncate text-end" $text="\${item[this.summaryfield] || ''}"></div>
+                                <div class="list-primary-text text-truncate px-1" $text="\${item[this.labelfield] || ''}"></div>
+                                <div class="list-summary-text opacity-75 fs-7 small ms-2 text-truncate text-end" $text="\${item[this.summaryfield] || ''}"></div>
                                 <div slot-id="item-actions"></div>
                         </template>
                 </div>
         </template>
         <div class="vs-pad-bottom flex-shrink-0" style="height:0px;"></div>
 </div>
-`))
+`), globalThis.Util.makeDom(`<style>
+List .list-primary-text{min-width:0;max-width:75%;flex:0 1 auto}List .list-summary-text{min-width:25%;flex:1 1 25%}List .list-summary-text:empty{display:none}List .list-group-item:not(:has(.list-summary-text:not(:empty))) .list-primary-text{max-width:100%}
+</style>`))

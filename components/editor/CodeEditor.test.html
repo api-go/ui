@@ -11,7 +11,7 @@
 </head>
 <body>
   <CodeEditor id="javascript" path="src/app.js" value="function run(){&#10;console.log('ok')&#10;}"></CodeEditor>
-  <CodeEditor id="markdown" path="docs/README.md" mode="split" wrap style="height:360px" value="# Preview&#10;&#10;**ready**"></CodeEditor>
+  <CodeEditor id="markdown" path="docs/README.md" mode="split" wrap toolbar style="height:360px" value="# Preview&#10;&#10;**ready**"></CodeEditor>
   <CodeEditor id="htmlPreview" path="pages/preview.html" mode="preview" style="height:240px"></CodeEditor>
   <div style="position:absolute;left:-10000px;top:0;width:800px">
     <CodeEditor id="json" path="config/app.json" value="{&quot;enabled&quot;:true}"></CodeEditor>
@@ -27,7 +27,7 @@
   </div>
   <button id="runAll" type="button">测试全部</button><pre id="result"></pre>
   <script>
-    const cases = ['languages', 'highlight', 'path-detection', 'lang-precedence', 'value', 'ready-view-focus', 'readonly-theme', 'line-wrap', 'long-document-scroll', 'change-input', 'diagnostics', 'reindent', 'autoform-code', 'editor-document', 'registry', 'on-demand-bundles', 'markdown-preview', 'markdown-options', 'preview-modes', 'preview-events', 'html-sandbox', 'html-script-opt-in', 'html-script-manual-refresh', 'html-script-auto']
+    const cases = ['languages', 'highlight', 'path-detection', 'lang-precedence', 'value', 'ready-view-focus', 'readonly-theme', 'line-wrap', 'long-document-scroll', 'change-input', 'diagnostics', 'reindent', 'autoform-code', 'editor-document', 'registry', 'on-demand-bundles', 'toolbar-availability', 'toolbar-controls', 'markdown-preview', 'markdown-options', 'preview-modes', 'preview-events', 'html-sandbox', 'html-script-opt-in', 'html-script-manual-refresh', 'html-script-auto']
     const assert = (result, feature, condition, message) => { result.assertions++; if (condition) result.passed++; else { result.failed++; result.failures.push({ feature, message }) } }
     const tick = (ms = 80) => new Promise(resolve => setTimeout(resolve, ms))
     window.runTest = async () => {
@@ -106,6 +106,15 @@ creation:
       assert(result, 'registry', ['js', 'json', 'yaml', 'py', 'html', 'css', 'md'].every(extension => Editor.resolve({ path: `file.${extension}` })?.component === 'CodeEditor'), 'Editor registry resolves every supported extension')
       const resources = performance.getEntriesByType('resource').map(entry => new URL(entry.name).pathname)
       assert(result, 'on-demand-bundles', languages.every(name => resources.some(path => path.endsWith(`/libraries/CodeMirror${{ javascript: 'JavaScript', json: 'JSON', yaml: 'YAML', python: 'Python', html: 'HTML', css: 'CSS', markdown: 'Markdown' }[name]}.js`))), 'each requested language loads its independent classic-script bundle')
+      let availabilityTools
+      javascript.addEventListener('toolschange', event => { availabilityTools = event.detail })
+      javascript.state.path = 'pages/runtime.html'; await tick(350)
+      const availableViewTools = availabilityTools?.filter(tool => tool.group === 'view' && !tool.hidden) || []
+      assert(result, 'toolbar-availability', ['source', 'split-vertical', 'split-horizontal', 'preview', 'wrap'].every(id => availableViewTools.some(tool => tool.id === id)), `toolschange republishes preview tools after asynchronous language detection; tools=${availableViewTools.map(tool => tool.id).join(',')}`)
+      javascript.state.path = 'src/app.js'; await tick(180)
+      const prettyButton = markdown.querySelector('[data-tool="pretty"]'), fullscreenIcon = markdown.querySelector('[data-tool="fullscreen"] i')
+      const viewButtons = [...markdown.querySelectorAll('[data-view-tool]')]
+      assert(result, 'toolbar-controls', viewButtons.length === 4 && viewButtons.every(button => button.querySelector('i') && !button.textContent.trim()) && prettyButton?.title === 'Pretty' && !prettyButton.textContent.trim() && prettyButton.querySelector('.bi-stars') && parseFloat(getComputedStyle(fullscreenIcon).fontSize) < parseFloat(getComputedStyle(prettyButton).fontSize), 'the compact toolbar exposes four icon-only view choices, Pretty as a tooltip, and a visually normalized fullscreen glyph')
       await markdown.refreshPreview()
       assert(result, 'markdown-preview', markdown.querySelector('.code-editor-markdown h1')?.textContent === 'Preview' && markdown.querySelector('.code-editor-markdown strong')?.textContent === 'ready', 'Markdown split preview uses the shared safe renderer')
       markdown.value = '# Updated'

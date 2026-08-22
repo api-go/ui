@@ -60,9 +60,9 @@ globalThis.Component.register('Modal', container => {
 }, globalThis.Util.makeDom(/*html*/`
 <div class="modal fade">
   <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
-    <div $class="modal-content bg-body text-body border-\${this.state?.type || 'primary'} border-2 shadow-lg">
+	<div $class="'modal-content bg-body text-body shadow-lg border ' + (this.state?.type ? 'border-' + this.state.type + ' border-2' : 'border-secondary-subtle')">
       <div slot-id="header" class="modal-header py-2 px-3 bg-body-tertiary d-flex align-items-center">
-        <h6 $class="modal-title fw-bold me-auto text-\${this.state?.type || 'primary'}" $text="this.state?.title"></h6>
+		<h6 $class="'modal-title fw-bold me-auto ' + (this.state?.type ? 'text-' + this.state.type : 'text-body')" $text="this.state?.title"></h6>
         <button type="button" class="btn btn-link ms-2 bi bi-x-lg link-reset p-0" style="color:inherit; text-decoration:none" data-bs-dismiss="modal"></button>
       </div>
       <div slot-id="body" class="modal-body p-3"></div>

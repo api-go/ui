@@ -758,7 +758,7 @@ globalThis.Component.register('DataGrid', container => {
 		let topPos = rect.top - mainRect.top + main.scrollTop - mainPaddingTop - 1;
 		let leftPos = rect.left - mainRect.left + main.scrollLeft - 1;
 		const maxVisibleWidth = Math.max(rect.width + 2, main.clientWidth - 16);
-		let editorWidth = Math.min(Math.max(rect.width + 2, isCode ? 560 : (isComplex ? 300 : 0)), maxVisibleWidth);
+		let editorWidth = Math.min(Math.max(rect.width + 2, isCode ? 760 : (isComplex ? 420 : 0)), maxVisibleWidth);
 		const editorHeight = isCode ? Math.min(320, Math.max(240, main.clientHeight - Math.max(0, rect.top - mainRect.top) - 8)) : null;
 
 		const maxLeft = Math.min(main.scrollWidth - editorWidth - 5, main.scrollLeft + main.clientWidth - editorWidth - 5);
@@ -774,6 +774,7 @@ globalThis.Component.register('DataGrid', container => {
 			maxHeight: Math.max(100, mainRect.height - (rect.top - mainRect.top) - 5) + 'px',
 			overflow: 'auto',
 			resize: isCode ? 'both' : 'none',
+			border: '1px solid var(--bs-border-color)',
 			padding: '0'
 		});
 		setTimeout(() => overlay.querySelector('input, textarea, select, .form-control')?.focus(), 30);
@@ -1251,7 +1252,7 @@ globalThis.Component.register('DataGrid', container => {
                 </template>
         </div>
 
-		<Modal $.id="this.id + '_field_modal'" guard-dirty>
+		<Modal class="datagrid-field-modal" $.id="this.id + '_field_modal'" guard-dirty>
             <div slot="body"><AutoForm nobutton class="p-3"></AutoForm></div>
 			<div slot="footer" class="d-flex align-items-center w-100">
 				<label class="small me-auto mb-0"><input class="form-check-input me-1" type="checkbox" data-no-dirty $bind="thisNode.closest('DataGrid').state.fieldAdvanced">{#Advanced mode#}</label>
@@ -1260,7 +1261,7 @@ globalThis.Component.register('DataGrid', container => {
             </div>
 		</Modal>
 
-		<Modal $.id="this.id + '_row_modal'" .title="{#Edit Row#}">
+		<Modal class="datagrid-row-modal" $.id="this.id + '_row_modal'" .title="{#Edit Row#}">
 			<div slot="body"><AutoForm nobutton class="p-3" $oninput="thisNode.closest('DataGrid').rowFormChanged()" $onchange="thisNode.closest('DataGrid').rowFormChanged()"></AutoForm></div>
 			<div slot="footer" class="d-flex align-items-center w-100">
 				<span class="small text-muted me-auto" $text="((thisNode.closest('DataGrid').state.rowFormIndex ?? -1) + 1) + ' / ' + (thisNode.closest('DataGrid').state.list?.length || 0)"></span>
@@ -1293,7 +1294,13 @@ globalThis.Component.register('DataGrid', container => {
 </div>
 `), globalThis.Util.makeDom(/*html*/`
 <style>
-        DataGrid { display: block; contain: inline-size; }
+		DataGrid { display: block; }
+		.dt-editor-overlay.dt-editor-code { width:min(760px, calc(100vw - 2rem)) !important; border:1px solid var(--bs-border-color) !important; }
+		DataGrid > .modal .modal-dialog { width:min(920px, calc(100vw - 2rem)); max-width:none; }
+		DataGrid > .modal .modal-content { border:1px solid var(--bs-border-color); border-radius:.375rem; box-shadow:0 .5rem 1.5rem rgba(0,0,0,.18); }
+		DataGrid > .modal .modal-header, DataGrid > .modal .modal-footer { border-color:var(--bs-border-color); }
+		.modal.datagrid-field-modal .modal-dialog, .modal.datagrid-row-modal .modal-dialog { width:min(920px, calc(100vw - 2rem)); max-width:none; }
+		.modal.datagrid-field-modal .modal-content, .modal.datagrid-row-modal .modal-content { border:1px solid var(--bs-border-color); border-radius:.375rem; box-shadow:0 .5rem 1.5rem rgba(0,0,0,.18); }
         .dt-root { font-size: 0.875rem; }
 		.dt-row, .dt-header-row { display: grid; grid-template-columns: var(--dt-grid-template); width: var(--dt-row-width, max-content); min-width: 0; height: 40px; box-sizing: content-box; position: relative; }
 		DataGrid, .dt-root { width: 100%; min-width: 0; max-width: 100%; overflow: hidden !important; }
@@ -1322,14 +1329,14 @@ globalThis.Component.register('DataGrid', container => {
         .dt-filter-tabs div:hover i { color: var(--bs-primary); }
         .menu-item-row .only-btn { opacity: 0; }
         .menu-item-row:hover .only-btn { opacity: 1; }
-        .dt-editor-overlay .auto-form-root form { gap: 0 !important; margin: 0 !important; height: 100%; }
+		.dt-editor-overlay .auto-form-root form { gap: 0 !important; margin: 0 !important; height: 100%; }
         .dt-editor-overlay [control-wrapper] { width: 100%; margin: 0 !important; min-height: 100% !important; align-items: stretch !important; }
         .dt-editor-overlay.dt-editor-code [control-wrapper] { height: 100%; }
 		.dt-editor-overlay.dt-editor-simple [control-wrapper] { height: 100%; }
 		.dt-editor-overlay:not(.dt-editor-code) input.form-control { height: 100%; padding: 0 .5rem; border: 0; border-radius: 0; font: inherit; }
         .dt-editor-overlay [control-wrapper] > .d-flex { padding: 0.375rem 0.5rem; justify-content: flex-start !important; align-items: center !important; }
         .dt-editor-overlay [control-wrapper] > .form-switch { padding-left: 2.5rem !important; }
-        .dt-editor-overlay [control-wrapper] > textarea { min-height: 100px; resize: vertical; }
+		.dt-editor-overlay [control-wrapper] > textarea { min-height: 100px; resize: vertical; }
 </style>
 `))
 

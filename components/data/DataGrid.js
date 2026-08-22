@@ -570,6 +570,8 @@ globalThis.Component.register('DataGrid', container => {
 
 	container.onScroll = () => {
 		perf.onScroll(); scroll.refresh();
+		const main = container.querySelector('.dt-main'), header = container.querySelector('.dt-header');
+		if (main && header) header.scrollLeft = main.scrollLeft;
 		container.hideColumnMenu();
 		container.hideEditor(true);
 		const prev = container.querySelector('.dt-spacer-prev'), post = container.querySelector('.dt-spacer-post');
@@ -693,7 +695,7 @@ globalThis.Component.register('DataGrid', container => {
 			const width = (f.settings?.width || f.width) || (f.fillColumn ? 160 : 150);
 			return `var(--w-${f.id}, ${width}px)`;
 		}).join(' '));
-		container.style.setProperty('--dt-row-width', fields.reduce((sum, f) => sum + ((f.settings?.width || f.width) || 150), 0) + 'px');
+		container.style.setProperty('--dt-row-width', `max(${fields.reduce((sum, f) => sum + ((f.settings?.width || f.width) || 150), 0)}px, 100%)`);
 
 		let leftSum = 0;
 		fields.forEach(f => {
@@ -725,6 +727,7 @@ globalThis.Component.register('DataGrid', container => {
 	});
 	state.__watch('advancedMode', () => { state.fields = [...state.fields]; state.list = [...state.list]; });
 	state.__watch('table', table => { if (container.apiUrl && table) container.load({ fields: true }); });
+	state.__watch('isDirty', dirty => globalThis.State?.setDirtySource?.(`DataGrid:${container.id || ''}`, !!dirty));
 	if (container.apiUrl && state.table) setTimeout(() => container.load({ fields: true }));
 
 	container.editCell = (row, field, cellNode) => {
@@ -1192,6 +1195,7 @@ globalThis.Component.register('DataGrid', container => {
                                         </div>
                                 </template>
                                 </div>
+                </div>
                 <div class="dt-body" style="position:relative">
                         <div class="dt-spacer-prev flex-shrink-0" style="display:none"></div>
                         <template $each="this.state?._renderedList || []" key="id" index="rIdx">
@@ -1271,7 +1275,7 @@ globalThis.Component.register('DataGrid', container => {
 			</div>
 		</Modal>
 
-        <div class="dt-toolbar border-bottom d-flex align-items-center px-3 py-1 shadow-sm text-nowrap" $.="this.ensureFooterHost(thisNode)" style="position:absolute; left:0; right:0; top:0; height:48px; z-index:30; overflow:hidden">
+		<div class="dt-toolbar border-bottom bg-body d-flex align-items-center px-3 py-1 shadow-sm text-nowrap" $.="this.ensureFooterHost(thisNode)" style="position:absolute; left:0; right:0; top:0; height:48px; z-index:30; overflow:hidden">
                 <div class="d-flex align-items-center gap-3 flex-grow-1">
                         <div slot-id="toolbar-start" class="d-flex align-items-center gap-2"></div>
                         <div class="d-flex align-items-center gap-1 text-muted" style="font-size: 0.75rem">
@@ -1300,10 +1304,8 @@ globalThis.Component.register('DataGrid', container => {
 		.modal.datagrid-field-modal .modal-content, .modal.datagrid-row-modal .modal-content { border:1px solid var(--bs-border-color); border-radius:.375rem; box-shadow:0 .5rem 1.5rem rgba(0,0,0,.18); }
         .dt-root { font-size: 0.875rem; }
 		.dt-row, .dt-header-row { display: grid; grid-template-columns: var(--dt-grid-template); width: var(--dt-row-width, max-content); min-width: 0; height: 40px; box-sizing: content-box; position: relative; }
-		DataGrid { display: flex; flex: 1 1 0 !important; min-width: 0; max-width: 100%; width: 100%; contain: inline-size; overflow: hidden !important; }
-		.dt-root { width: 100%; min-width: 0; max-width: 100%; overflow: hidden !important; }
-		.dt-main { position: relative; min-height: 0; min-width: 0; width: 100%; max-width: 100%; flex: 1 1 0; padding-top: 48px; overflow-x: auto; overflow-y: auto; }
-		.dt-header, .dt-body { width: max-content; min-width: 100%; }
+		DataGrid, .dt-root { width: 100%; min-width: 0; max-width: 100%; overflow: hidden !important; }
+		.dt-main { position: relative; min-height: 0; min-width: 0; width: 100%; max-width: 100%; flex: 1 1 auto; padding-top: 48px; overflow-x: auto; overflow-y: auto; }
 		.dt-toolbar { flex: 0 0 48px; overflow: visible !important; }
 		.dt-header-row { background-color: rgba(var(--bs-secondary-rgb), 0.08); }
 		.dt-body-row { background-color: rgba(var(--bs-secondary-rgb), 0.08) !important; cursor: pointer; }

@@ -2,13 +2,13 @@
 
 > Build-free native JavaScript UI framework. This file is the authoritative AI entry point and documentation index.
 
-Version: 1.0.7
+Version: 1.0.8
 
 Choose one version-pinned npm CDN. `ui.js` loads all adjacent framework, utility, and component files from the same origin.
 
-- jsDelivr (primary): `https://cdn.jsdelivr.net/npm/@apigo.cc/ui@1.0.7/ui.js`
-- UNPKG (alternative): `https://unpkg.com/@apigo.cc/ui@1.0.7/ui.js`
-- JSDMirror (China-optimized alternative): `https://cdn.jsdmirror.com/npm/@apigo.cc/ui@1.0.7/ui.js`
+- jsDelivr (primary): `https://cdn.jsdelivr.net/npm/@apigo.cc/ui@1.0.8/ui.js`
+- UNPKG (alternative): `https://unpkg.com/@apigo.cc/ui@1.0.8/ui.js`
+- JSDMirror (China-optimized alternative): `https://cdn.jsdmirror.com/npm/@apigo.cc/ui@1.0.8/ui.js`
 
 Load the chosen URL in `<head>` without `async`, `defer`, or `type="module"`. A minimal complete page is:
 
@@ -18,7 +18,7 @@ Load the chosen URL in `<head>` without `async`, `defer`, or `type="module"`. A 
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
-  <script src="https://cdn.jsdelivr.net/npm/@apigo.cc/ui@1.0.7/ui.js" components="List"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@apigo.cc/ui@1.0.8/ui.js" components="List"></script>
   <script>
     const users = [{ id: 'ada', label: 'Ada', summary: 'Admin' }]
   </script>

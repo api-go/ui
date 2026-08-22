@@ -344,7 +344,7 @@ globalThis.Component.register('DataGrid', container => {
 		filterConfig: {},
 		activeFieldId: null, activeField: null, activeModes: [],
 		_columnStats: {}, _internalUpdate: false, _appliedHash: '', _fieldsDirty: false, _masterCellNodes: null,
-		isDirty: false, isBulkEdit: null, advancedMode: false, fieldAdvanced: false, rowFormIndex: -1, table: state.table || '', apiLoading: false, total: 0,
+		isDirty: false, changedCells: [], isBulkEdit: null, advancedMode: false, fieldAdvanced: false, rowFormIndex: -1, table: state.table || '', apiLoading: false, total: 0,
 		editable: container.editable, readonly: container.readonly, showAdvanced: !container.hasAttribute('no-advanced'), rowFormMin: 0, rowFormMax: -1
 	})
 
@@ -395,13 +395,13 @@ globalThis.Component.register('DataGrid', container => {
 				// Table metadata exists before its first field creates the physical
 				// table. Keep that valid empty state editable without querying it.
 				if (state.fields.length === 0) {
-					state._internalUpdate = true; state.list = []; state._originalList = []; state.total = 0; state._internalUpdate = false; state.isDirty = false;
+					state._internalUpdate = true; state.list = []; state._originalList = []; state.total = 0; state._internalUpdate = false; state.isDirty = false; state.changedCells = [];
 					return;
 				}
 			}
 			const response = await requestApi('query', { ...buildQuery(), offset: 0, limit: 1000 });
 			const list = Array.isArray(response.data) ? response.data : (Array.isArray(response.list) ? response.list : []);
-			state._internalUpdate = true; state.list = list; state._originalList = globalThis.Util.clone(list); state.total = Number(response.count ?? list.length); state._internalUpdate = false; state.isDirty = false;
+			state._internalUpdate = true; state.list = list; state._originalList = globalThis.Util.clone(list); state.total = Number(response.count ?? list.length); state._internalUpdate = false; state.isDirty = false; state.changedCells = [];
 		} catch (_) { /* requestApi already reports the error */ }
 	};
 
@@ -428,7 +428,7 @@ globalThis.Component.register('DataGrid', container => {
 		}
 		return { ok: errors.length === 0, errors, invalidRows: [...new Set(errors.map(error => error.row))] };
 	};
-	const scroll = createScrollManager(container, state, () => setTimeout(() => selection.applySelectionUI(), 50));
+	const scroll = createScrollManager(container, state, () => setTimeout(() => { selection.applySelectionUI(); container.applyChangedCellsUI(); }, 50));
 
 	const menuNode = container.querySelector('.dt-column-menu');
 	if (menuNode) menuNode._thisObj = container;
@@ -683,9 +683,25 @@ globalThis.Component.register('DataGrid', container => {
 
 	container._initRow = (rowNode) => {
 		const row = rowNode._ref?.item;
+		if (row) Object.defineProperty(row, '_dtRowNode', { value: rowNode, writable: true, configurable: true, enumerable: false });
 		if (row && row._editingF === undefined) { Object.defineProperty(row, '_editingF', { set: (v) => { if (v === null) container.hideEditor(true); }, configurable: true }); }
 		Array.from(rowNode.children).forEach(cell => { const fIdx = parseInt(cell.dataset.fidx); if (!isNaN(fIdx)) cell._ref = { ...(cell._ref || rowNode._ref), f: state._displayFields[fIdx], fIdx: fIdx }; });
 	};
+	container.markChanged = (row, cellNode = currentEditingNode) => {
+		if (!row || !cellNode) return;
+		const fIdx = parseInt(cellNode.dataset.fidx);
+		if (isNaN(fIdx) || state.changedCells.some(item => item.row === row && item.fIdx === fIdx)) return;
+		state.changedCells = [...state.changedCells, { row, fIdx }];
+		container.applyChangedCellsUI();
+	};
+	container.applyChangedCellsUI = () => {
+		const changed = state.changedCells;
+		container.querySelectorAll('.dt-body-row').forEach(rowNode => {
+			const row = rowNode._ref?.item;
+			rowNode.querySelectorAll('.dt-cell').forEach((cell, fIdx) => cell.classList.toggle('dt-cell-changed', !!row && changed.some(item => item.row === row && item.fIdx === fIdx)));
+		});
+	};
+	container.getChangedRowCount = () => new Set(state.changedCells.map(item => item.row)).size;
 
 	state.__watch('fields', fields => {
 		if (!Array.isArray(fields)) return;
@@ -814,14 +830,17 @@ globalThis.Component.register('DataGrid', container => {
 				const field = state._displayFields[fIdx]; const dataKey = getDataKey(field); const newValue = form.data[dataKey];
 				for (let i = minRow; i <= maxRow; i++) {
 					if (state.list[i] && state.list[i][dataKey] !== newValue) {
+						container.markChanged(state.list[i], currentEditingNode);
 						state.list[i][dataKey] = newValue;
 						hasChanges = true;
 					}
 				}
 			}
 			if (hasChanges) {
+				container.markChanged(currentEditingRow, currentEditingNode);
 				state.isDirty = true;
 				state.list = [...state.list];
+				setTimeout(() => container.applyChangedCellsUI(), 0);
 			}
 		}
 		_editorOverlay.style.display = 'none';
@@ -988,6 +1007,7 @@ globalThis.Component.register('DataGrid', container => {
 		if (await globalThis.Dialog.confirm(`Are you sure you want to delete ${count} row(s)?`)) {
 			const rMin = bounds.minRow, rMax = bounds.maxRow;
 			const removedItems = state.list.slice(rMin, rMax + 1);
+			removedItems.forEach(container.markChanged);
 			if (container.apiUrl) {
 				const removedIDs = removedItems.map(item => item?.id).filter(Boolean);
 				try { await requestApi('remove', { data: removedIDs }); }
@@ -1011,7 +1031,7 @@ globalThis.Component.register('DataGrid', container => {
 			catch (_) { return; }
 			state._originalList = globalThis.Util.clone(state.list);
 		}
-		container.dispatchEvent(new CustomEvent('save', { detail: { list: savedList, fields: state.fields } })); state.isDirty = false; return true;
+		container.dispatchEvent(new CustomEvent('save', { detail: { list: savedList, fields: state.fields } })); container.querySelectorAll('.dt-cell-changed').forEach(node => node.classList.remove('dt-cell-changed')); state.isDirty = false; state.changedCells = []; return true;
 	};
 
 	const getFieldSchema = () => {
@@ -1292,7 +1312,7 @@ globalThis.Component.register('DataGrid', container => {
 				<div slot-id="toolbar-end" class="d-flex align-items-center gap-2"></div>
 				<div slot-id="footer-end" class="d-flex align-items-center gap-2"></div>
                 <div $if="this.state?.editable && !this.state?.readonly" class="d-flex align-items-center gap-2">
-                        <button class="btn btn-sm btn-primary px-3" $disabled="!this.state?.isDirty" $onclick="this.saveChanges()"><i class="bi bi-floppy me-1"></i>Save</button>
+		<button class="btn btn-sm btn-primary px-3 ms-2" $disabled="!this.state?.isDirty" $onclick="this.saveChanges()"><i class="bi bi-floppy me-1"></i>Save<span $if="this.getChangedRowCount()" $text="'(' + this.getChangedRowCount() + ')'" ></span></button>
                 </div>
         </div>
 </div>
@@ -1305,8 +1325,8 @@ globalThis.Component.register('DataGrid', container => {
         .dt-root { font-size: 0.875rem; }
 		.dt-row, .dt-header-row { display: grid; grid-template-columns: var(--dt-grid-template); width: var(--dt-row-width, max-content); min-width: 0; height: 40px; box-sizing: content-box; position: relative; }
 		DataGrid, .dt-root { width: 100%; min-width: 0; max-width: 100%; overflow: hidden !important; }
-		.dt-main { position: relative; min-height: 0; min-width: 0; width: 100%; max-width: 100%; flex: 1 1 auto; padding-top: 48px; overflow-x: auto; overflow-y: auto; }
-		.dt-toolbar { flex: 0 0 48px; overflow: visible !important; }
+		.dt-main { position: relative; min-height: 0; min-width: 0; width: 100%; max-width: 100%; flex: 1 1 auto; padding-top: 0; overflow-x: auto; overflow-y: auto; }
+		.dt-toolbar { position: relative !important; order: -1; inset: auto !important; flex: 0 0 48px; overflow: visible !important; }
 		.dt-header-row { background-color: rgba(var(--bs-secondary-rgb), 0.08); }
 		.dt-body-row { background-color: rgba(var(--bs-secondary-rgb), 0.08) !important; cursor: pointer; }
 		.dt-body-row .dt-cell { background-color: var(--bs-body-bg); cursor: default; border-bottom: 1px solid var(--bs-border-color); }
@@ -1316,6 +1336,7 @@ globalThis.Component.register('DataGrid', container => {
 		@media (max-width: 1100px) { .dt-toolbar-label { display: none; } .dt-toolbar-icon { display: inline-block; } .dt-toolbar { padding-left: .5rem !important; padding-right: .5rem !important; } .dt-toolbar .gap-3 { gap: .5rem !important; } }
         .dt-cell-selected { background-color: rgba(var(--bs-primary-rgb), 0.15) !important; outline: 1px solid var(--bs-primary); outline-offset: -1px; }
 		.dt-body-row:hover { background-color: var(--bs-secondary-bg) !important; }
+		.dt-cell-changed { color: var(--bs-warning-text-emphasis) !important; background-color: var(--bs-warning-bg-subtle) !important; }
 		.dt-drop-before { box-shadow: inset 3px 0 0 var(--bs-primary) !important; }
 		.dt-body-row.dt-drop-row { position: relative; box-shadow: none !important; }
 		.dt-body-row.dt-drop-row::after { content: ''; position: absolute; inset: 0; z-index: 30; pointer-events: none; border-top: 3px solid var(--bs-primary); }

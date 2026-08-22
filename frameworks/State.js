@@ -183,6 +183,12 @@
   const State = NewState({
     exitBlocks: 0
   });
+  if (typeof window !== "undefined") window.addEventListener("beforeunload", (event) => {
+    if (State.exitBlocks > 0) {
+      event.preventDefault();
+      event.returnValue = "";
+    }
+  });
   globalThis.Hash = Hash;
   globalThis.LocalStorage = LocalStorage;
   globalThis.Cookie = Cookie;

@@ -693,7 +693,7 @@ globalThis.Component.register('DataGrid', container => {
 			const width = (f.settings?.width || f.width) || (f.fillColumn ? 160 : 150);
 			return `var(--w-${f.id}, ${width}px)`;
 		}).join(' '));
-		container.style.setProperty('--dt-row-width', `max(${fields.reduce((sum, f) => sum + ((f.settings?.width || f.width) || 150), 0)}px, 100%)`);
+		container.style.setProperty('--dt-row-width', fields.reduce((sum, f) => sum + ((f.settings?.width || f.width) || 150), 0) + 'px');
 
 		let leftSum = 0;
 		fields.forEach(f => {
@@ -1300,8 +1300,10 @@ globalThis.Component.register('DataGrid', container => {
 		.modal.datagrid-field-modal .modal-content, .modal.datagrid-row-modal .modal-content { border:1px solid var(--bs-border-color); border-radius:.375rem; box-shadow:0 .5rem 1.5rem rgba(0,0,0,.18); }
         .dt-root { font-size: 0.875rem; }
 		.dt-row, .dt-header-row { display: grid; grid-template-columns: var(--dt-grid-template); width: var(--dt-row-width, max-content); min-width: 0; height: 40px; box-sizing: content-box; position: relative; }
-		DataGrid, .dt-root { width: 100%; min-width: 0; max-width: 100%; overflow: hidden !important; }
-		.dt-main { position: relative; min-height: 0; min-width: 0; width: 100%; max-width: 100%; flex: 1 1 auto; padding-top: 48px; overflow-x: auto; overflow-y: auto; }
+		DataGrid { display: flex; flex: 1 1 0 !important; min-width: 0; max-width: 100%; width: 100%; contain: inline-size; overflow: hidden !important; }
+		.dt-root { width: 100%; min-width: 0; max-width: 100%; overflow: hidden !important; }
+		.dt-main { position: relative; min-height: 0; min-width: 0; width: 100%; max-width: 100%; flex: 1 1 0; padding-top: 48px; overflow-x: auto; overflow-y: auto; }
+		.dt-header, .dt-body { width: max-content; min-width: 100%; }
 		.dt-toolbar { flex: 0 0 48px; overflow: visible !important; }
 		.dt-header-row { background-color: rgba(var(--bs-secondary-rgb), 0.08); }
 		.dt-body-row { background-color: rgba(var(--bs-secondary-rgb), 0.08) !important; cursor: pointer; }

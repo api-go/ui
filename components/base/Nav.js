@@ -38,21 +38,21 @@ globalThis.Component.register('Nav', container => {
                 <span $class="\${this.vertical ? 'mb-2 fw-bold' : 'mx-1'}" style="transform: translateY(3px);" $text="this.state.brand.label"></span>
         </template>
 	</div>
-	<div $class="d-flex \${this.vertical ? 'w-100 flex-fill mt-2 flex-column' : 'ms-2 align-items-center flex-fill'}" $style="this.vertical ? 'min-height:0; overflow-y:auto; overflow-x:visible;' : ''">
+	<div $class="d-flex \${this.vertical ? 'w-100 flex-fill mt-2 flex-column gap-1' : 'ms-2 align-items-center flex-fill'}" $style="this.vertical ? 'min-height:0; overflow-y:auto; overflow-x:visible;' : ''">
 		<template $each="this.state?.list || []">
 				<div $class="\${this.vertical ? 'nav nav-pills flex-column w-100 position-relative' : 'navbar-nav flex-row align-items-center'} \${!this.vertical && item.type==='fill' ? 'flex-fill' : ''}">
 			<template $if="item.type==='label'">
 				<div $class="\${this.vertical ? 'small text-uppercase text-body-secondary fw-semibold px-2 py-1 mt-2' : 'navbar-text small text-uppercase text-body-secondary fw-semibold px-2'} \${item.class || ''}" $text="item.label"></div>
 			</template>
 			<template $if="item.type==='button'">
-				<button $class="nav-link \${this.state.value===item.name?'active':''} \${this.vertical ? 'w-100 text-start py-1 px-2' : ''} \${item.class || ''}" $onclick="this.click(item)">
+				<button $class="nav-link \${this.state.value===item.name?'active':''} \${this.vertical ? 'w-100 text-start py-2 px-2' : ''} \${item.class || ''}" $onclick="this.click(item)">
 						<i $class="bi bi-\${item.icon} me-2"></i><span $class="\${this.vertical ? 'text-truncate' : 'd-none d-' + (this.state?.list?.length>5?'lg':'md') + '-inline'}" $text="item.label"></span>
 				</button>
 				</template>
 				<template $if="item.type==='dropdown'">
 					<template $if="this.vertical">
 						<div class="w-100">
-							<button type="button" $class="nav-link w-100 text-start py-1 px-2 d-flex align-items-center justify-content-between \${item.class || ''}" $onclick="this.toggleGroup(item)">
+							<button type="button" $class="nav-link w-100 text-start py-2 px-2 d-flex align-items-center justify-content-between \${item.class || ''}" $onclick="this.toggleGroup(item)">
 								<span class="d-inline-flex align-items-center">
 									<i $class="bi bi-\${item.icon} me-2"></i><span class="text-truncate" $text="item.label"></span>
 								</span>
@@ -65,7 +65,7 @@ globalThis.Component.register('Nav', container => {
 											<div $class="small text-uppercase text-body-secondary fw-semibold px-2 py-1 \${subitem.class || ''}" $text="subitem.label"></div>
 										</template>
 										<template $if="subitem.type==='button'">
-											<button $class="nav-link w-100 text-start py-1 px-2 \${this.state.value===subitem.name?'active':''} \${subitem.class || ''}" $onclick="this.clickSubitem(subitem)">
+											<button $class="nav-link w-100 text-start py-2 px-2 \${this.state.value===subitem.name?'active':''} \${subitem.class || ''}" $onclick="this.clickSubitem(subitem)">
 												<i $class="bi bi-\${subitem.icon} me-2 d-inline-block" style="width: 16px;"></i><span $text="subitem.label"></span>
 											</button>
 										</template>
@@ -110,4 +110,12 @@ globalThis.Component.register('Nav', container => {
 		</template>
 	</div>
 </div>
-`))
+`), globalThis.Util.makeDom(/*html*/`<style>
+	Nav .nav-link.active, Nav .dropdown-item.active {
+		background: rgba(var(--bs-secondary-rgb), .18) !important;
+		color: inherit !important;
+		font-weight: 600;
+	}
+	Nav .nav-link { border-radius: .5rem; }
+	Nav .dropdown-item.active { border-radius: .375rem; }
+</style>`))

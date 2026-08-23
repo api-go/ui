@@ -9,7 +9,7 @@
       name: 'Ada', password: 'secret', email: 'ada@example.test', age: 36,
       birthday: '1815-12-10', appointment: '1843-07-01T09:00', role: 'admin',
       alerts: true, plan: 'pro', active: true, bio: 'First programmer.',
-      periodStart: '1843-07-01', periodEnd: '1843-07-31', color: '#0d6efd', icon: 'star', tags: ['math']
+      periodStart: '1843-07-01', periodEnd: '1843-07-31', periodZone: 'UTC', periodPrecision: 15, color: '#0d6efd', icon: 'star', tags: ['math']
     }
     const profileSchema = [
       { name: 'name', label: 'Name', type: 'text', setting: { required: true }, placeholder: 'Name' },
@@ -24,14 +24,25 @@
       { name: 'alerts', label: 'Alerts', type: 'checkbox', text: 'Receive alerts' },
       { name: 'plan', label: 'Plan', type: 'radio', options: ['free', 'pro'] },
       { name: 'active', label: 'Active', type: 'switch' },
-      { name: 'bio', label: 'Bio', type: 'textarea' },
+      { name: 'bio', label: 'Bio', type: 'textarea', placeholder: 'Biography' },
       { name: 'periodStart', label: 'Period', type: 'DatePicker', setting: { rangeEnd: 'periodEnd' } },
+      { name: 'periodZone', type: 'select', options: ['UTC', 'Asia/Shanghai'], appendTo: 'periodStart' },
+      { name: 'periodPrecision', type: 'number', appendTo: 'periodStart' },
       { name: 'color', label: 'Color', type: 'ColorPicker' },
       { name: 'icon', label: 'Icon', type: 'IconPicker' },
-      { name: 'tags', label: 'Tags', type: 'TagsInput' },
+      { name: 'tags', label: 'Tags', type: 'TagsInput', placeholder: 'Add tag' },
       { name: 'hidden', label: 'Hidden', type: 'text', if: "this.data.role === 'user'" }
     ]
     const compactSchema = [{ name: 'name', label: 'Name', type: 'text' }]
+    const categoryOptions = {
+      fruit: [{ value: 'apple', label: 'Apple' }, { value: 'banana', label: 'Banana' }],
+      vegetable: [{ value: 'carrot', label: 'Carrot' }, { value: 'pea', label: 'Pea' }]
+    }
+    const dependentData = { type: 'fruit', item: 'banana' }
+    const dependentSchema = [
+      { name: 'type', label: 'Type', type: 'select', options: [{ value: 'fruit', label: 'Fruit' }, { value: 'vegetable', label: 'Vegetable' }] },
+      { name: 'item', label: 'Item', type: 'select', options: 'categoryOptions[this.data.type] || []' }
+    ]
     const databaseFields = [
       { id: 'f-name', tableID: 'users', name: 'name', type: 'v100', settings: { type: 'text', attrs: { required: true } } },
       { id: 'f-role', tableID: 'users', name: 'role', type: 'v30', settings: { type: 'select', options: ['admin', 'user'] } }
@@ -51,11 +62,12 @@
   <AutoForm id="errorForm" nobutton $.api="errorApi" $.state.data="profile" $.state.schema="compactSchema"></AutoForm>
   <AutoForm id="cancelForm" nobutton $.api="saveApi" $.state.data="profile" $.state.schema="compactSchema"></AutoForm>
   <AutoForm id="databaseForm" nobutton $.state.data="profile" $.state.schema="databaseFields"></AutoForm>
+  <AutoForm id="dependentForm" nobutton $.state.data="dependentData" $.state.schema="dependentSchema"></AutoForm>
   <button id="runAll" type="button">测试全部</button>
   <pre id="result"></pre>
   <script>
     const tick = () => new Promise(resolve => setTimeout(resolve, 80))
-    const cases = ['data', 'all-controls', 'setting', 'setting-expression', 'options', 'database-schema', 'if', 'custom-type', 'vertical', 'horizontal', 'inline', 'nobutton', 'submitlabel', 'slot', 'submit', 'submit-event', 'response-event', 'error-event']
+    const cases = ['data', 'all-controls', 'appendTo', 'rangeEnd', 'setting', 'placeholder', 'setting-expression', 'options', 'dependent-options', 'database-schema', 'if', 'custom-type', 'vertical', 'horizontal', 'inline', 'nobutton', 'submitlabel', 'slot', 'submit', 'submit-event', 'response-event', 'error-event']
     const assert = (testResult, feature, condition, message) => { testResult.assertions++; if (condition) testResult.passed++; else { testResult.failed++; testResult.failures.push({ feature, message }) } }
     window.runTest = async () => {
       const testResult = { name: 'components.form.AutoForm', status: 'running', assertions: 0, passed: 0, failed: 0, failures: [], consoleErrors: [], coverage: { tested: [], total: cases, percent: 0 } }
@@ -65,9 +77,18 @@
       const standardTypes = ['text', 'password', 'email', 'number', 'date', 'datetime', 'file', 'select', 'checkbox', 'radio', 'switch', 'textarea']
       const customTypes = ['DatePicker', 'ColorPicker', 'IconPicker', 'TagsInput']
       assert(testResult, 'all-controls', form.querySelectorAll('[control-wrapper]').length === 17 && standardTypes.every(type => form.querySelector(`[name="${profileSchema.find(item => item.type === type).name}"]`)) && customTypes.every(type => form.querySelector(type)), 'one schema renders every documented standard and custom control type')
+      const periodWrapper = form.querySelector('DatePicker[name="periodStart"]')?.closest('[control-wrapper]')
+      assert(testResult, 'appendTo', periodWrapper?.querySelector('select[name="periodZone"]')?.value === 'UTC' && periodWrapper?.querySelector('input[name="periodPrecision"]')?.value === '15', 'multiple controls append directly to one root control group and keep independent bindings')
+      assert(testResult, 'rangeEnd', periodWrapper?.querySelectorAll('DatePicker input[type="date"]').length === 2 && periodWrapper?.querySelectorAll('DatePicker input[type="date"]')[1]?.value === '1843-07-31', 'DatePicker rangeEnd keeps working when other controls append to its root field')
       assert(testResult, 'setting', form.querySelector('input[name="name"]').required, 'setting attributes are copied to controls')
+      assert(testResult, 'placeholder', form.querySelector('input[name="name"]').placeholder === 'Name' && form.querySelector('textarea[name="bio"]').placeholder === 'Biography' && form.querySelector('TagsInput input')?.placeholder === 'Add tag', 'schema placeholder reaches native and custom controls')
       assert(testResult, 'setting-expression', form.querySelector('input[name="conditionalReadonly"]').readOnly, 'setting boolean expressions react to form data')
       assert(testResult, 'options', form.querySelectorAll('[name="role"] option').length === 2, 'select options render schema options')
+      const dependentForm = document.querySelector('#dependentForm'); const dependentType = dependentForm.querySelector('select[name="type"]'); const dependentItem = dependentForm.querySelector('select[name="item"]')
+      assert(testResult, 'dependent-options', dependentItem.options.length === 2 && dependentItem.value === 'banana', 'dependent select resolves options from current form data')
+      dependentType.value = 'vegetable'; dependentType.dispatchEvent(new Event('change', { bubbles: true })); await tick()
+      assert(testResult, 'dependent-options', [...dependentItem.options].map(option => option.value).join(',') === 'carrot,pea', 'dependent select options react to the parent selection')
+      assert(testResult, 'dependent-options', dependentForm.data.item === dependentItem.value, 'dependent select keeps the bound value synchronized after options change')
       const databaseForm = document.querySelector('#databaseForm'); assert(testResult, 'database-schema', databaseForm.querySelector('input[name="name"]')?.required && databaseForm.querySelectorAll('select[name="role"] option').length === 2, 'database field definitions are converted to a plain form schema without changing form data keys')
       assert(testResult, 'if', !form.querySelector('input[name="hidden"]'), '$$if hides fields whose expression is false')
       form.data.role = 'user'; await tick(); assert(testResult, 'if', !!form.querySelector('input[name="hidden"]'), '$$if evaluates item.if again after form data changes'); assert(testResult, 'setting-expression', !form.querySelector('input[name="conditionalReadonly"]').readOnly, 'setting expressions update when data changes'); form.data.role = 'admin'

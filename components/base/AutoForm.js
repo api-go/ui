@@ -6,20 +6,23 @@ const AUTOFORM_BLUEPRINT = globalThis.Util.makeDom(/*html*/`
 <div class="auto-form-root">
   <form $class="\${this.inline ? 'd-flex flex-wrap align-items-center gap-3' : (this.vertical ? 'd-flex flex-column' : (this.horizontal ? 'auto-grid-form forced-horizontal' : 'auto-grid-form'))}" $onsubmit="event.stopPropagation();event.preventDefault();this.submit()">
 
-  <template $each="this.state._schema || []">
-    <template $$if="item.if || 'true'">
-    <template $if="item.type === 'divider'">
-      <div style="grid-column:1/-1" class="pt-2 pb-1"><hr class="my-2"><div $if="item.label" $text="item.label" class="small fw-semibold text-muted text-uppercase"></div></div>
+  <template $each="this.state._schema || []" as="group">
+    <template $$if="group.root.if || 'true'">
+    <template $if="group.root.type === 'divider'">
+      <div style="grid-column:1/-1" class="pt-2 pb-1"><hr class="my-2"><div $if="group.root.label" $text="group.root.label" class="small fw-semibold text-muted text-uppercase"></div></div>
     </template>
-    <template $if="item.type !== 'divider'">
+    <template $if="group.root.type !== 'divider'">
     <div style="display:contents">
-        <label $name="item.name" $class="\${this.inline ? 'mb-0 text-muted text-nowrap' : 'col-form-label text-muted'}" $text="item.label"></label>
-        <div control-wrapper $class="\${this.inline ? 'd-flex align-items-center' : 'mb-3 d-flex align-items-center'}">
+        <label $name="group.root.name" $class="\${this.inline ? 'mb-0 text-muted text-nowrap' : 'col-form-label text-muted'}" $text="group.root.label"></label>
+        <div control-wrapper $class="\${this.inline ? 'd-flex align-items-center gap-2' : 'mb-3 d-flex align-items-center gap-2'}">
+          <template $each="group.items" as="item">
+          <template $$if="item.if || 'true'">
+          <div control-item style="display:contents">
           <template $if="['text', 'password', 'email', 'number', 'date', 'datetime', 'file'].includes(item.type)"><input $name="item.name" $type="item.type" $.="item.setting || {}" $$readonly="typeof item.setting?.readonly === 'string' ? item.setting.readonly : !!item.setting?.readonly" $$disabled="typeof item.setting?.disabled === 'string' ? item.setting.disabled : !!item.setting?.disabled" $$required="typeof item.setting?.required === 'string' ? item.setting.required : !!item.setting?.required" $bind="this.state.data[item.name]" $class="form-control \${item.type === 'number' ? 'text-end' : ''}"></template>
 
           <template $if="item.type === 'select'"><select $name="item.name" $.="item.setting || {}" $$disabled="typeof item.setting?.disabled === 'string' ? item.setting.disabled : !!item.setting?.disabled" $$required="typeof item.setting?.required === 'string' ? item.setting.required : !!item.setting?.required" $bind="this.state.data[item.name]" class="form-select">
               <option value="" $if="item.placeholder" $text="item.placeholder" disabled selected></option>
-              <option $each="item.options" as="opt" $value="opt.value !== undefined ? opt.value : opt" $text="opt.label || opt"></option>
+              <option $$each="item.options" as="opt" $value="opt.value !== undefined ? opt.value : opt" $text="opt.label || opt"></option>
           </select></template>
 
           <template $if="['checkbox', 'radio'].includes(item.type)"><div class="d-flex align-items-center flex-wrap gap-3 h-100" style="padding: 0 0.75rem; min-height: calc(2.25rem + 2px);">
@@ -37,6 +40,9 @@ const AUTOFORM_BLUEPRINT = globalThis.Util.makeDom(/*html*/`
 
 
           <template $if="item.type === 'label'"><span $name="item.name" $.="item.setting || {}" $text="item.value ?? this.state.data[item.name] ?? ''" class="form-control-plaintext text-break py-1"></span></template>
+          </div>
+          </template>
+          </template>
         </div>
     </div>
     </template>
@@ -78,10 +84,15 @@ const getDbFormType = type => DB_FORM_TYPE_MAP[type] || 'text';
 
 // Database field definitions are converted only for rendering. Form data keeps
 // its original keys, so submitting an AutoForm still returns the API row shape.
+const withPlaceholder = field => field?.placeholder == null ? field : {
+        ...field,
+        setting: { ...(field.setting || {}), placeholder: field.placeholder }
+};
+
 const normalizeSchemaItem = field => {
-        if (!field?.tableID) return field;
+        if (!field?.tableID) return withPlaceholder(field);
         const settings = field.settings || {};
-        return {
+        return withPlaceholder({
                 ...field,
                 name: field.name,
                 label: settings.label ?? field.label ?? field.name,
@@ -90,13 +101,31 @@ const normalizeSchemaItem = field => {
                 placeholder: settings.placeholder ?? field.placeholder,
                 setting: settings.attrs ?? field.setting,
                 if: settings.if ?? field.if
-        };
+        });
+};
+
+const groupSchemaItems = fields => {
+        const groups = [];
+        const roots = new Map();
+        for (const item of fields) {
+                const target = item?.appendTo && roots.get(item.appendTo);
+                if (target) {
+                        target.items.push(item);
+                        continue;
+                }
+                const group = { root: item, items: [item] };
+                groups.push(group);
+                if (item?.name && !item.appendTo && item.type !== 'divider') roots.set(item.name, group);
+                else if (item?.appendTo) console.warn(`AutoForm appendTo target must be a preceding root field: ${item.appendTo}`);
+        }
+        return groups;
 };
 
 globalThis.Component.register('AutoForm', container => {
         if (!Array.isArray(container.state.schema)) container.state.schema = []
         const setSchema = schema => {
-                container.state._schema = Array.isArray(schema) ? schema.map(normalizeSchemaItem) : [];
+                const fields = Array.isArray(schema) ? schema.map(normalizeSchemaItem) : [];
+                container.state._schema = groupSchemaItems(fields);
         };
         container.state.__watch('schema', setSchema)
         setSchema(container.state.schema)
@@ -118,6 +147,12 @@ globalThis.Component.register('AutoForm', container => {
         container.request = { method: 'POST' }
         container.response = {}
         container.result = null
+        container.addEventListener('change', event => {
+                if (event.target?.tagName !== 'SELECT') return
+                setTimeout(() => container.querySelectorAll('select[name]').forEach(select => {
+                        if (select.value !== String(container.data[select.name] ?? '')) container.data[select.name] = select.value
+                }))
+        })
 
         container.form = globalThis.$(container, 'form')
         container.submit = (opt = {}) => {
@@ -142,7 +177,7 @@ globalThis.Component.register('AutoForm', container => {
 }, AUTOFORM_BLUEPRINT, AUTOFORM_STYLE)
 
 const findAnchorInBlueprint = (root) => {
-    let f = root.querySelector('[control-wrapper]');
+    let f = root.querySelector('[control-item]');
     if (f) return f;
     for (const t of root.querySelectorAll('template')) {
         f = findAnchorInBlueprint(t.content); if (f) return f;

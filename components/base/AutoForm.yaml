@@ -19,11 +19,12 @@ properties:
   result: Latest response.result after submit.
 
 schema:
-  item: "{name, type, label?, setting?, options?, placeholder?, if?}"
+  item: "{name, type, label?, setting?, options?, placeholder?, if?, appendTo?}"
   types: "text|password|email|number|date|datetime|file|select|checkbox|radio|switch|textarea|label|divider|DatePicker|ColorPicker|IconPicker|TagsInput|code"
-  options: "select/checkbox/radio options: ['A', {value:'b', label:'B'}]"
+  options: "select/checkbox/radio options: ['A', {value:'b', label:'B'}], or a $$each expression string evaluated against the form (for example `categories[this.data.type] || []`)"
   setting: "native/control attributes copied to the control. Do not place schema metadata such as type or options here. Omit absent values instead of supplying undefined. Boolean required, readonly, and disabled values may be JavaScript expression strings evaluated against this.data, for example { readonly: '!!this.data.id' }."
   if: 'JavaScript expression evaluated by `$$if`; use component data through `this.data`, for example `this.data.role === "admin"`.'
+  appendTo: "Root field name declared earlier in the schema. The current control is rendered in that root field's control group while keeping its own data binding. Multiple controls may appendTo the same root; appended fields must reference the root directly."
   label: Read-only text displaying item.value or data[item.name].
   divider: Full-width section divider; label is its optional section title.
   database_fields: 'Data-API field definitions with tableID are accepted and converted for rendering only: name stays the data key; settings.type is the control type; settings.options are control options; only settings.attrs become control attributes. Other custom settings remain field metadata and must not be expanded onto the native control. The original fields and data are not changed.'
@@ -63,6 +64,31 @@ examples:
     <AutoForm id="form" nobutton $.state.data="profile" $.state.schema="profileSchema">
       <div slot="actions" $onclick="this.submit()">Save</div>
     </AutoForm>
+  appended_controls: |
+    <script>
+      const period = { from: '2026-01-01', to: '2026-01-31', zone: 'UTC' }
+      const periodSchema = [
+        { name: 'from', label: 'Period', type: 'DatePicker', setting: { rangeEnd: 'to' } },
+        { name: 'zone', type: 'select', options: ['UTC', 'Asia/Shanghai'], appendTo: 'from' }
+      ]
+    </script>
+    <AutoForm $.state.data="period" $.state.schema="periodSchema"></AutoForm>
+  dependent_options: |
+    <script>
+      const data = { type: 'fruit', item: 'apple' }
+      const categories = { fruit: [{ value: 'apple', label: 'Apple' }], vegetable: [{ value: 'carrot', label: 'Carrot' }] }
+      const schema = [
+        { name: 'type', label: 'Type', type: 'select', options: [{ value: 'fruit', label: 'Fruit' }, { value: 'vegetable', label: 'Vegetable' }] },
+        { name: 'item', label: 'Item', type: 'select', options: 'categories[this.data.type] || []' }
+      ]
+    </script>
+    <AutoForm $.state.data="data" $.state.schema="schema"></AutoForm>
+
+rules:
+  - appendTo is AutoForm layout metadata, not a control setting.
+  - An appended field references a preceding root field directly; chains are not resolved.
+  - The root provides the shared label, and every grouped control keeps its own name, condition, settings, and data binding.
+  - DatePicker setting.rangeEnd remains independent and may be used with or without appendTo controls.
 
 related:
   - API.yaml

@@ -2114,6 +2114,14 @@ url("data:font/woff;base64,d09GRgABAAAAAsBAAAsAAAAHavgAAQAAAAAAAAAAAAAAAAAAAAAAA
 .bi-globe-asia-australia-fill::before { content: "\\f91c"; }
 .bi-globe-central-south-asia-fill::before { content: "\\f91d"; }
 .bi-globe-europe-africa-fill::before { content: "\\f91e"; }
+/* 默认链接按钮使用正文中性色；语义色由 btn-link-{color} 显式选择。 */
+.btn-link {
+    --bs-btn-color: var(--bs-body-color);
+    --bs-btn-hover-color: var(--bs-emphasis-color);
+    --bs-btn-active-color: var(--bs-emphasis-color);
+    --bs-btn-disabled-color: var(--bs-secondary-color);
+}
+
 /* Bootstrap 原生仅提供 .btn-link；为链接按钮补充语义色变体。 */
 .btn-link-primary,
 .btn-link.btn-link-primary {
@@ -7348,18 +7356,9 @@ url("data:font/woff;base64,d09GRgABAAAAAsBAAAsAAAAHavgAAQAAAAAAAAAAAAAAAAAAAAAAA
       if (options.primary) {
         const rgb = Bootstrap._hexToRgb(options.primary);
         const hoverColor = Bootstrap._shadeColor(options.primary, 0.15);
-        const activeColor = Bootstrap._shadeColor(options.primary, 0.2);
         root.style.setProperty("--bs-link-color", options.primary);
         root.style.setProperty("--bs-link-hover-color", hoverColor);
         if (rgb) root.style.setProperty("--bs-link-color-rgb", `${rgb.r}, ${rgb.g}, ${rgb.b}`);
-        cssPatch += `
-				.btn-link {
-					--bs-btn-color: var(--bs-primary) !important;
-					--bs-btn-hover-color: ${hoverColor} !important;
-					--bs-btn-active-color: ${activeColor} !important;
-					--bs-btn-disabled-color: rgba(var(--bs-primary-rgb), .65) !important;
-				}
-			`;
       }
       if (cssPatch) {
         let styleEl = document.getElementById("bs-config-patch");

@@ -33,7 +33,16 @@ const DB_EDITOR_TYPE_MAP = {
 const getDataKey = field => field?.name;
 // settings.type is the authoritative application/editor type. field.type is a
 // database storage type and is only a fallback for legacy field definitions.
-const getEditorType = field => field?.settings?.type || DB_EDITOR_TYPE_MAP[field?.type] || 'text';
+const getEditorType = field => {
+	// Date storage types must remain date editors even when legacy metadata has
+	// a stale generic settings.type value.
+	if (field?.type === 'd' || field?.type === 'date') return 'date';
+	if (field?.type === 'dt' || field?.type === 'datetime') return 'datetime';
+	const configured = String(field?.settings?.type || '').toLowerCase();
+	if (configured === 'datepicker' || configured === 'date') return 'date';
+	if (configured === 'datetime' || configured === 'datetime-local') return 'datetime';
+	return field?.settings?.type || DB_EDITOR_TYPE_MAP[field?.type] || 'text';
+};
 const SYSTEM_FIELDS = [
 	{ id: '__system_id', name: 'id', type: 'v100', system: true, settings: { label: 'ID', width: 130 } },
 	{ id: '__system_creator', name: 'creator', type: 'v100', system: true, settings: { label: 'Creator', width: 120 } },
@@ -357,6 +366,16 @@ globalThis.Component.register('DataGrid', container => {
 		fields.sort((a, b) => pinRank(a) - pinRank(b));
 		return fields;
 	};
+	const alignNumericColumns = () => setTimeout(() => {
+		const numeric = new Set(state._displayFields.map((field, index) => ((['i','ui','bi','ubi','ti','f','ff'].includes(field.type) || field.settings?.type === 'number') ? index : -1)).filter(index => index >= 0));
+		container.querySelectorAll('.dt-row, .dt-header-row').forEach(row => row.querySelectorAll('.dt-cell').forEach((cell, index) => {
+			const isNumeric = numeric.has(index);
+			cell.classList.toggle('text-end', isNumeric);
+			const content = [...cell.children].find(child => child.tagName !== 'TEMPLATE' && getComputedStyle(child).display !== 'none');
+			content?.classList.toggle('text-end', isNumeric);
+			content?.classList.toggle('w-100', isNumeric);
+		}));
+	}, 0);
 	const requestApi = async (action, payload = {}) => {
 		if (!container.apiUrl || !state.table) return null;
 		state.apiLoading = true;
@@ -718,6 +737,7 @@ globalThis.Component.register('DataGrid', container => {
 			const pinned = f.settings?.pinned || f.pinned;
 			if (pinned === 'left') { container.style.setProperty(`--l-${f.id}`, leftSum + 'px'); leftSum += ((f.settings?.width || f.width) || 150); }
 		});
+		alignNumericColumns();
 		let rightSum = 0;
 		[...fields].reverse().forEach(f => {
 			const pinned = f.settings?.pinned || f.pinned;
@@ -727,7 +747,7 @@ globalThis.Component.register('DataGrid', container => {
 	});
 
 	state.__watch('list', list => {
-		if (!state._internalUpdate && !state.isDirty) {
+		if (!state.isDirty) {
 			state._originalList = globalThis.Util.clone(list || []);
 			setTimeout(() => {
 				const stats = {};
@@ -740,6 +760,7 @@ globalThis.Component.register('DataGrid', container => {
 			}, 200);
 		}
 		scroll.init(); scroll.reset(list);
+		alignNumericColumns();
 	});
 	state.__watch('advancedMode', () => { state.fields = [...state.fields]; state.list = [...state.list]; });
 	state.__watch('table', table => { if (container.apiUrl && table) container.load({ fields: true }); });
@@ -751,9 +772,10 @@ globalThis.Component.register('DataGrid', container => {
 		const overlay = container.querySelector('.dt-editor-overlay'), rect = cellNode.getBoundingClientRect(), mainRect = main.getBoundingClientRect();
 		currentEditingNode = cellNode;
 		currentEditingRow = row;
-		const formType = getEditorType(field);
+		const editorType = getEditorType(field);
+		const formType = ['date', 'datetime'].includes(editorType) ? 'DatePicker' : editorType;
 		const isCode = formType === 'code';
-		const isSimple = ['text', 'number', 'select', 'date', 'datetime'].includes(formType);
+		const isSimple = ['text', 'number', 'select', 'date', 'datetime', 'DatePicker'].includes(formType);
 		const isComplex = ['textarea', 'TagsInput', 'checkbox', 'radio'].includes(formType);
 		overlay.classList.toggle('dt-editor-code', isCode);
 		overlay.classList.toggle('dt-editor-simple', isSimple);
@@ -1228,7 +1250,7 @@ globalThis.Component.register('DataGrid', container => {
                 <div class="dt-editor-overlay dt-editor-container" style="display: none; position: absolute; z-index: 1000; background: var(--bs-body-bg); box-shadow: 0 4px 16px rgba(0,0,0,0.25); border: 1px solid var(--bs-primary); padding: 0;"><AutoForm nobutton inline class="h-100 w-100" $onsubmit="event.preventDefault(); thisNode.closest('DataGrid').hideEditor(true)"></AutoForm></div>
         </div>
 
-        <div class="dt-column-menu bg-body shadow-lg rounded p-2" style="display:none; position:absolute; z-index:2000; min-width:240px; max-width:300px; border: 1px solid var(--bs-primary)">
+        <div class="dt-column-menu bg-body shadow-lg rounded p-2" style="display:none; position:absolute; z-index:2000; min-width:240px; max-width:300px; border: 1px solid var(--bs-border-color)">
                 <template $if="this.state?.activeFieldId">
                         <div class="d-flex gap-1 mb-2">
                                 <button $class="btn btn-xs flex-grow-1 d-flex align-items-center justify-content-center \${this.state?.sortConfig?.direction === 'asc' && this.state?.sortConfig?.fieldId === this.state?.activeFieldId ? 'btn-primary' : 'btn-outline-secondary border'}" $onclick="this.setSort('asc')"><i class="bi bi-sort-alpha-down me-1"></i> ASC</button>
@@ -1295,7 +1317,7 @@ globalThis.Component.register('DataGrid', container => {
 			</div>
 		</Modal>
 
-		<div class="dt-toolbar border-bottom bg-body d-flex align-items-center px-3 py-1 shadow-sm text-nowrap" $.="this.ensureFooterHost(thisNode)" style="position:absolute; left:0; right:0; top:0; height:48px; z-index:30; overflow:hidden">
+		<div $if="!this.hasAttribute('notoolbar')" class="dt-toolbar border-bottom bg-body d-flex align-items-center px-3 py-1 shadow-sm text-nowrap" $.="this.ensureFooterHost(thisNode)" style="position:absolute; left:0; right:0; top:0; height:48px; z-index:30; overflow:hidden">
                 <div class="d-flex align-items-center gap-3 flex-grow-1">
                         <div slot-id="toolbar-start" class="d-flex align-items-center gap-2"></div>
                         <div class="d-flex align-items-center gap-1 text-muted" style="font-size: 0.75rem">
@@ -1343,7 +1365,7 @@ globalThis.Component.register('DataGrid', container => {
         .dt-drag-preview { background-color: var(--bs-body-bg); color: var(--bs-body-color); border-color: var(--bs-primary) !important; }
         .header-cell .header-menu-btn { opacity: 0; transition: opacity 0.2s; }
         .header-cell:hover .header-menu-btn { opacity: 1; }
-        .dt-column-menu { background-color: var(--bs-body-bg); border: 1px solid var(--bs-primary); box-shadow: 0 10px 40px rgba(0,0,0,0.2) !important; z-index: 2100 !important; }
+        .dt-column-menu { background-color: var(--bs-body-bg); border: 1px solid var(--bs-border-color); box-shadow: 0 10px 40px rgba(0,0,0,0.2) !important; z-index: 2100 !important; }
         .btn-xs { padding: 1px 5px; line-height: 1.5; }
 		.cursor-pointer { cursor: pointer; }
 		.cursor-grab { cursor: grab; }

@@ -18,6 +18,11 @@ const MODE_ICONS = {
 	'=': 'bi-calculator', '>': 'bi-chevron-right', '<': 'bi-chevron-left', 'between': 'bi-arrows-expand'
 };
 
+const MODE_LABELS = {
+	contains: '{#Contains#}', equals: '{#Equals#}', starts: '{#Starts with#}', ends: '{#Ends with#}',
+	between: '{#Between#}'
+};
+
 const DataGridConfig = {
 	_fieldTypes: new Map(),
 	registerFieldType: (config) => {
@@ -45,24 +50,24 @@ const getEditorType = field => {
 };
 const SYSTEM_FIELDS = [
 	{ id: '__system_id', name: 'id', type: 'v100', system: true, settings: { label: 'ID', width: 130 } },
-	{ id: '__system_creator', name: 'creator', type: 'v100', system: true, settings: { label: 'Creator', width: 120 } },
-	{ id: '__system_createTime', name: 'createTime', type: 'bi', system: true, settings: { label: 'Create Time', width: 150 } },
-	{ id: '__system_updater', name: 'updater', type: 'v100', system: true, settings: { label: 'Updater', width: 120 } },
-	{ id: '__system_updateTime', name: 'updateTime', type: 'bi', system: true, settings: { label: 'Update Time', width: 150 } }
+	{ id: '__system_creator', name: 'creator', type: 'v100', system: true, settings: { label: '{#Creator#}', width: 120 } },
+	{ id: '__system_createTime', name: 'createTime', type: 'bi', system: true, settings: { label: '{#Create Time#}', width: 150 } },
+	{ id: '__system_updater', name: 'updater', type: 'v100', system: true, settings: { label: '{#Updater#}', width: 120 } },
+	{ id: '__system_updateTime', name: 'updateTime', type: 'bi', system: true, settings: { label: '{#Update Time#}', width: 150 } }
 ];
 
 // Register Built-in Types
 DataGridConfig.registerFieldType({
 	value: 'text', label: '{#Text#}', typeForDB: 'v100',
-	schema: [{ name: 'placeholder', label: 'Placeholder', type: 'text', if: 'this.data.user_type=="text"' }]
+	schema: [{ name: 'placeholder', label: '{#Placeholder#}', type: 'text', if: 'this.data.user_type=="text"' }]
 });
 DataGridConfig.registerFieldType({
 	value: 'number', label: '{#Number#}', typeForDB: 'ff',
 	schema: [
-		{ name: 'decimals', label: 'Decimals', type: 'number', setting: { min: 0, max: 10 }, if: 'this.data.user_type=="number"' },
-		{ name: 'prefix', label: 'Prefix (e.g. $)', type: 'text', if: 'this.data.user_type=="number"' },
-		{ name: 'suffix', label: 'Suffix (e.g. %)', type: 'text', if: 'this.data.user_type=="number"' },
-		{ name: 'thousandSep', label: 'Thousand Sep', type: 'switch', if: 'this.data.user_type=="number"' }
+		{ name: 'decimals', label: '{#Decimals#}', type: 'number', setting: { min: 0, max: 10 }, if: 'this.data.user_type=="number"' },
+		{ name: 'prefix', label: '{#Prefix (e.g. $)#}', type: 'text', if: 'this.data.user_type=="number"' },
+		{ name: 'suffix', label: '{#Suffix (e.g. %)#}', type: 'text', if: 'this.data.user_type=="number"' },
+		{ name: 'thousandSep', label: '{#Thousand Sep#}', type: 'switch', if: 'this.data.user_type=="number"' }
 	],
 	formatter: (val, field) => {
 		if (val == null || val === '') return '';
@@ -81,7 +86,7 @@ DataGridConfig.registerFieldType({
 });
 DataGridConfig.registerFieldType({
 	value: 'select', label: '{#Single Select#}', typeForDB: 'v100',
-	schema: [{ name: 'options_str', label: 'Options', type: 'textarea', setting: { rows: 3, placeholder: 'Label:Value per line' }, if: 'this.data.user_type=="select"' }],
+	schema: [{ name: 'options_str', label: '{#Options#}', type: 'textarea', setting: { rows: 3, placeholder: '{#Label:Value per line#}' }, if: 'this.data.user_type=="select"' }],
 	formatter: (val, field) => {
 		if (val == null || val === '') return '';
 		const opts = field.settings?.options || [];
@@ -91,7 +96,7 @@ DataGridConfig.registerFieldType({
 });
 DataGridConfig.registerFieldType({
 	value: 'checkbox', label: '{#Multi Select#}', typeForDB: 'v4096',
-	schema: [{ name: 'options_str', label: 'Options', type: 'textarea', setting: { rows: 3, placeholder: 'Label:Value per line' }, if: 'this.data.user_type=="checkbox"' }],
+	schema: [{ name: 'options_str', label: '{#Options#}', type: 'textarea', setting: { rows: 3, placeholder: '{#Label:Value per line#}' }, if: 'this.data.user_type=="checkbox"' }],
 	formatter: (val, field) => {
 		if (!Array.isArray(val)) return val == null ? '' : String(val);
 		const opts = field.settings?.options || [];
@@ -104,21 +109,21 @@ DataGridConfig.registerFieldType({
 DataGridConfig.registerFieldType({
 	value: 'switch', label: '{#Switch#}', typeForDB: 'b',
 	schema: [
-		{ name: 'labelOn', label: 'Label On', type: 'text', if: 'this.data.user_type=="switch"' },
-		{ name: 'labelOff', label: 'Label Off', type: 'text', if: 'this.data.user_type=="switch"' }
+		{ name: 'labelOn', label: '{#Label On#}', type: 'text', if: 'this.data.user_type=="switch"' },
+		{ name: 'labelOff', label: '{#Label Off#}', type: 'text', if: 'this.data.user_type=="switch"' }
 	],
 	formatter: (val, field) => {
 		const s = field.settings || {};
-		return val ? (s.labelOn || 'Yes') : (s.labelOff || 'No');
+		return val ? (s.labelOn || '{#Yes#}') : (s.labelOff || '{#No#}');
 	}
 });
 DataGridConfig.registerFieldType({
 	value: 'datetime', label: '{#DateTime#}', typeForDB: 'dt',
-	schema: [{ name: 'format', label: 'Format', type: 'text', setting: { placeholder: 'YYYY-MM-DD' }, if: 'this.data.user_type=="datetime"' }]
+	schema: [{ name: 'format', label: '{#Format#}', type: 'text', setting: { placeholder: 'YYYY-MM-DD' }, if: 'this.data.user_type=="datetime"' }]
 });
 DataGridConfig.registerFieldType({
 	value: 'textarea', label: '{#Long Text#}', typeForDB: 't',
-	schema: [{ name: 'placeholder', label: 'Placeholder', type: 'text', if: 'this.data.user_type=="textarea"' }]
+	schema: [{ name: 'placeholder', label: '{#Placeholder#}', type: 'text', if: 'this.data.user_type=="textarea"' }]
 });
 DataGridConfig.registerFieldType({
 	value: 'code', label: '{#Code#}', typeForDB: 'o', schema: [],
@@ -135,9 +140,9 @@ const getDefaultDbType = (editorType, decimals = 0) => {
 };
 
 const DB_TYPE_OPTIONS = [
-	['i', 'Integer'], ['ui', 'Unsigned Integer'], ['bi', 'Big Integer'], ['ubi', 'Unsigned Big Integer'], ['ti', 'Tiny Integer'],
-	['v', 'Text (VARCHAR)'], ['c', 'Fixed Text (CHAR)'], ['t', 'Long Text'], ['o', 'Object (JSON)'], ['dt', 'Date & Time'], ['d', 'Date'], ['tm', 'Time'],
-	['f', 'Float'], ['ff', 'Double'], ['b', 'Boolean'], ['bb', 'Binary (BLOB)']
+	['i', '{#Integer#}'], ['ui', '{#Unsigned Integer#}'], ['bi', '{#Big Integer#}'], ['ubi', '{#Unsigned Big Integer#}'], ['ti', '{#Tiny Integer#}'],
+	['v', '{#Text (VARCHAR)#}'], ['c', '{#Fixed Text (CHAR)#}'], ['t', '{#Long Text#}'], ['o', '{#Object (JSON)#}'], ['dt', '{#Date & Time#}'], ['d', '{#Date#}'], ['tm', '{#Time#}'],
+	['f', '{#Float#}'], ['ff', '{#Double#}'], ['b', '{#Boolean#}'], ['bb', '{#Binary (BLOB)#}']
 ];
 
 globalThis.Component.register('DBTypeInput', container => {
@@ -161,7 +166,7 @@ globalThis.Component.register('DBTypeInput', container => {
 }, globalThis.Util.makeDom(/*html*/`
 	<div class="input-group">
 		<select class="form-select" $bind="this.state.family"><option $each="this.state.options || []" as="opt" $value="opt.value" $text="opt.label"></option></select>
-		<input $if="this.state.family === 'v' || this.state.family === 'c'" class="form-control text-end" style="max-width:110px" type="number" min="1" step="1" placeholder="Length" $bind="this.state.length">
+		<input $if="this.state.family === 'v' || this.state.family === 'c'" class="form-control text-end" style="max-width:110px" type="number" min="1" step="1" placeholder="{#Length#}" $bind="this.state.length">
 	</div>
 `));
 globalThis.AutoForm?.register('DBTypeInput', 'dbtype');
@@ -289,6 +294,13 @@ const createSelectionManager = (container, state) => {
 		add(activeBounds); multiSelections.forEach(add);
 		return [...indexes].sort((a, b) => a - b).map(index => state.list[index]).filter(Boolean);
 	};
+	const selectAllRows = () => {
+		if (!state.list.length || !state._displayFields.length) return clearAllActive();
+		startCell = { row: 0, col: 0 };
+		multiSelections = [];
+		activeBounds = { minRow: 0, maxRow: state.list.length - 1, minCol: 0, maxCol: state._displayFields.length - 1 };
+		applySelectionUI(); updateStatus(); container.focus();
+	};
 	const copy = async () => {
 		const bounds = getSelectionBounds(); if (!bounds) return;
 		const text = state.list.slice(bounds.minRow, bounds.maxRow + 1).map(row => {
@@ -331,7 +343,7 @@ const createSelectionManager = (container, state) => {
 			if (anyRowChanged) state.list = [...state.list];
 		} catch (err) { console.error('Paste Error:', err); }
 	};
-	return { applySelectionUI, clearAllActive, startSelect, updateSelect, endSelect, getSelectionBounds, getSelectedRows, copy, paste };
+	return { applySelectionUI, clearAllActive, selectAllRows, startSelect, updateSelect, endSelect, getSelectionBounds, getSelectedRows, copy, paste };
 };
 
 // Component Registration
@@ -428,6 +440,8 @@ globalThis.Component.register('DataGrid', container => {
 	state.perf = perf.stats;
 	const selection = createSelectionManager(container, state);
 	container.getSelectedRows = () => selection.getSelectedRows();
+	container.selectAllRows = () => selection.selectAllRows();
+	container.clearSelection = () => selection.clearAllActive();
 	container.hasRowChanges = () => JSON.stringify(state.list || []) !== JSON.stringify(state._originalList || []);
 	container.validateRows = (rows = state.list) => {
 		const errors = [];
@@ -437,11 +451,11 @@ globalThis.Component.register('DataGrid', container => {
 				const settings = field.settings || {}, attrs = settings.attrs || {};
 				const value = rows[rowIndex]?.[getDataKey(field)];
 				const empty = value === undefined || value === null || value === '';
-				if ((settings.required || attrs.required) && empty) errors.push({ row: rowIndex, field: field.name, message: `Row ${rowIndex + 1}: ${field.name} is required` });
+				if ((settings.required || attrs.required) && empty) errors.push({ row: rowIndex, field: field.name, message: `{#Row {row}: {field} is required||${rowIndex + 1}||${field.name}#}` });
 				const pattern = settings.pattern || attrs.pattern;
 				if (!empty && pattern) {
-					try { if (!new RegExp(pattern).test(String(value))) errors.push({ row: rowIndex, field: field.name, message: `Row ${rowIndex + 1}: ${field.name} has an invalid format` }); }
-					catch (_) { errors.push({ row: rowIndex, field: field.name, message: `${field.name} has an invalid validation pattern` }); }
+					try { if (!new RegExp(pattern).test(String(value))) errors.push({ row: rowIndex, field: field.name, message: `{#Row {row}: {field} has an invalid format||${rowIndex + 1}||${field.name}#}` }); }
+					catch (_) { errors.push({ row: rowIndex, field: field.name, message: `{#{field} has an invalid validation pattern||${field.name}#}` }); }
 				}
 			}
 		}
@@ -545,7 +559,7 @@ globalThis.Component.register('DataGrid', container => {
 			const step = Number.isFinite(upper) && upper > lower ? (upper - lower) / (count + 1) : 100;
 			if (!Number.isFinite(step) || step <= Number.EPSILON * Math.max(1, Math.abs(lower), Math.abs(upper)) * 8) {
 				state.dragRow = null;
-				globalThis.Toast?.show('The nearby priority range is exhausted; reorder a wider section before trying again.', { type: 'warning' });
+				globalThis.Toast?.show('{#The nearby priority range is exhausted; reorder a wider section before trying again.#}', { type: 'warning' });
 				return;
 			}
 			changed = ordered.slice(start, end + 1);
@@ -611,7 +625,7 @@ globalThis.Component.register('DataGrid', container => {
 			const previousFilters = state.filterConfig;
 			state.filterConfig = targetFilters; state.sortConfig = targetSort;
 			const reload = async () => {
-				if (container.hasRowChanges() && !await globalThis.Dialog.confirm('Discard unsaved changes and reload data?')) { state.filterConfig = previousFilters; state.sortConfig = previousSort; return; }
+				if (container.hasRowChanges() && !await globalThis.Dialog.confirm('{#Discard unsaved changes and reload data?#}')) { state.filterConfig = previousFilters; state.sortConfig = previousSort; return; }
 				await container.load();
 			};
 			reload();
@@ -845,7 +859,7 @@ globalThis.Component.register('DataGrid', container => {
 					hasChanges = true;
 				}
 			});
-			if (invalidEditorValue) { globalThis.Toast?.show('Invalid JSON', { type: 'danger' }); return false; }
+			if (invalidEditorValue) { globalThis.Toast?.show('{#Invalid JSON#}', { type: 'danger' }); return false; }
 
 			if (state.isBulkEdit) {
 				const { minRow, maxRow, fIdx } = state.isBulkEdit;
@@ -1024,19 +1038,17 @@ globalThis.Component.register('DataGrid', container => {
 
 	container.deleteSelectedRow = async () => {
 		if (state.readonly) return;
-		const bounds = selection.getSelectionBounds(); if (!bounds) return;
-		const count = bounds.maxRow - bounds.minRow + 1;
-		if (await globalThis.Dialog.confirm(`Are you sure you want to delete ${count} row(s)?`)) {
-			const rMin = bounds.minRow, rMax = bounds.maxRow;
-			const removedItems = state.list.slice(rMin, rMax + 1);
-			removedItems.forEach(container.markChanged);
+		const removedItems = selection.getSelectedRows();
+		const count = removedItems.length; if (!count) return;
+		if (await globalThis.Dialog.confirm(`{#Are you sure you want to delete {count} row(s)?||${count}#}`)) {
 			if (container.apiUrl) {
 				const removedIDs = removedItems.map(item => item?.id).filter(Boolean);
 				try { await requestApi('remove', { data: removedIDs }); }
 				catch (_) { return; }
 			}
-			state.list = state.list.filter((_, i) => !(i >= rMin && i <= rMax));
-			state._originalList = state._originalList.filter(item => !removedItems.includes(item));
+			const removed = new Set(removedItems);
+			state.list = state.list.filter(item => !removed.has(item));
+			if (container.apiUrl) state._originalList = globalThis.Util.clone(state.list);
 			state.isDirty = !container.apiUrl; selection.clearAllActive();
 			container.dispatchEvent(new CustomEvent('remove', { detail: { items: removedItems } }));
 		}
@@ -1059,27 +1071,27 @@ globalThis.Component.register('DataGrid', container => {
 	const getFieldSchema = () => {
 		const types = globalThis.DataGrid.getFieldTypes();
 		const baseSchema = [
-			{ name: 'name', label: 'Field Name', type: 'text', setting: { required: true, placeholder: 'e.g. Display Name' } },
-			{ name: 'user_type', label: 'Field Type', type: 'select', options: types.map(t => ({ label: t.label, value: t.value })) },
-			{ name: 'pinned', label: 'Pin Column', type: 'select', options: [{ label: 'None', value: '' }, { label: 'Left', value: 'left' }, { label: 'Right', value: 'right' }] }
+			{ name: 'name', label: '{#Field Name#}', type: 'text', setting: { required: true, placeholder: '{#e.g. Display Name#}' } },
+			{ name: 'user_type', label: '{#Field Type#}', type: 'select', options: types.map(t => ({ label: t.label, value: t.value })) },
+			{ name: 'pinned', label: '{#Pin Column#}', type: 'select', options: [{ label: '{#None#}', value: '' }, { label: '{#Left#}', value: 'left' }, { label: '{#Right#}', value: 'right' }] }
 		];
 		const dynamicSchema = types.reduce((acc, t) => acc.concat(t.schema || []), []);
 		const advancedSchema = state.fieldAdvanced ? [
-			{ type: 'divider', label: 'Advanced Settings' },
-			{ name: 'required', label: 'Required', type: 'switch' },
-			{ name: 'pattern', label: 'Validation Pattern', type: 'text', setting: { placeholder: 'Regular expression, e.g. ^[A-Z].+$' } },
-			{ name: 'db_type', label: 'Database Type', type: 'dbtype', setting: { required: true } },
-			{ name: 'isIndex', label: 'Index', type: 'switch' },
-			{ name: 'isSecret', label: 'Secret', type: 'switch' },
-			{ name: 'memo', label: 'Memo', type: 'text' },
-			{ name: 'attrs_json', label: 'Settings', type: 'textarea', setting: { rows: 3, placeholder: '{"minlength":2,"maxlength":100}' } },
-			{ name: 'if_expr', label: 'Display Condition', type: 'text', setting: { placeholder: 'this.data.role === "admin"' } }
+			{ type: 'divider', label: '{#Advanced Settings#}' },
+			{ name: 'required', label: '{#Required#}', type: 'switch' },
+			{ name: 'pattern', label: '{#Validation Pattern#}', type: 'text', setting: { placeholder: '{#Regular expression, e.g. ^[A-Z].+$#}' } },
+			{ name: 'db_type', label: '{#Database Type#}', type: 'dbtype', setting: { required: true } },
+			{ name: 'isIndex', label: '{#Index#}', type: 'switch' },
+			{ name: 'isSecret', label: '{#Secret#}', type: 'switch' },
+			{ name: 'memo', label: '{#Memo#}', type: 'text' },
+			{ name: 'attrs_json', label: '{#Settings#}', type: 'textarea', setting: { rows: 3, placeholder: '{"minlength":2,"maxlength":100}' } },
+			{ name: 'if_expr', label: '{#Display Condition#}', type: 'text', setting: { placeholder: 'this.data.role === "admin"' } }
 		] : [];
 		const auditSchema = state.advancedMode ? [
-			{ type: 'divider', label: 'System Information' },
-			{ name: 'id', label: 'Field ID', type: 'label' }, { name: 'tableID', label: 'Table ID', type: 'label' },
-			{ name: 'creator', label: 'Creator', type: 'label' }, { name: 'createTime', label: 'Create Time', type: 'label' },
-			{ name: 'updater', label: 'Updater', type: 'label' }, { name: 'updateTime', label: 'Update Time', type: 'label' }
+			{ type: 'divider', label: '{#System Information#}' },
+			{ name: 'id', label: '{#Field ID#}', type: 'label' }, { name: 'tableID', label: '{#Table ID#}', type: 'label' },
+			{ name: 'creator', label: '{#Creator#}', type: 'label' }, { name: 'createTime', label: '{#Create Time#}', type: 'label' },
+			{ name: 'updater', label: '{#Updater#}', type: 'label' }, { name: 'updateTime', label: '{#Update Time#}', type: 'label' }
 		] : [];
 		return baseSchema.concat(dynamicSchema, advancedSchema, auditSchema);
 	};
@@ -1097,7 +1109,7 @@ globalThis.Component.register('DataGrid', container => {
 	const formatOptionsStr = (opts) => { if (!opts) return ''; return opts.map(o => typeof o === 'object' ? `${o.label}:${o.value}` : o).join('\n'); };
 	const parseAttrsJSON = value => {
 		const attrs = JSON.parse(String(value || '{}'));
-		if (!attrs || Array.isArray(attrs) || typeof attrs !== 'object') throw new Error('Control Attributes must be a JSON object');
+		if (!attrs || Array.isArray(attrs) || typeof attrs !== 'object') throw new Error('{#Control Attributes must be a JSON object#}');
 		delete attrs.required; delete attrs.pattern;
 		return attrs;
 	};
@@ -1110,7 +1122,7 @@ globalThis.Component.register('DataGrid', container => {
 		const pattern = String(value || '').trim();
 		if (!pattern) return undefined;
 		try { new RegExp(pattern); return pattern; }
-		catch (_) { throw new Error('Validation Pattern must be a valid regular expression'); }
+		catch (_) { throw new Error('{#Validation Pattern must be a valid regular expression#}'); }
 	};
 	const bindFieldTypeDefaults = (form, data) => {
 		setTimeout(() => {
@@ -1136,7 +1148,7 @@ globalThis.Component.register('DataGrid', container => {
 		const data = globalThis.NewState({ id: 'c' + Date.now().toString().slice(-4), tableID: state.fields[0]?.tableID || '', creator: '', createTime: '', updater: '', updateTime: '', name: '', _editing: false, user_type: 'text', pinned: '', db_type: getDefaultDbType('text'), _dbTypeAuto: true, decimals: 0, isIndex: false, isSecret: false, required: false, pattern: '', memo: '', options_str: '', attrs_json: '{}', if_expr: '' });
 		const d = container.querySelector(`Modal[id="${container.id}_field_modal"]`);
 		if (!d) return;
-		Object.assign(d.state, { title: 'Add Field', buttons: ['Cancel', 'Save'] });
+		Object.assign(d.state, { title: '{#Add Field#}', buttons: ['{#Cancel#}', '{#Save#}'] });
 		state.fieldAdvanced = false;
 		const form = d.querySelector('AutoForm');
 		if (form) {
@@ -1162,7 +1174,7 @@ globalThis.Component.register('DataGrid', container => {
 		const data = globalThis.NewState({ id: f.id, tableID: f.tableID || '', creator: f.creator || '', createTime: f.createTime || '', updater: f.updater || '', updateTime: f.updateTime || '', name: f.name, _editing: true, pinned: s.pinned || f.pinned || '', memo: f.memo || '', isIndex: !!f.isIndex, isSecret: !!f.isSecret, required: !!(s.required || s.attrs?.required), pattern: s.pattern || s.attrs?.pattern || '', user_type: getEditorType(f), db_type: f.type || '', _dbTypeAuto: true, decimals: s.decimals || 0, prefix: s.prefix || '', suffix: s.suffix || '', thousandSep: !!s.thousandSep, labelOn: s.labelOn || '', labelOff: s.labelOff || '', format: s.format || '', placeholder: s.placeholder || '', options_str: formatOptionsStr(s.options), attrs_json: formatAttrsJSON(s.attrs), if_expr: s.if || f.if || '' });
 		const d = container.querySelector(`Modal[id="${container.id}_field_modal"]`);
 		if (!d) return;
-		Object.assign(d.state, { title: 'Edit Field', buttons: ['Cancel', 'Save'] });
+		Object.assign(d.state, { title: '{#Edit Field#}', buttons: ['{#Cancel#}', '{#Save#}'] });
 		state.fieldAdvanced = false;
 		const form = d.querySelector('AutoForm');
 		if (form) {
@@ -1190,7 +1202,7 @@ globalThis.Component.register('DataGrid', container => {
 		if (!state.activeField) return;
 		container.hideColumnMenu();
 		if (state.activeField.system) return;
-		if (await globalThis.Dialog.confirm(`Are you sure you want to delete field "${state.activeField.name}"?`)) {
+		if (await globalThis.Dialog.confirm(`{#Are you sure you want to delete field "{field}"?||${state.activeField.name}#}`)) {
 			const idx = state.fields.findIndex(f => f.id === state.activeField.id);
 			if (idx !== -1) {
 				if (container.apiUrl) { try { await requestApi('removeField', { fields: [state.activeField] }); } catch (_) { return; } }
@@ -1218,6 +1230,7 @@ globalThis.Component.register('DataGrid', container => {
 	});
 
 	state._MODE_ICONS = MODE_ICONS;
+	state._MODE_LABELS = MODE_LABELS;
 }, globalThis.Util.makeDom(/*html*/`
 <div class="dt-root d-flex flex-column h-100 w-100 bg-body text-body overflow-hidden" style="position:relative; user-select:none; outline: none; min-height: 0" tabindex="0">
 		<div class="dt-main flex-grow-1 overflow-auto" $onscroll="this.onScroll()" 
@@ -1230,7 +1243,7 @@ globalThis.Component.register('DataGrid', container => {
 								<div class="d-flex align-items-center overflow-hidden flex-grow-1 h-100 px-2">
                                                         <i $if="this.state?.filterConfig?.[item.id] && (this.state.filterConfig[item.id].value || this.state.filterConfig[item.id].selectedValues?.length)" class="bi bi-filter me-1 text-primary"></i>
                                                         <i $if="this.state?.sortConfig?.fieldId === item.id && this.state.sortConfig.direction" $class="bi bi-sort-\${this.state.sortConfig.direction === 'asc' ? 'down' : 'up-alt'} me-1 text-primary"></i>
-										<span draggable="true" $ondragstart="this.onFieldDragStart(item,event)" $class="text-truncate flex-grow-1 cursor-grab \${item.rowOrder ? 'd-flex align-items-center justify-content-center' : ''}" $onclick="this.showColumnMenu(item, event)"><i $if="item.rowOrder" class="bi bi-list" title="Row order"></i><span $if="!item.rowOrder" $text="item.settings?.label || item.name"></span></span>
+										<span draggable="true" $ondragstart="this.onFieldDragStart(item,event)" $class="text-truncate flex-grow-1 cursor-grab \${item.rowOrder ? 'd-flex align-items-center justify-content-center' : ''}" $onclick="this.showColumnMenu(item, event)"><i $if="item.rowOrder" class="bi bi-list" title="{#Row order#}"></i><span $if="!item.rowOrder" $text="item.settings?.label || item.name"></span></span>
                                                 </div>
 				<button $if="!item.rowOrder" class="btn btn-xs btn-link text-muted p-0 border-0 me-1 header-menu-btn" $onclick="this.showColumnMenu(item, event)"><i class="bi bi-chevron-down"></i></button>
 								<Resizer $.target="thisNode.parentElement" style="position:absolute; right:0; top:0; bottom:0; width:4px; z-index:10" min="50" max="1000" $onmousedown="event.stopPropagation()" $ondragstart="event.preventDefault();event.stopPropagation()" $onresizing="this.onColumnResizing(item, event)" $onresize="this.onColumnResize(item, event)"></Resizer>
@@ -1253,26 +1266,26 @@ globalThis.Component.register('DataGrid', container => {
         <div class="dt-column-menu bg-body shadow-lg rounded p-2" style="display:none; position:absolute; z-index:2000; min-width:240px; max-width:300px; border: 1px solid var(--bs-border-color)">
                 <template $if="this.state?.activeFieldId">
                         <div class="d-flex gap-1 mb-2">
-                                <button $class="btn btn-xs flex-grow-1 d-flex align-items-center justify-content-center \${this.state?.sortConfig?.direction === 'asc' && this.state?.sortConfig?.fieldId === this.state?.activeFieldId ? 'btn-primary' : 'btn-outline-secondary border'}" $onclick="this.setSort('asc')"><i class="bi bi-sort-alpha-down me-1"></i> ASC</button>
-                                <button $class="btn btn-xs flex-grow-1 d-flex align-items-center justify-content-center \${this.state?.sortConfig?.direction === 'desc' && this.state?.sortConfig?.fieldId === this.state?.activeFieldId ? 'btn-primary' : 'btn-outline-secondary border'}" $onclick="this.setSort('desc')"><i class="bi bi-sort-alpha-up-alt me-1"></i> DESC</button>
+                                <button $class="btn btn-xs flex-grow-1 d-flex align-items-center justify-content-center \${this.state?.sortConfig?.direction === 'asc' && this.state?.sortConfig?.fieldId === this.state?.activeFieldId ? 'btn-primary' : 'btn-outline-secondary border'}" $onclick="this.setSort('asc')"><i class="bi bi-sort-alpha-down me-1"></i> {#ASC#}</button>
+                                <button $class="btn btn-xs flex-grow-1 d-flex align-items-center justify-content-center \${this.state?.sortConfig?.direction === 'desc' && this.state?.sortConfig?.fieldId === this.state?.activeFieldId ? 'btn-primary' : 'btn-outline-secondary border'}" $onclick="this.setSort('desc')"><i class="bi bi-sort-alpha-up-alt me-1"></i> {#DESC#}</button>
                         </div>
 
                         <template $if="this.state?.activeModes?.length">
                         <div class="py-2 border-bottom" style="min-height: 48px">
                                 <div class="input-group input-group-sm mb-1">
-                                        <input type="text" class="form-control" $placeholder="(this.state?.filterConfig?.[this.state?.activeFieldId]?.mode || 'Search').toUpperCase() + '...'" $bind="this.state.filterConfig[this.state.activeFieldId].value" $oninput="this.applySortFilter()" $onkeydown="if(event.key==='Enter'){this.applySortFilter();this.hideColumnMenu();}">
-                                        <button class="btn btn-outline-secondary border dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false" title="Search Mode">
+					<input type="text" class="form-control" $placeholder="(this.state?._MODE_LABELS?.[this.state?.filterConfig?.[this.state?.activeFieldId]?.mode] || '{#Search#}') + '...'" $bind="this.state.filterConfig[this.state.activeFieldId].value" $oninput="this.applySortFilter()" $onkeydown="if(event.key==='Enter'){this.applySortFilter();this.hideColumnMenu();}">
+								<button class="btn btn-outline-secondary border dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false" title="{#Search Mode#}">
                                                 <i $class="bi \${this.state?._MODE_ICONS?.[this.state?.filterConfig?.[this.state?.activeFieldId]?.mode] || 'bi-filter'}"></i>
                                         </button>
                                         <ul class="dropdown-menu dropdown-menu-end shadow">
                                                 <template $each="this.state?.activeModes || []" as="m">
                                                         <li><button class="dropdown-item d-flex align-items-center" type="button" $onclick="this.state.filterConfig[this.state.activeFieldId].mode = m; this.state.filterConfig = {...this.state.filterConfig}">
-                                                                <i $class="bi \${this.state?._MODE_ICONS?.[m] || 'bi-filter'} me-2"></i> <span $text="m.toUpperCase()"></span>
+								<i $class="bi \${this.state?._MODE_ICONS?.[m] || 'bi-filter'} me-2"></i> <span $text="this.state?._MODE_LABELS?.[m] || m.toUpperCase()"></span>
                                                         </button></li>
                                                 </template>
                                         </ul>
                                 </div>
-                                <input $if="this.state?.filterConfig?.[this.state?.activeFieldId]?.mode === 'between'" type="text" class="form-control form-control-sm" placeholder="And..." $bind="this.state.filterConfig[this.state.activeFieldId].value2" $oninput="this.applySortFilter()" $onkeydown="if(event.key==='Enter'){this.applySortFilter();this.hideColumnMenu();}">
+								<input $if="this.state?.filterConfig?.[this.state?.activeFieldId]?.mode === 'between'" type="text" class="form-control form-control-sm" placeholder="{#And...#}" $bind="this.state.filterConfig[this.state.activeFieldId].value2" $oninput="this.applySortFilter()" $onkeydown="if(event.key==='Enter'){this.applySortFilter();this.hideColumnMenu();}">
                         </div>
                         </template>
 
@@ -1280,20 +1293,20 @@ globalThis.Component.register('DataGrid', container => {
                                 <template $each="this.state?._columnStats?.[this.state?.activeFieldId] || []">
                                         <label class="d-flex align-items-center mb-1 small cursor-pointer p-1 rounded-1 menu-item-row" onmouseover="this.style.background='var(--bs-light)'" onmouseout="this.style.background='transparent'">
                                                 <input type="checkbox" class="form-check-input me-2" $checked="this.state?.filterConfig?.[this.state?.activeFieldId]?.selectedValues?.includes(String(item.val))" $onclick="this.toggleSelectedValue(String(item.val))">
-                                                <span class="text-truncate flex-grow-1"><span $text="item.val || '(Empty)'"></span> <span class="text-muted ms-1" style="font-size: 0.7rem" $text="'(' + item.count + ')'"></span></span>
-                                                <button class="btn btn-xs btn-link p-0 text-primary only-btn" style="font-size: 10px; text-decoration: none" $onclick="this.filterOnlyThis(item.val); event.preventDefault(); event.stopPropagation();">Only</button>
+										<span class="text-truncate flex-grow-1"><span $text="item.val || '{#(Empty)#}'"></span> <span class="text-muted ms-1" style="font-size: 0.7rem" $text="'(' + item.count + ')'"></span></span>
+										<button class="btn btn-xs btn-link p-0 text-primary only-btn" style="font-size: 10px; text-decoration: none" $onclick="this.filterOnlyThis(item.val); event.preventDefault(); event.stopPropagation();">{#Only#}</button>
                                         </label>
                                 </template>
                         </div>
 
                         <div $if="this.state?.filterConfig?.[this.state?.activeFieldId]?.value || this.state?.filterConfig?.[this.state?.activeFieldId]?.selectedValues?.length" class="mt-2 pt-1 border-top text-center">
-                                <span class="cursor-pointer text-primary small fw-bold" $onclick="this.clearColumnSettings()"><i class="bi bi-x-circle me-1"></i> Clear Filter</span>
+				<span class="cursor-pointer text-primary small fw-bold" $onclick="this.clearColumnSettings()"><i class="bi bi-x-circle me-1"></i> {#Clear Filter#}</span>
                         </div>
 
                         <div $if="this.state?.editable && !this.state?.readonly && !this.state?.activeField?.system" class="mt-3 pt-2 border-top d-flex gap-1 justify-content-between">
-                                <button class="btn btn-sm btn-outline-secondary border-0 flex-grow-1" title="Edit Field" $onclick="this.editField()"><i class="bi bi-pencil"></i></button>
-                                <button class="btn btn-sm btn-outline-secondary border-0 flex-grow-1" title="Add Field" $onclick="this.addField()"><i class="bi bi-plus-lg"></i></button>
-                                <button class="btn btn-sm btn-outline-secondary border-0 flex-grow-1 text-danger" title="Delete Field" $onclick="this.deleteField()"><i class="bi bi-trash"></i></button>
+				<button class="btn btn-sm btn-outline-secondary border-0 flex-grow-1" title="{#Edit Field#}" $onclick="this.editField()"><i class="bi bi-pencil"></i></button>
+				<button class="btn btn-sm btn-outline-secondary border-0 flex-grow-1" title="{#Add Field#}" $onclick="this.addField()"><i class="bi bi-plus-lg"></i></button>
+				<button class="btn btn-sm btn-outline-secondary border-0 flex-grow-1 text-danger" title="{#Delete Field#}" $onclick="this.deleteField()"><i class="bi bi-trash"></i></button>
                         </div>
                 </template>
         </div>
@@ -1302,8 +1315,8 @@ globalThis.Component.register('DataGrid', container => {
             <div slot="body"><AutoForm nobutton class="p-3"></AutoForm></div>
 			<div slot="footer" class="d-flex align-items-center w-100">
 				<label class="small me-auto mb-0"><input class="form-check-input me-1" type="checkbox" data-no-dirty $bind="thisNode.closest('DataGrid').state.fieldAdvanced">{#Advanced mode#}</label>
-                <button type="button" class="btn btn-sm btn-secondary" $onclick="thisNode.closest('DataGrid').finishFieldDialog(1)">Cancel</button>
-                <button type="button" class="btn btn-sm btn-primary" $onclick="thisNode.closest('DataGrid').finishFieldDialog(2)">Save</button>
+                <button type="button" class="btn btn-sm btn-secondary" $onclick="thisNode.closest('DataGrid').finishFieldDialog(1)">{#Cancel#}</button>
+                <button type="button" class="btn btn-sm btn-primary" $onclick="thisNode.closest('DataGrid').finishFieldDialog(2)">{#Save#}</button>
             </div>
 		</Modal>
 
@@ -1318,23 +1331,23 @@ globalThis.Component.register('DataGrid', container => {
 		</Modal>
 
 		<div $if="!this.hasAttribute('notoolbar')" class="dt-toolbar border-bottom bg-body d-flex align-items-center px-3 py-1 shadow-sm text-nowrap" $.="this.ensureFooterHost(thisNode)" style="position:absolute; left:0; right:0; top:0; height:48px; z-index:30; overflow:hidden">
-                <div class="d-flex align-items-center gap-3 flex-grow-1">
+                <div class="d-flex align-items-center flex-grow-1">
                         <div slot-id="toolbar-start" class="d-flex align-items-center gap-2"></div>
-                        <div class="d-flex align-items-center gap-1 text-muted" style="font-size: 0.75rem">
-                                <i class="bi bi-check-all fs-6"></i><span $text="(this.state?.selectedRowCount || 0) + ' / ' + (this.apiUrl ? (this.state?.total || 0) : (this.state?.list?.length || 0))"></span>
+					<div class="d-flex align-items-center gap-1 text-muted me-3" style="font-size: 0.75rem">
+								<button type="button" class="btn btn-link btn-sm p-0 border-0 lh-1" $onclick="this.state?.selectedRowCount ? this.clearSelection() : this.selectAllRows()" $title="this.state?.selectedRowCount ? '{#Clear Selection#}' : '{#Select All Rows#}'" aria-label="{#Toggle all rows selection#}"><i $class="this.state?.selectedRowCount ? 'bi bi-check-all fs-6 text-warning' : 'bi bi-check-all fs-6'"></i></button><span $text="this.state?.selectedRowCount || 0"></span><span>/</span><span $text="this.apiUrl ? (this.state?.total || 0) : (this.state?.list?.length || 0)"></span>
+					</div>
+                        <div $if="this.state?.editable && !this.state?.readonly" class="d-flex align-items-center gap-1 me-3">
+				<button class="btn btn-sm btn-outline-secondary border-0 d-flex align-items-center px-2 py-1" $onclick="this.addRow()" title="{#Add Row#}"><i class="bi bi-plus-lg text-primary"></i><span class="dt-toolbar-label ms-1">{#Add#}</span></button>
+				<button class="btn btn-sm btn-outline-secondary border-0 d-flex align-items-center px-2 py-1" $onclick="this.editSelectedRows()" $disabled="!this.state?.selectedRowCount" title="{#Edit Selected Rows#}"><i class="bi bi-pencil text-primary"></i><span class="dt-toolbar-label ms-1">{#Edit#}</span></button>
+				<button class="btn btn-sm btn-outline-secondary border-0 d-flex align-items-center px-2 py-1" $onclick="this.deleteSelectedRow()" $disabled="!this.state?.selectedRowCount" title="{#Delete Selected Rows#}"><i class="bi bi-trash text-danger"></i><span class="dt-toolbar-label ms-1">{#Delete#}</span></button>
                         </div>
-                        <div $if="this.state?.editable && !this.state?.readonly" class="d-flex align-items-center gap-1">
-                                <button class="btn btn-sm btn-outline-secondary border-0 d-flex align-items-center px-2 py-1" $onclick="this.addRow()" title="Add Row"><i class="bi bi-plus-lg text-primary"></i><span class="dt-toolbar-label ms-1">Add</span></button>
-                                <button class="btn btn-sm btn-outline-secondary border-0 d-flex align-items-center px-2 py-1" $onclick="this.editSelectedRows()" $disabled="!this.state?.selectedRowCount" title="Edit Selected Rows"><i class="bi bi-pencil text-primary"></i><span class="dt-toolbar-label ms-1">Edit</span></button>
-                                <button class="btn btn-sm btn-outline-secondary border-0 d-flex align-items-center px-2 py-1" $onclick="this.deleteSelectedRow()" $disabled="!this.state?.selectedRowCount" title="Delete Selected Rows"><i class="bi bi-trash text-danger"></i><span class="dt-toolbar-label ms-1">Delete</span></button>
-                        </div>
-                        <label $if="this.state?.showAdvanced" class="small d-flex align-items-center mb-0 text-nowrap" title="System Fields"><input class="form-check-input" type="checkbox" $bind="this.state.advancedMode"><i class="bi bi-eye mx-1 dt-toolbar-icon"></i><span class="dt-toolbar-label ms-1">System Fields</span></label>
-						<div slot-id="footer-start" class="d-flex align-items-center gap-2"></div>
+							<label $if="this.state?.showAdvanced" class="small d-flex align-items-center mb-0 text-nowrap me-3" title="{#System Fields#}"><input class="form-check-input" type="checkbox" $bind="this.state.advancedMode"><i class="bi bi-eye mx-1 dt-toolbar-icon"></i><span class="dt-toolbar-label ms-1">{#System Fields#}</span></label>
+							<div slot-id="footer-start" class="d-flex align-items-center gap-2 me-3"></div>
                 </div>
 				<div slot-id="toolbar-end" class="d-flex align-items-center gap-2"></div>
 				<div slot-id="footer-end" class="d-flex align-items-center gap-2"></div>
                 <div $if="this.state?.editable && !this.state?.readonly" class="d-flex align-items-center gap-2">
-		<button class="btn btn-sm btn-primary px-3 ms-2" $disabled="!this.state?.isDirty" $onclick="this.saveChanges()"><i class="bi bi-floppy me-1"></i>Save<span $if="this.getChangedRowCount()" $text="'(' + this.getChangedRowCount() + ')'" ></span></button>
+		<button class="btn btn-sm btn-primary px-3 ms-2" $disabled="!this.state?.isDirty" $onclick="this.saveChanges()"><i class="bi bi-floppy me-1"></i>{#Save#}<span $if="this.getChangedRowCount()" $text="'(' + this.getChangedRowCount() + ')'" ></span></button>
                 </div>
         </div>
 </div>

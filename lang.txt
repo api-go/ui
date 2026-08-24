@@ -1,0 +1,166 @@
+(Empty)
+ASC
+Add
+Add Field
+Add Row
+Add card
+Add child
+Add column
+Add node
+Advanced Settings
+Advanced mode
+And...
+Are you sure you want to delete field "{field}"?
+Are you sure you want to delete {count} row(s)?
+Between
+Big Integer
+Binary (BLOB)
+Board menu
+Boolean
+Cancel
+Central topic
+Clear Filter
+Clear Selection
+Close
+Code
+Code tools
+Collapse
+Column menu
+Confirm
+Connection
+Contains
+Content
+Control Attributes must be a JSON object
+Create Time
+Creator
+DESC
+Database Type
+Date
+Date & Time
+DateTime
+Decimals
+Delete
+Delete Field
+Delete Selected Rows
+Delete card
+Delete column
+Delete node
+Delete selected
+Direction
+Discard unsaved changes and reload data?
+Display Condition
+Double
+Edit
+Edit Field
+Edit Row
+Edit Selected Rows
+Edit card
+Edit column
+Edit edge
+Edit node
+Ends with
+Equals
+Expand left
+Expand right
+Field ID
+Field Name
+Field Type
+Fit graph
+Fit map
+Fixed Text (CHAR)
+Float
+Format
+Fullscreen
+HTML preview
+Index
+Integer
+Invalid JSON
+Kanban
+Label
+Label Off
+Label On
+Label:Value per line
+Left
+Length
+Long Text
+Memo
+Multi Select
+New card
+New column
+New node
+New plot point
+New topic
+Next
+No
+No columns
+No content
+No icons found
+No nodes
+Node
+None
+Number
+Object (JSON)
+Only
+Options
+Pin Column
+Placeholder
+Prefix (e.g. $)
+Pretty
+Preview
+Preview mode
+Previous
+Regular expression, e.g. ^[A-Z].+$
+Required
+Right
+Row order
+Row {row}: {field} has an invalid format
+Row {row}: {field} is required
+Save
+Search
+Search Mode
+Search icons...
+Secret
+Select All Rows
+Select Icon
+Settings
+Shift-click another node to connect
+Single Select
+Source
+Split left and right
+Split top and bottom
+Starting point
+Starts with
+Submit
+Suffix (e.g. %)
+Switch
+Syntax error
+System Fields
+System Information
+Table ID
+Text
+Text (VARCHAR)
+The nearby priority range is exhausted; reorder a wider section before trying again.
+Thousand Sep
+Time
+Tiny Integer
+Title
+Toggle all rows selection
+Unsigned Big Integer
+Unsigned Integer
+Untitled
+Update Time
+Updater
+Validate
+Validate syntax
+Validation Pattern
+Validation Pattern must be a valid regular expression
+Wrap lines
+Yes
+child
+e.g. Display Name
+new tag name
+please config .api or .request.url to auto submit
+preview
+sibling
+verify failed
+{field} has an invalid validation pattern

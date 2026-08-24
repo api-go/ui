@@ -15,7 +15,7 @@ examples:
       const userSchema = [{ name: 'tags', label: 'Tags', type: 'TagsInput' }]
     </script>
 
-    <TagsInput placeholder="Add a tag" $.state.value="tags"></TagsInput>
+    <TagsInput placeholder="{#Add a tag#}" $.state.value="tags"></TagsInput>
     <AutoForm $.state.data="user" $.state.schema="userSchema"></AutoForm>
 
 events:

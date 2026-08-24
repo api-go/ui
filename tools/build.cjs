@@ -22,6 +22,25 @@ const filesBelow = async directory => {
   return results.flat();
 };
 
+const translationTexts = source => {
+  const texts = [];
+  for (const match of source.matchAll(/\{#([\s\S]*?)#\}/g)) {
+    const text = match[1].split('||', 1)[0].trim();
+    if (text && !text.includes('\n')) texts.push(text);
+  }
+  for (const match of source.matchAll(/\bGetLang\s*\(\s*(['"`])((?:\\.|(?!\1)[\s\S])*)\1/g)) {
+    if (match[1] === '`' && match[2].includes('${')) continue;
+    const text = match[2]
+      .replace(/\\n/g, '\n')
+      .replace(/\\r/g, '\r')
+      .replace(/\\t/g, '\t')
+      .replace(/\\(['"`\\])/g, '$1')
+      .trim();
+    if (text && !text.includes('\n')) texts.push(text);
+  }
+  return texts;
+};
+
 (async () => {
   const packageMetadata = JSON.parse(await readFile(join(root, 'package.json'), 'utf8'));
   const llmsFile = join(root, 'llms.txt');
@@ -39,6 +58,12 @@ const filesBelow = async directory => {
   await Promise.all([buildCodeMirror(), buildMarkdown()]);
   await Promise.all(Object.entries(frameworks).map(([name, source]) => copyFile(source, join(root, 'frameworks', `${name}.js`))));
   const sources = (await Promise.all(publicDirs.map(dir => filesBelow(join(root, dir))))).flat();
+  // libraries contains generated third-party bundles whose encoded data can
+  // accidentally contain marker-shaped byte sequences.
+  const translationSources = sources.filter(file => !relative(root, file).startsWith(`libraries${sep}`));
+  const sourceContents = await Promise.all(translationSources.map(file => readFile(file, 'utf8')));
+  const languages = [...new Set(sourceContents.flatMap(translationTexts))].sort();
+  await writeFile(join(root, 'lang.txt'), languages.length ? `${languages.join('\n')}\n` : '');
   const sourceStats = await Promise.all(sources.map(async file => {
     const path = relative(root, file).split(sep).join('/');
     return [path, Math.floor((await stat(file)).mtimeMs)];

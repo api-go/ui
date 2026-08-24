@@ -44,6 +44,7 @@
     "ui.js",
     "ui.test.html",
     "llms.txt",
+    "lang.txt",
     "README.md",
     "README.zh-CN.md",
     "test",

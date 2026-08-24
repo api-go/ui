@@ -49,6 +49,8 @@ methods:
   addRow: Add an empty row.
   deleteSelectedRow: Delete selected rows.
   getSelectedRows: Return the unique data rows touched by the current cell selections, in row order.
+  selectAllRows: Select every currently loaded row and visible field.
+  clearSelection: Clear all selected cells and rows.
   getQuery: Return the current structured filter and sort payload used by an API-backed grid.
   saveChanges: Dispatch save.
   addField: Add a field.
@@ -110,6 +112,7 @@ rules:
   - DataGrid contains its intrinsic inline size so wide columns scroll inside .dt-main instead of widening the host or its toolbar.
   - The top toolbar has a stable 48px height so host modules can align their primary toolbars consistently.
   - Treat underscore-prefixed state fields as internal read-only diagnostics.
+  - The toolbar total selects every currently loaded row; when a selection exists, the adjacent clear button clears it.
   - Custom field editors must be registered in AutoForm before use.
   - The trailing row editor is the tinted row div background after the last real field, not a synthetic field or pseudo-element. Real cells paint their own background, so cell and row-background double-clicks remain distinct without an event-capturing overlay.
 

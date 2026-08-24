@@ -49,7 +49,7 @@ globalThis.Component.register('CodeEditor', container => {
       if (!node.type.isError) return
       const from = Math.min(node.from, editorView.state.doc.length)
       const to = Math.max(from, Math.min(node.to || node.from + 1, editorView.state.doc.length))
-      diagnostics.push({ from, to, severity: 'error', source: container.language, message: 'Syntax error' })
+      diagnostics.push({ from, to, severity: 'error', source: container.language, message: '{#Syntax error#}' })
     })
     return diagnostics
   }
@@ -207,14 +207,14 @@ globalThis.Component.register('CodeEditor', container => {
 		return container.classList.contains('code-editor-fullscreen')
 	}
   globalThis.Editor.setTools(container, [
-    { id: 'source', group: 'view', label: 'Source', icon: 'code-slash', active: () => mode === 'source', hidden: () => !previewable(), run: () => container.setMode('source') },
-    { id: 'split-vertical', group: 'view', label: 'Split left and right', icon: 'layout-split', active: () => mode === 'split' && container.getAttribute('split-direction') !== 'horizontal', hidden: () => !previewable(), run: () => { container.setAttribute('split-direction', 'vertical'); container.setMode('split') } },
-    { id: 'split-horizontal', group: 'view', label: 'Split top and bottom', icon: 'view-stacked', active: () => mode === 'split' && container.getAttribute('split-direction') === 'horizontal', hidden: () => !previewable(), run: () => { container.setAttribute('split-direction', 'horizontal'); container.setMode('split') } },
-    { id: 'preview', group: 'view', label: 'Preview', icon: 'eye', active: () => mode === 'preview', hidden: () => !previewable(), run: () => container.setMode('preview') },
-    { id: 'validate', group: 'document', label: 'Validate syntax', icon: 'check2-circle', run: () => container.validate() },
-		{ id: 'pretty', group: 'document', label: 'Pretty', icon: 'stars', run: () => container.pretty() }
-	,{ id: 'wrap', group: 'view', label: 'Wrap lines', icon: 'text-wrap', active: () => container.hasAttribute('wrap'), run: () => container.setWrap(!container.hasAttribute('wrap')) },
-	{ id: 'fullscreen', group: 'view', label: 'Fullscreen', icon: 'arrows-fullscreen', run: () => container.toggleFullscreen() }
+    { id: 'source', group: 'view', label: '{#Source#}', icon: 'code-slash', active: () => mode === 'source', hidden: () => !previewable(), run: () => container.setMode('source') },
+    { id: 'split-vertical', group: 'view', label: '{#Split left and right#}', icon: 'layout-split', active: () => mode === 'split' && container.getAttribute('split-direction') !== 'horizontal', hidden: () => !previewable(), run: () => { container.setAttribute('split-direction', 'vertical'); container.setMode('split') } },
+    { id: 'split-horizontal', group: 'view', label: '{#Split top and bottom#}', icon: 'view-stacked', active: () => mode === 'split' && container.getAttribute('split-direction') === 'horizontal', hidden: () => !previewable(), run: () => { container.setAttribute('split-direction', 'horizontal'); container.setMode('split') } },
+    { id: 'preview', group: 'view', label: '{#Preview#}', icon: 'eye', active: () => mode === 'preview', hidden: () => !previewable(), run: () => container.setMode('preview') },
+    { id: 'validate', group: 'document', label: '{#Validate syntax#}', icon: 'check2-circle', run: () => container.validate() },
+    { id: 'pretty', group: 'document', label: '{#Pretty#}', icon: 'stars', run: () => container.pretty() }
+	,{ id: 'wrap', group: 'view', label: '{#Wrap lines#}', icon: 'text-wrap', active: () => container.hasAttribute('wrap'), run: () => container.setWrap(!container.hasAttribute('wrap')) },
+	{ id: 'fullscreen', group: 'view', label: '{#Fullscreen#}', icon: 'arrows-fullscreen', run: () => container.toggleFullscreen() }
   ])
   container.focus = () => view?.focus()
   container.addEventListener('bind', event => {
@@ -313,24 +313,24 @@ globalThis.Component.register('CodeEditor', container => {
 }, globalThis.Util.makeDom(/*html*/`
 <div class="code-editor-root">
   <div class="code-editor-toolbar btn-toolbar border-bottom p-1 gap-1" hidden>
-    <div class="btn-group btn-group-sm code-editor-preview-tools" role="group" aria-label="Preview mode">
-      <button type="button" class="btn btn-sm" data-tool="source" data-view-tool="source" title="Source"><i class="bi bi-code-slash"></i></button>
-      <button type="button" class="btn btn-sm" data-tool="split-vertical" data-view-tool="split-vertical" title="Split left and right"><i class="bi bi-layout-split"></i></button>
-      <button type="button" class="btn btn-sm" data-tool="split-horizontal" data-view-tool="split-horizontal" title="Split top and bottom"><i class="bi bi-view-stacked"></i></button>
-      <button type="button" class="btn btn-sm" data-tool="preview" data-view-tool="preview" title="Preview"><i class="bi bi-eye"></i></button>
+    <div class="btn-group btn-group-sm code-editor-preview-tools" role="group" aria-label="{#Preview mode#}">
+      <button type="button" class="btn btn-sm" data-tool="source" data-view-tool="source" title="{#Source#}"><i class="bi bi-code-slash"></i></button>
+      <button type="button" class="btn btn-sm" data-tool="split-vertical" data-view-tool="split-vertical" title="{#Split left and right#}"><i class="bi bi-layout-split"></i></button>
+      <button type="button" class="btn btn-sm" data-tool="split-horizontal" data-view-tool="split-horizontal" title="{#Split top and bottom#}"><i class="bi bi-view-stacked"></i></button>
+      <button type="button" class="btn btn-sm" data-tool="preview" data-view-tool="preview" title="{#Preview#}"><i class="bi bi-eye"></i></button>
     </div>
-    <div class="btn-group btn-group-sm" role="group" aria-label="Code tools">
-      <button type="button" class="btn btn-sm btn-link text-body-secondary" data-tool="validate" title="Validate"><i class="bi bi-check2-circle"></i></button>
-      <button type="button" class="btn btn-sm btn-link text-body-secondary" data-tool="pretty" title="Pretty"><i class="bi bi-stars"></i></button>
-      <button type="button" class="btn btn-sm btn-link text-body-secondary" data-tool="wrap" title="Wrap lines"><i class="bi bi-text-wrap"></i></button>
-      <button type="button" class="btn btn-sm btn-link text-body-secondary" data-tool="fullscreen" title="Fullscreen"><i class="bi bi-arrows-fullscreen"></i></button>
+    <div class="btn-group btn-group-sm" role="group" aria-label="{#Code tools#}">
+      <button type="button" class="btn btn-sm btn-link text-body-secondary" data-tool="validate" title="{#Validate#}"><i class="bi bi-check2-circle"></i></button>
+      <button type="button" class="btn btn-sm btn-link text-body-secondary" data-tool="pretty" title="{#Pretty#}"><i class="bi bi-stars"></i></button>
+      <button type="button" class="btn btn-sm btn-link text-body-secondary" data-tool="wrap" title="{#Wrap lines#}"><i class="bi bi-text-wrap"></i></button>
+      <button type="button" class="btn btn-sm btn-link text-body-secondary" data-tool="fullscreen" title="{#Fullscreen#}"><i class="bi bi-arrows-fullscreen"></i></button>
     </div>
   </div>
   <div class="code-editor-workspace">
     <div class="code-editor-source"><div class="code-editor-host"></div></div>
     <div class="code-editor-preview" hidden>
       <div class="code-editor-markdown markdown-body" hidden></div>
-      <iframe class="code-editor-html" title="HTML preview" sandbox hidden></iframe>
+      <iframe class="code-editor-html" title="{#HTML preview#}" sandbox hidden></iframe>
     </div>
   </div>
 </div>

@@ -14,7 +14,7 @@ globalThis.Component.register('Kanban', container => {
     if (Array.isArray(value)) value = { columns: value }
     const data = value && typeof value === 'object' ? globalThis.Editor.clone(value) : {}
     data.columns = Array.isArray(data.columns) ? data.columns : []
-    data.columns = data.columns.map(column => ({ ...column, id: String(column.id || globalThis.GraphDocument?.id?.('column') || `column-${Math.random().toString(36).slice(2)}`), title: column.title || 'Untitled', items: Array.isArray(column.items) ? column.items.map(card => ({ ...card, id: String(card.id || `card-${Math.random().toString(36).slice(2)}`), title: card.title ?? card.content ?? 'Untitled' })) : [] }))
+    data.columns = data.columns.map(column => ({ ...column, id: String(column.id || globalThis.GraphDocument?.id?.('column') || `column-${Math.random().toString(36).slice(2)}`), title: column.title || '{#Untitled#}', items: Array.isArray(column.items) ? column.items.map(card => ({ ...card, id: String(card.id || `card-${Math.random().toString(36).slice(2)}`), title: card.title ?? card.content ?? '{#Untitled#}' })) : [] }))
     return data
   }
   container.readonly = container.hasAttribute('readonly')
@@ -92,9 +92,9 @@ globalThis.Component.register('Kanban', container => {
     }
     return draft
   }
-  container.addColumn = () => container.edit('column', { id: `column-${globalThis.crypto?.randomUUID?.() || Date.now()}`, title: 'New column', items: [] }, { isNew: true })
+  container.addColumn = () => container.edit('column', { id: `column-${globalThis.crypto?.randomUUID?.() || Date.now()}`, title: '{#New column#}', items: [] }, { isNew: true })
   container.editColumn = column => container.edit('column', column)
-  container.addCard = column => container.edit('card', { id: `card-${globalThis.crypto?.randomUUID?.() || Date.now()}`, title: 'New card', content: '' }, { columnId: column.id, isNew: true })
+  container.addCard = column => container.edit('card', { id: `card-${globalThis.crypto?.randomUUID?.() || Date.now()}`, title: '{#New card#}', content: '' }, { columnId: column.id, isNew: true })
   container.editCard = (card, column) => container.edit('card', card, { columnId: column.id })
   container.commitEdit = () => {
     const editing = state.editing
@@ -150,7 +150,7 @@ globalThis.Component.register('Kanban', container => {
   document.addEventListener('keydown', outsideEditorEscape)
   container.schemas = schemas
   globalThis.Editor.setTools(container, [
-    { id: 'add-column', label: 'Add column', icon: 'layout-three-columns', disabled: () => container.readonly, run: () => container.addColumn() }
+    { id: 'add-column', label: '{#Add column#}', icon: 'layout-three-columns', disabled: () => container.readonly, run: () => container.addColumn() }
   ])
   const documentSave = container.save
   container.save = async () => { const result = await documentSave(); if (result) state.dirty = false; return result }

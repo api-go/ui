@@ -9,7 +9,7 @@ const GraphDocument = (() => {
     const visit = (raw, parentId) => {
       const nodeId = String(raw.id || id('node'))
       const { children, ...node } = raw
-      nodes.push({ ...node, id: nodeId, title: node.title ?? node.text ?? node.content ?? 'Node' })
+      nodes.push({ ...node, id: nodeId, title: node.title ?? node.text ?? node.content ?? '{#Node#}' })
       if (parentId) edges.push({ id: id('edge'), from: parentId, to: nodeId })
       ;(children || []).forEach(child => visit(child, nodeId))
     }
@@ -31,7 +31,7 @@ const GraphDocument = (() => {
       let nodeId = String(raw.id || id('node'))
       while (seen.has(nodeId)) nodeId = id('node')
       seen.add(nodeId)
-      return { ...raw, id: nodeId, title: raw.title ?? raw.text ?? raw.content ?? 'Node' }
+      return { ...raw, id: nodeId, title: raw.title ?? raw.text ?? raw.content ?? '{#Node#}' }
     })
     const nodeIds = new Set(data.nodes.map(node => node.id))
     const edgeIds = new Set()
@@ -54,7 +54,7 @@ const GraphDocument = (() => {
     return found
   }
   const addNode = (data, node = {}, parentId = null) => {
-    const created = { title: 'New node', ...node, id: String(node.id || id('node')) }
+    const created = { title: '{#New node#}', ...node, id: String(node.id || id('node')) }
     data.nodes.push(created)
     if (parentId) addEdge(data, parentId, created.id)
     return created

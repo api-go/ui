@@ -3,6 +3,7 @@
  */
 globalThis.Component.register('Nav', container => {
 	container.vertical = container.hasAttribute('vertical')
+	container.homepage = container.getAttribute('homepage') || '#'
 	container.state.openName = container.state.openName || null
 	container.state.value = container.state.value || null
 
@@ -27,7 +28,7 @@ globalThis.Component.register('Nav', container => {
 	}
 }, globalThis.Util.makeDom(/*html*/`
 <div $class="\${this.vertical ? 'd-flex flex-column border-end h-100 align-self-stretch overflow-visible' : 'navbar navbar-expand border-bottom'} bg-body-secondary px-2 \${this.vertical ? 'py-3' : 'py-1'} align-items-center \${this.vertical ? 'align-items-start' : ''}" $style="this.vertical ? 'min-height:0;' : ''">
-	<div class="d-flex align-items-center gap-2">
+	<div class="d-flex align-items-center gap-2" style="cursor:pointer" title="Home" $onclick="location.hash=this.homepage">
         <template $if="this.state?.brand?.image">
                 <img $src="this.state.brand.image" $class="\${this.vertical ? 'mb-2' : 'mx-1'}" style="height:30px;width:auto;max-width:300px">
         </template>
@@ -40,7 +41,8 @@ globalThis.Component.register('Nav', container => {
 	</div>
 	<div $class="d-flex \${this.vertical ? 'w-100 flex-fill mt-2 flex-column gap-1' : 'ms-2 align-items-center flex-fill'}" $style="this.vertical ? 'min-height:0; overflow-y:auto; overflow-x:visible;' : ''">
 		<template $each="this.state?.list || []">
-				<div $class="\${this.vertical ? 'nav nav-pills flex-column w-100 position-relative' : 'navbar-nav flex-row align-items-center'} \${!this.vertical && item.type==='fill' ? 'flex-fill' : ''}">
+			<div $class="\${this.vertical ? 'nav nav-pills flex-column w-100 position-relative' : 'navbar-nav flex-row align-items-center'} \${!this.vertical && item.type==='fill' ? 'flex-fill' : ''}"><template $if="item.type==='slot'"><div $attr="'slot-id=' + item.name"></div></template>
+			<template $if="item.type==='fill'"><div slot-id="tools-end" class="d-flex align-items-center justify-content-end flex-shrink-0"></div></template>
 			<template $if="item.type==='label'">
 				<div $class="\${this.vertical ? 'small text-uppercase text-body-secondary fw-semibold px-2 py-1 mt-2' : 'navbar-text small text-uppercase text-body-secondary fw-semibold px-2'} \${item.class || ''}" $text="item.label"></div>
 			</template>

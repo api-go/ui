@@ -52,14 +52,14 @@ globalThis.Component.register('IconPicker', container => {
     </span>
   </button>
   <div $class="dropdown-menu p-2 shadow \${this.state.open ? 'd-flex show' : 'd-none'}" style="width: 300px; max-height: 350px; overflow-y: hidden; flex-direction: column; z-index: 1050">
-    <input type="text" class="form-control form-control-sm mb-2" placeholder="Search icons..." $bind="this.state.search" $onclick="event.stopPropagation()">
+    <input type="text" class="form-control form-control-sm mb-2" placeholder="{#Search icons...#}" $bind="this.state.search" $onclick="event.stopPropagation()">
     <div class="d-flex flex-wrap gap-1 overflow-auto p-1" style="flex: 1" $onclick="event.stopPropagation()">
         <template $each="this.state.filteredIcons" as="icon">
             <button type="button" class="btn btn-sm btn-outline-light text-dark p-2 d-flex align-items-center justify-content-center" $onclick="this._selectIcon(icon)" $title="icon" style="width: 40px; height: 40px">
                 <i $class="bi bi-\${icon}"></i>
             </button>
         </template>
-        <div $if="this.state.filteredIcons.length === 0" class="text-muted p-2 w-100 text-center">No icons found</div>
+        <div $if="this.state.filteredIcons.length === 0" class="text-muted p-2 w-100 text-center">{#No icons found#}</div>
     </div>
   </div>
 </div>

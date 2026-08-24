@@ -17,7 +17,7 @@ globalThis.Component.register('Mindmap', container => {
     hGap: Number(container.getAttribute('h-gap')) || 80,
     vGap: Number(container.getAttribute('v-gap')) || 28
   }
-  const defaultData = () => ({ nodes: [{ id: 'root', title: 'Central topic', content: '' }], edges: [], view: {}, settings: { ...defaultSettings } })
+  const defaultData = () => ({ nodes: [{ id: 'root', title: '{#Central topic#}', content: '' }], edges: [], view: {}, settings: { ...defaultSettings } })
   const normalize = value => {
     const data = globalThis.GraphDocument.normalize(value?.nodes || value?.root || value?.children || value?.id ? value : defaultData())
     data.settings = { ...defaultSettings, ...(data.settings || {}) }
@@ -122,7 +122,7 @@ globalThis.Component.register('Mindmap', container => {
     if (container.readonly) return null
     const data = normalize(state.data), parentNode = parent || data.nodes.find(node => node.id === state.selectedNodeId) || data.nodes[0]
     if (!parentNode) return null
-    const node = globalThis.GraphDocument.addNode(data, { title: 'New topic', content: '' }, parentNode.id)
+    const node = globalThis.GraphDocument.addNode(data, { title: '{#New topic#}', content: '' }, parentNode.id)
     parentNode.collapsed = false; changed(data, 'add-node', { node, parent: parentNode }); container.selectNode(node); container.editNode(node)
     return node
   }
@@ -182,10 +182,10 @@ globalThis.Component.register('Mindmap', container => {
   document.addEventListener('keydown', outsideEditorEscape)
   container.schemas = schemas
   globalThis.Editor.setTools(container, [
-    { id: 'direction-left', group: 'view', label: 'Expand left', icon: 'diagram-3', active: () => state.data.settings?.direction === 'left', run: () => container.setDirection('left') },
-    { id: 'direction-right', group: 'view', label: 'Expand right', icon: 'diagram-3', active: () => state.data.settings?.direction === 'right', run: () => container.setDirection('right') },
-    { id: 'fit', group: 'view', label: 'Fit map', icon: 'bounding-box', run: () => container.fit() },
-    { id: 'add-child', label: 'Add child', icon: 'node-plus', disabled: () => container.readonly, run: () => container.addChild() }
+    { id: 'direction-left', group: 'view', label: '{#Expand left#}', icon: 'diagram-3', active: () => state.data.settings?.direction === 'left', run: () => container.setDirection('left') },
+    { id: 'direction-right', group: 'view', label: '{#Expand right#}', icon: 'diagram-3', active: () => state.data.settings?.direction === 'right', run: () => container.setDirection('right') },
+    { id: 'fit', group: 'view', label: '{#Fit map#}', icon: 'bounding-box', run: () => container.fit() },
+    { id: 'add-child', label: '{#Add child#}', icon: 'node-plus', disabled: () => container.readonly, run: () => container.addChild() }
   ])
   const documentSave = container.save
   container.save = async () => { const data = normalize(state.data); data.view = canvas.view; state.data = data; const result = await documentSave(); if (result) state.dirty = false; return result }

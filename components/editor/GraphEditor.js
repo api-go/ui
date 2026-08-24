@@ -13,7 +13,7 @@ const GRAPH_EDITOR_SCHEMAS = {
 }
 
 globalThis.Component.register('GraphEditor', container => {
-  const defaultData = () => ({ nodes: [{ id: 'root', title: 'Starting point', content: '', x: 0, y: 0 }], edges: [], view: {} })
+  const defaultData = () => ({ nodes: [{ id: 'root', title: '{#Starting point#}', content: '', x: 0, y: 0 }], edges: [], view: {} })
   const normalize = value => {
     const data = globalThis.GraphDocument.normalize(value?.nodes ? value : defaultData())
     data.nodes = data.nodes.map((node, index) => ({ ...node, x: Number.isFinite(Number(node.x)) ? Number(node.x) : (index % 4) * 240, y: Number.isFinite(Number(node.y)) ? Number(node.y) : Math.floor(index / 4) * 150 }))
@@ -117,7 +117,7 @@ globalThis.Component.register('GraphEditor', container => {
     if (container.readonly) return null
     const data = normalize(state.data)
     if (!position) { const rect = viewport.getBoundingClientRect(); position = canvas.toWorld(rect.left + rect.width / 2, rect.top + rect.height / 2) }
-    const node = globalThis.GraphDocument.addNode(data, { title: 'New plot point', content: '', x: Math.round(position.x), y: Math.round(position.y) })
+    const node = globalThis.GraphDocument.addNode(data, { title: '{#New plot point#}', content: '', x: Math.round(position.x), y: Math.round(position.y) })
     changed(data, 'add-node', { node }); container.selectNode(node); container.editNode(node); return node
   }
   container.connect = (from, to) => {
@@ -229,9 +229,9 @@ globalThis.Component.register('GraphEditor', container => {
   document.addEventListener('keydown', outsideEditorEscape)
   container.schemas = schemas
   globalThis.Editor.setTools(container, [
-    { id: 'fit', group: 'view', label: 'Fit graph', icon: 'bounding-box', run: () => container.fit() },
-    { id: 'add-node', label: 'Add node', icon: 'plus-lg', disabled: () => container.readonly, run: () => container.addNode() },
-    { id: 'remove-selected', label: 'Delete selected', icon: 'trash', disabled: () => container.readonly || (!state.selectedNodeId && !state.selectedEdgeId), run: () => container.removeSelected() }
+    { id: 'fit', group: 'view', label: '{#Fit graph#}', icon: 'bounding-box', run: () => container.fit() },
+    { id: 'add-node', label: '{#Add node#}', icon: 'plus-lg', disabled: () => container.readonly, run: () => container.addNode() },
+    { id: 'remove-selected', label: '{#Delete selected#}', icon: 'trash', disabled: () => container.readonly || (!state.selectedNodeId && !state.selectedEdgeId), run: () => container.removeSelected() }
   ])
   const documentSave = container.save
   container.save = async () => { const data = normalize(state.data); data.view = canvas.view; state.data = data; const result = await documentSave(); if (result) state.dirty = false; return result }

@@ -1,5 +1,12 @@
 # Changelog
 
+## [v1.0.9] - 2026-08-25
+
+- **组件**: 完善 Nav、DataGrid、TagsInput、IconPicker 与图形编辑器交互细节。
+- **编辑器**: 更新 CodeEditor、Markdown 与 CodeMirror 浏览器构建产物。
+- **多语言**: 构建时自动提取静态翻译文本并发布 `lang.txt`。
+- **开发流程**: AI 页面验收统一使用 Codex 内置浏览器。
+
 ## [v1.0.7] - 2026-08-22
 
 - **弹窗**: Modal 未指定语义类型时使用中性边框和正文标题色，指定类型时继续显示对应强调色。

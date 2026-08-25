@@ -43,6 +43,7 @@ examples:
     <Nav class="border-end" $.state.brand="navBrand" $.state.list="navItems" $bind="Hash.nav" vertical></Nav>
 
 rules:
+	- The brand is hidden below the Bootstrap `md` breakpoint so horizontal navigation keeps room for action icons.
   - Bind `$bind="Hash.nav"` when the selected navigation item must survive a page refresh.
   - Use `noselect: true` and nav for actions such as Logout, including buttons inside dropdowns: `$onnav="if(event.detail.name==='logout') logout()"`. Use change only for selected-page state.
   - Use the same `navItems` data for horizontal and vertical navigation when comparing layouts.

@@ -28,7 +28,7 @@ globalThis.Component.register('Nav', container => {
 	}
 }, globalThis.Util.makeDom(/*html*/`
 <div $class="\${this.vertical ? 'd-flex flex-column border-end h-100 align-self-stretch overflow-visible' : 'navbar navbar-expand border-bottom'} bg-body-secondary px-2 \${this.vertical ? 'py-3' : 'py-1'} align-items-center \${this.vertical ? 'align-items-start' : ''}" $style="this.vertical ? 'min-height:0;' : ''">
-	<div class="d-flex align-items-center gap-2" style="cursor:pointer" title="Home" $onclick="location.hash=this.homepage">
+	<div class="d-none d-md-flex align-items-center gap-2" style="cursor:pointer" title="Home" $onclick="location.hash=this.homepage">
         <template $if="this.state?.brand?.image">
                 <img $src="this.state.brand.image" $class="\${this.vertical ? 'mb-2' : 'mx-1'}" style="height:30px;width:auto;max-width:300px">
         </template>
@@ -48,7 +48,7 @@ globalThis.Component.register('Nav', container => {
 			</template>
 			<template $if="item.type==='button'">
 				<button $class="nav-link \${this.state.value===item.name?'active':''} \${this.vertical ? 'w-100 text-start py-2 px-2' : ''} \${item.class || ''}" $onclick="this.click(item)">
-						<i $class="bi bi-\${item.icon} me-2"></i><span $class="\${this.vertical ? 'text-truncate' : 'd-none d-' + (this.state?.list?.length>5?'lg':'md') + '-inline'}" $text="item.label"></span>
+						<i $if="item.icon" $class="bi bi-\${item.icon} me-2"></i><span $class="\${this.vertical ? 'text-truncate' : 'd-none d-' + (this.state?.list?.length>5?'lg':'md') + '-inline'}" $text="item.label"></span>
 				</button>
 				</template>
 				<template $if="item.type==='dropdown'">
@@ -56,7 +56,7 @@ globalThis.Component.register('Nav', container => {
 						<div class="w-100">
 							<button type="button" $class="nav-link w-100 text-start py-2 px-2 d-flex align-items-center justify-content-between \${item.class || ''}" $onclick="this.toggleGroup(item)">
 								<span class="d-inline-flex align-items-center">
-									<i $class="bi bi-\${item.icon} me-2"></i><span class="text-truncate" $text="item.label"></span>
+									<i $if="item.icon" $class="bi bi-\${item.icon} me-2"></i><span class="text-truncate" $text="item.label"></span>
 								</span>
 								<i $class="bi \${this.state.openName===item.name?'bi-chevron-down':'bi-chevron-right'} small ms-2"></i>
 							</button>
@@ -68,12 +68,12 @@ globalThis.Component.register('Nav', container => {
 										</template>
 										<template $if="subitem.type==='button'">
 											<button $class="nav-link w-100 text-start py-2 px-2 \${this.state.value===subitem.name?'active':''} \${subitem.class || ''}" $onclick="this.clickSubitem(subitem)">
-												<i $class="bi bi-\${subitem.icon} me-2 d-inline-block" style="width: 16px;"></i><span $text="subitem.label"></span>
+											<i $if="subitem.icon" $class="bi bi-\${subitem.icon} me-2 d-inline-block" style="width: 16px;"></i><span $text="subitem.label"></span>
 											</button>
 										</template>
 										<template $if="subitem.type==='switch'">
 											<div $class="d-flex align-items-center px-2 py-2 \${subitem.class || ''}">
-												<i $class="bi bi-\${subitem.icon} me-2 d-inline-block" style="width: 16px;"></i><span $text="subitem.label"></span><div class="flex-fill"></div>
+											<i $if="subitem.icon" $class="bi bi-\${subitem.icon} me-2 d-inline-block" style="width: 16px;"></i><span $text="subitem.label"></span><div class="flex-fill"></div>
 												<div class="form-switch ms-2"><input class="form-check-input" type="checkbox" $bind="subitem.bind[subitem.name]"></div>
 											</div>
 										</template>
@@ -85,7 +85,7 @@ globalThis.Component.register('Nav', container => {
 					<template $if="!this.vertical">
 						<div class="dropdown">
 							<button type="button" $class="nav-link dropdown-toggle \${item.class || ''}" data-bs-toggle="dropdown">
-								<i $class="bi bi-\${item.icon} me-2"></i><span $class="'d-none d-' + (this.state?.list?.length>5?'lg':'md') + '-inline'" $text="item.label"></span>
+								<i $if="item.icon" $class="bi bi-\${item.icon} me-2"></i><span $class="'d-none d-' + (this.state?.list?.length>5?'lg':'md') + '-inline'" $text="item.label"></span>
 							</button>
 							<div class="dropdown-menu dropdown-menu-end p-2 bg-body-secondary shadow" $style="'width: ' + (item.width || 250) + 'px; z-index: 1080;'">
 								<template $each="item.items || item.list" as="subitem">
@@ -94,12 +94,12 @@ globalThis.Component.register('Nav', container => {
 									</template>
 									<template $if="subitem.type==='button'">
 										<button $class="dropdown-item \${this.state.value===subitem.name?'active':''} \${subitem.class || ''}" $onclick="this.clickSubitem(subitem)">
-											<i $class="bi bi-\${subitem.icon} me-2 d-inline-block" style="width: 16px;"></i><span $text="subitem.label"></span>
+											<i $if="subitem.icon" $class="bi bi-\${subitem.icon} me-2 d-inline-block" style="width: 16px;"></i><span $text="subitem.label"></span>
 										</button>
 									</template>
 									<template $if="subitem.type==='switch'">
 										<div $class="d-flex align-items-center px-3 py-2 \${subitem.class || ''}">
-											<i $class="bi bi-\${subitem.icon} me-2 d-inline-block" style="width: 16px;"></i><span $text="subitem.label"></span><div class="flex-fill"></div>
+											<i $if="subitem.icon" $class="bi bi-\${subitem.icon} me-2 d-inline-block" style="width: 16px;"></i><span $text="subitem.label"></span><div class="flex-fill"></div>
 												<div class="form-switch ms-2"><input class="form-check-input" type="checkbox" $bind="subitem.bind[subitem.name]"></div>
 										</div>
 									</template>

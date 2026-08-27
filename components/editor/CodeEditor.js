@@ -382,7 +382,7 @@ globalThis.AutoForm?.register('CodeEditor', 'code')
 globalThis.Editor?.register({
   name: 'CodeEditor',
   component: 'CodeEditor',
-  extensions: ['js', 'mjs', 'cjs', 'json', 'yaml', 'yml', 'py', 'html', 'htm', 'css', 'md', 'markdown', 'txt', 'text', 'log', 'conf', 'config', 'ini', 'env', 'csv', 'xml', 'sql', 'sh', 'bash'],
-  types: ['code', 'javascript', 'json', 'yaml', 'python', 'html', 'css', 'markdown'],
-  mimeTypes: ['text/javascript', 'application/javascript', 'application/json', 'application/yaml', 'text/yaml', 'text/x-python', 'text/html', 'text/css', 'text/markdown']
+  extensions: ['js', 'mjs', 'cjs', 'ts', 'tsx', 'json', 'yaml', 'yml', 'py', 'html', 'htm', 'xml', 'css', 'md', 'markdown', 'txt', 'text', 'log', 'conf', 'config', 'ini', 'env', 'csv', 'sql', 'sh', 'bash', 'c', 'h', 'cc', 'cpp', 'cxx', 'hpp', 'java', 'rs', 'go'],
+  types: ['code', 'plain', 'text', 'javascript', 'typescript', 'json', 'yaml', 'python', 'html', 'xml', 'css', 'sql', 'cpp', 'java', 'rust', 'go', 'shell', 'bash', 'markdown'],
+  mimeTypes: ['text/plain', 'text/javascript', 'application/javascript', 'application/typescript', 'application/json', 'application/yaml', 'text/yaml', 'text/x-python', 'text/html', 'application/xml', 'text/xml', 'text/css', 'application/sql', 'text/x-sql', 'text/x-csrc', 'text/x-java', 'text/x-rust', 'text/x-go', 'application/x-sh', 'text/markdown']
 })

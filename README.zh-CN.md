@@ -16,4 +16,4 @@ AI 辅助开发时，只需把统一入口 [https://apigo.cc/web/ui/ai/llms.txt]
 
 `npm run build` 不会生成 `dist`。它会构建 CodeMirror 浏览器核心、可按需加载的语言包和安全 Markdown 渲染器，将 `../state/dist/state.js` 和 `../bootstrap/dist/bootstrap.js` 复制到 `frameworks/`，再把所有源码文件的最后修改时间缓存版本写入 `ui.js`，并在源码旁生成 `.min.js`。加载 `ui.min.js` 时，入口会自动改为加载对应的 framework、library、utility 和 component 的 `.min.js`。UI 包的版本独立于前置框架包。
 
-`MarkdownViewer` 直接把 Markdown 字符串渲染为文档。`CodeEditor` 支持 JavaScript、JSON、YAML、Python、HTML、CSS 和 Markdown；`.md` 与 `.html` 文档可切换源码、分屏和预览模式。HTML 预览脚本需要显式开启，并在不具备同源权限的沙箱 iframe 中运行。
+`MarkdownViewer` 直接把 Markdown 字符串渲染为文档。`CodeEditor` 支持 JavaScript、JSON、YAML、Python、HTML、CSS、SQL 和 Markdown；`.md` 与 `.html` 文档可切换源码、分屏和预览模式。HTML 预览脚本需要显式开启，并在不具备同源权限的沙箱 iframe 中运行。

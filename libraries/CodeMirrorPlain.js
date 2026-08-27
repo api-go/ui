@@ -1,0 +1,6 @@
+(function () {
+	'use strict';
+
+	globalThis.CodeMirror.registerLanguage('plain', () => []);
+
+})();

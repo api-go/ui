@@ -20,6 +20,7 @@
     <CodeEditor id="python" path="scripts/task.py" value="def run():&#10;  return True"></CodeEditor>
     <CodeEditor id="html" path="pages/index.htm" value="&lt;main&gt;Hello&lt;/main&gt;"></CodeEditor>
     <CodeEditor id="css" path="styles/app.css" value="body { color: red; }"></CodeEditor>
+    <CodeEditor id="sql" path="db/query.sql" value="SELECT id, name FROM users WHERE active = true;"></CodeEditor>
     <CodeEditor id="explicit" path="scripts/task.py" lang="css" readonly theme="dark" value="body{}"></CodeEditor>
     <CodeEditor id="documentEditor" path="scripts/local.py" value="print('local')"></CodeEditor>
     <CodeEditor id="longDocument" path="logs/long.json" style="height:200px"></CodeEditor>
@@ -34,18 +35,18 @@
       const result = { name: 'components.editor.CodeEditor', status: 'running', assertions: 0, passed: 0, failed: 0, failures: [], consoleErrors: [], coverage: { tested: [], total: cases, percent: 0 } }
       const editors = [...document.querySelectorAll('CodeEditor')]
       await Promise.all(editors.map(editor => editor.ready))
-      const languages = ['javascript', 'json', 'yaml', 'python', 'html', 'css', 'markdown']
+      const languages = ['javascript', 'json', 'yaml', 'python', 'html', 'css', 'sql', 'markdown']
       assert(result, 'languages', languages.every(name => document.querySelector(`#${name}`).language === name), 'all six normalized languages initialize')
       await tick()
       const unhighlighted = languages.filter(name => !document.querySelector(`#${name} .cm-content span[class]`))
       assert(result, 'highlight', !unhighlighted.length, `all six language parsers produce highlighted tokens; missing=${unhighlighted.join(',')}`)
-      assert(result, 'path-detection', CodeMirror.languageFromPath('A/FILE.YAML?version=2') === 'yaml' && CodeMirror.languageFromPath('task.py') === 'python' && CodeMirror.languageFromPath('README.MD') === 'markdown', 'extensions are detected case-insensitively')
+      assert(result, 'path-detection', CodeMirror.languageFromPath('A/FILE.YAML?version=2') === 'yaml' && CodeMirror.languageFromPath('task.py') === 'python' && CodeMirror.languageFromPath('README.MD') === 'markdown' && CodeMirror.languageFromPath('query.SQL') === 'sql' && CodeMirror.resolveLanguage({ lang: 'unsupported-language' }) === 'plain' && CodeMirror.resolveLanguage({ path: 'README.unknown' }) === 'plain', 'extensions are detected case-insensitively and unsupported languages fall back to plain text')
       const explicit = document.querySelector('#explicit')
       const json = document.querySelector('#json')
       assert(result, 'lang-precedence', explicit.language === 'css', 'explicit lang overrides the path extension')
       const javascript = document.querySelector('#javascript')
       assert(result, 'value', javascript.value.includes("console.log('ok')") && javascript.getAttribute('value').includes('function'), 'value exposes source text without rewriting the initial attribute')
-      assert(result, 'diagnostics', languages.every(name => document.querySelector(`#${name}`).validate().length === 0), 'valid JavaScript, JSON, YAML, Python, HTML, CSS, and Markdown have no parser diagnostics')
+      assert(result, 'diagnostics', languages.every(name => document.querySelector(`#${name}`).validate().length === 0), 'valid JavaScript, JSON, YAML, Python, HTML, CSS, SQL, and Markdown have no parser diagnostics')
       javascript.focus(); await tick()
       assert(result, 'ready-view-focus', javascript.view && javascript.ready instanceof Promise && javascript.view.hasFocus, `ready exposes EditorView and focus focuses it; active=${document.activeElement?.className}`)
       const darkColor = getComputedStyle(explicit.view.dom).backgroundColor, lightColor = getComputedStyle(json.view.dom).backgroundColor
@@ -103,9 +104,9 @@ creation:
       let saveDetail; documentEditor.addEventListener('save', event => { saveDetail = event.detail }, { once: true })
       const saved = await documentEditor.save()
       assert(result, 'editor-document', documentEditor.documentMode && saved === saveDetail && saved.type === 'code' && saved.data.endsWith('print(2)'), 'path enables stateless Editor document load/save behavior with string data')
-      assert(result, 'registry', ['js', 'json', 'yaml', 'py', 'html', 'css', 'md'].every(extension => Editor.resolve({ path: `file.${extension}` })?.component === 'CodeEditor'), 'Editor registry resolves every supported extension')
+      assert(result, 'registry', ['js', 'json', 'yaml', 'py', 'html', 'css', 'sql', 'md'].every(extension => Editor.resolve({ path: `file.${extension}` })?.component === 'CodeEditor'), 'Editor registry resolves every supported extension')
       const resources = performance.getEntriesByType('resource').map(entry => new URL(entry.name).pathname)
-      assert(result, 'on-demand-bundles', languages.every(name => resources.some(path => path.endsWith(`/libraries/CodeMirror${{ javascript: 'JavaScript', json: 'JSON', yaml: 'YAML', python: 'Python', html: 'HTML', css: 'CSS', markdown: 'Markdown' }[name]}.js`))), 'each requested language loads its independent classic-script bundle')
+      assert(result, 'on-demand-bundles', languages.every(name => resources.some(path => path.endsWith(`/libraries/CodeMirror${{ javascript: 'JavaScript', json: 'JSON', yaml: 'YAML', python: 'Python', html: 'HTML', css: 'CSS', sql: 'SQL', markdown: 'Markdown' }[name]}.js`))), 'each requested language loads its independent classic-script bundle')
       let availabilityTools
       javascript.addEventListener('toolschange', event => { availabilityTools = event.detail })
       javascript.state.path = 'pages/runtime.html'; await tick(350)

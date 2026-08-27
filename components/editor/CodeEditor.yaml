@@ -60,6 +60,7 @@ languages:
   python: ".py; aliases py and python."
   html: ".html|.htm; aliases html and htm."
   css: .css
+  sql: ".sql; aliases sql, mysql, pgsql, and postgres."
   markdown: ".md|.markdown; aliases md and markdown."
 
 preview:

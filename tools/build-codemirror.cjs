@@ -33,13 +33,18 @@ const minified = /CodeMirror\\.min\\.js$/.test(sourceUrl.pathname)
 const languages = new Map()
 const loading = new Map()
 const names = {
+  plain: 'plain', text: 'plain', txt: 'plain',
   js: 'javascript', javascript: 'javascript', mjs: 'javascript', cjs: 'javascript',
+  ts: 'typescript', typescript: 'typescript', tsx: 'typescript',
   json: 'json', yaml: 'yaml', yml: 'yaml', py: 'python', python: 'python',
-  html: 'html', htm: 'html', css: 'css', md: 'markdown', markdown: 'markdown'
+  html: 'html', htm: 'html', xml: 'xml', css: 'css', sql: 'sql', mysql: 'sql', pgsql: 'sql', postgres: 'sql',
+  c: 'cpp', h: 'cpp', cc: 'cpp', cpp: 'cpp', cxx: 'cpp', java: 'java', rs: 'rust', rust: 'rust', go: 'go',
+  sh: 'shell', bash: 'shell', shell: 'shell', md: 'markdown', markdown: 'markdown'
 }
 const files = {
-  javascript: 'CodeMirrorJavaScript', json: 'CodeMirrorJSON', yaml: 'CodeMirrorYAML',
-  python: 'CodeMirrorPython', html: 'CodeMirrorHTML', css: 'CodeMirrorCSS', markdown: 'CodeMirrorMarkdown'
+  plain: 'CodeMirrorPlain', javascript: 'CodeMirrorJavaScript', typescript: 'CodeMirrorTypeScript', json: 'CodeMirrorJSON', yaml: 'CodeMirrorYAML',
+  python: 'CodeMirrorPython', html: 'CodeMirrorHTML', xml: 'CodeMirrorXML', css: 'CodeMirrorCSS', sql: 'CodeMirrorSQL',
+  cpp: 'CodeMirrorCPP', java: 'CodeMirrorJava', rust: 'CodeMirrorRust', go: 'CodeMirrorGo', shell: 'CodeMirrorShell', markdown: 'CodeMirrorMarkdown'
 }
 const normalizeLanguage = value => names[String(value || '').toLowerCase().replace(/^\\./, '')] || ''
 const languageFromPath = path => {
@@ -47,10 +52,10 @@ const languageFromPath = path => {
   const dot = filename.lastIndexOf('.')
   return dot < 0 ? '' : normalizeLanguage(filename.slice(dot + 1))
 }
-const resolveLanguage = ({ lang = '', path = '' } = {}) => normalizeLanguage(lang) || languageFromPath(path) || 'javascript'
+const resolveLanguage = ({ lang = '', path = '' } = {}) => normalizeLanguage(lang) || languageFromPath(path) || 'plain'
 const registerLanguage = (name, factory) => languages.set(normalizeLanguage(name) || name, factory)
 const loadLanguage = name => {
-  name = normalizeLanguage(name) || 'javascript'
+  name = normalizeLanguage(name) || 'plain'
   if (languages.has(name)) return Promise.resolve(languages.get(name))
   if (loading.has(name)) return loading.get(name)
   const filename = files[name]
@@ -99,12 +104,21 @@ globalThis.CodeMirror = {
 `
 
 const languageEntries = {
+  CodeMirrorPlain: `globalThis.CodeMirror.registerLanguage('plain', () => [])`,
   CodeMirrorJavaScript: `import { javascript } from '@codemirror/lang-javascript'; globalThis.CodeMirror.registerLanguage('javascript', () => javascript())`,
+  CodeMirrorTypeScript: `import { javascript } from '@codemirror/lang-javascript'; globalThis.CodeMirror.registerLanguage('typescript', () => javascript({ typescript: true }))`,
   CodeMirrorJSON: `import { json } from '@codemirror/lang-json'; globalThis.CodeMirror.registerLanguage('json', () => json())`,
   CodeMirrorYAML: `import { yaml } from '@codemirror/lang-yaml'; globalThis.CodeMirror.registerLanguage('yaml', () => yaml())`,
   CodeMirrorPython: `import { python } from '@codemirror/lang-python'; globalThis.CodeMirror.registerLanguage('python', () => python())`,
   CodeMirrorHTML: `import { html } from '@codemirror/lang-html'; globalThis.CodeMirror.registerLanguage('html', () => html())`,
+  CodeMirrorXML: `import { xml } from '@codemirror/lang-xml'; globalThis.CodeMirror.registerLanguage('xml', () => xml())`,
   CodeMirrorCSS: `import { css } from '@codemirror/lang-css'; globalThis.CodeMirror.registerLanguage('css', () => css())`,
+  CodeMirrorSQL: `import { sql } from '@codemirror/lang-sql'; globalThis.CodeMirror.registerLanguage('sql', () => sql().language)`,
+  CodeMirrorCPP: `import { cpp } from '@codemirror/lang-cpp'; globalThis.CodeMirror.registerLanguage('cpp', () => cpp())`,
+  CodeMirrorJava: `import { java } from '@codemirror/lang-java'; globalThis.CodeMirror.registerLanguage('java', () => java())`,
+  CodeMirrorRust: `import { rust } from '@codemirror/lang-rust'; globalThis.CodeMirror.registerLanguage('rust', () => rust())`,
+  CodeMirrorGo: `import { go } from '@codemirror/lang-go'; globalThis.CodeMirror.registerLanguage('go', () => go())`,
+  CodeMirrorShell: `import { StreamLanguage } from '@codemirror/language'; import { shell } from '@codemirror/legacy-modes/mode/shell'; globalThis.CodeMirror.registerLanguage('shell', () => StreamLanguage.define(shell))`,
   CodeMirrorMarkdown: `import { markdownLanguage } from '@codemirror/lang-markdown'; globalThis.CodeMirror.registerLanguage('markdown', () => markdownLanguage)`
 }
 

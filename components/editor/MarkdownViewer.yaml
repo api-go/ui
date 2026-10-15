@@ -1,4 +1,7 @@
 name: MarkdownViewer
+kind: component
+src: /ui/components/editor/MarkdownViewer.js
+dependencies: [/ui/libraries/Markdown.js, Disposer]
 purpose: Render a Markdown string as sanitized HTML without document transport or editing behavior.
 
 attributes:
@@ -32,4 +35,4 @@ related:
   - CodeEditor.yaml
 
 tests:
-  - MarkdownViewer.test.html
+  - MarkdownViewer.test.yaml

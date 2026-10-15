@@ -1,3 +1,9 @@
+reference:
+  docdbPath: /_system/AI/Development/Frontend/Bootstrap.yaml
+  kind: framework
+  category: framework
+  source: /ui/frameworks/Bootstrap.js
+
 name: Bootstrap
 purpose: Provide Bootstrap 5 styles, icons, JavaScript APIs, and reactive theme configuration.
 
@@ -7,16 +13,43 @@ provided:
   Bootstrap: 'apigo helper API for theme configuration.'
 
 config:
-  colors: 'Bootstrap.config({ primary: "#6f42c1", success: "#198754" }) patches CSS variables and related component colors; primary also drives links and btn-link states.'
+  colors: 'Bootstrap.config({ primary: "#6f42c1", success: "#198754", bodyTertiaryBg: "#f8f9fa" }) patches Bootstrap 5.3 color and semantic CSS variables plus related component colors; primary also drives links and btn-link states.'
+  semantic_colors: 'Supports bodyColor/bodyBg, bodySecondaryColor/bodySecondaryBg, bodyTertiaryColor/bodyTertiaryBg, bodyEmphasisColor, headingColor, borderColor, borderColorTranslucent, linkColor and linkHoverColor ( kebab-case keys are also accepted). Unspecified secondary/tertiary layers remain Bootstrap defaults.'
+  theme_palettes: 'Use light: { ... } and dark: { ... } for theme-specific palettes. Their variables are scoped to [data-bs-theme] and take effect immediately when darkMode or bindDarkMode changes.'
+  presets: 'Bootstrap.themes includes steady, clean, soft and cool presets, all retaining brand primary #a855f7 and both light/dark palettes. Bootstrap.useTheme(name, overrides?) applies one immediately; overrides are merged into the selected preset. Bootstrap.addTheme(name, theme) registers a custom preset.'
   dark_mode: 'Bootstrap.config({ darkMode: true }) sets data-bs-theme.'
   bind_dark_mode: 'Bootstrap.config({ bindDarkMode: [LocalStorage, "darkMode"] }) reacts to a state key.'
 
 rules:
+  - Set ui-sm or ui-lg on html/body for global density. Omit both for Bootstrap default sizing; ui-default restores default in a subtree. Nearest scope wins. Use only one density class per element.
+  - Explicit btn-sm/lg, form-control-sm/lg, form-select-sm/lg and input-group-sm/lg or btn-group-sm/lg preserve their native precedence. Explicit Bootstrap spacing utilities remain untouched. Density does not rewrite class attributes or scale the root font.
+  - Shared layout and virtualized components consume inherited --ui-* tokens. Runtime class changes update their cached geometry without rebuilding drafts. Bootstrap.observeDensity(element, callback) returns an unsubscribe function for geometry integrations; release it with DOMDisposer.
+  - Density is independent of viewport size and theme. Do not automatically make touch interfaces compact. Global density cannot resize a component that deliberately specifies an explicit Bootstrap size.
   - ui.js loads Bootstrap before utilities and components.
+  - Declare framework dependencies before page state and component code; Bootstrap classes alone do not load styles. Portable same-origin pages use ordinary script src tags in dependency order. The master/Sites host additionally supports its native script srcs loader; do not assume that nonstandard attribute works on ordinary static hosting.
   - Use Bootstrap classes and Icons directly in component markup.
   - Do not load a second Bootstrap CSS file or runtime.
 
 examples:
+  density: |
+    <html class="ui-sm">
+      <body>
+        <button class="btn btn-primary">Inherited small</button>
+        <button class="btn btn-primary btn-lg">Explicit large</button>
+        <section class="ui-default"><input class="form-control"></section>
+      </body>
+    </html>
+    <!-- State-driven one-click switching: -->
+    <!-- <body $class="page_state.density === 'default' ? '' : 'ui-'+page_state.density"> -->
+  standalone_site: |
+    <script srcs="/ui/frameworks/State.js,/ui/frameworks/Bootstrap.js,/ui/utilities/*.js"></script>
+    <script srcs="/ui/components/base/*.js"></script>
+    <script>
+      const page_state = NewState({ loading: false, error: '' })
+    </script>
+    <main class="container py-4">
+      <div class="alert alert-danger" $if="page_state.error" $text="page_state.error"></div>
+    </main>
   theme: |
     <script>
       Bootstrap.config({ primary: '#6f42c1' })

@@ -1,3 +1,9 @@
+reference:
+  docdbPath: /_system/AI/Development/Frontend/State.yaml
+  kind: framework
+  category: framework
+  source: /ui/frameworks/State.js
+
 name: State
 purpose: Provide reactive state, declarative DOM directives, and the custom component runtime.
 
@@ -6,6 +12,28 @@ globals:
   Hash: 'Reactive JSON values persisted in location.hash.'
   LocalStorage: 'Reactive JSON values persisted in localStorage.'
   NewState: 'NewState(defaults, getter?, setter?) -> reactive object.'
+
+hash_navigation:
+  go: 'Hash.go(patch) merges an object patch into the current live route in one navigation. JSON values replace matching fields; null or undefined removes a field. Unmentioned fields remain. Observers receive the complete updated route. Returns the resulting fragment string.'
+  links: 'Opt-in native/Markdown links use #+ followed by URLSearchParams whose values are JSON: href="#+panel=%22settings%22&closed=null". The patch merges on navigation and the browser history entry is normalized to the complete ordinary fragment. Same-page absolute URLs also work. On a fresh page, the patch restores its own fields without borrowing another page or older route.'
+  replacement: 'Ordinary fragments such as #panel=%22settings%22 replace the entire route. href="#" explicitly clears every route field and returns to the empty/home route. These semantics are never changed to implicit merging.'
+  history: 'Merged destinations use normal browser history. Back/forward restore complete snapshots; reload never reapplies an old patch. Explicitly remove closed UI fields with null, rather than restoring cached route objects.'
+  validation: 'Hash.go requires an object with JSON-serializable values; invalid patches throw before changing the route. Invalid JSON entries in opt-in links are ignored. The key go is reserved for this method and cannot be used as route data.'
+  rules:
+    - Build link values with JSON.stringify and URLSearchParams; do not concatenate unescaped user values or use javascript URLs.
+    - Hash navigation does not own application dirty-change confirmation or authorization. The host must perform its existing navigation guard before calling Hash.go.
+
+change_contract:
+  State.changes: 'Reactive map of stable edit-source keys to booleans. Application code writes only these keys.'
+  State._exitBlocks: 'Framework-owned count of State.changes entries whose value is strictly true. Read-only to application code.'
+  changebind: '`.changebind="SourceKey"` stores a stable source key on View, List, or Nav. Use `.changebind="*"` for global navigation protection.'
+  rules:
+    - Set `State.changes.SourceKey=true` when persisted data changes.
+    - Set the same key false only after successful save, confirmed discard, or successful initialization of a new record.
+    - Never assign State._exitBlocks directly.
+    - A List clears its bound source after confirmed discard and before it changes selection or emits itemclick.
+    - A Nav clears its local source, or every strictly true source for `*`, after confirmed discard and before navigation.
+    - beforeunload protection is automatic while State._exitBlocks is greater than zero.
 
 state:
   watch: 'state.__watch(key, callback); key=null watches every write.'
@@ -16,16 +44,17 @@ state:
     - Do not use __unsafeRefreshState in application code.
 
 directives:
-  $text: 'Set textContent. Without a value, evaluates the element text as a template.'
-  $html: Set innerHTML.
+  $text: 'Set textContent, including string representations of boolean and numeric values. Without a value, evaluates the element text as a template.'
+  $html: 'Set innerHTML, including string representations of boolean and numeric values.'
   $class: 'Set dynamic classes while retaining static classes.'
   $style: 'Set dynamic styles while retaining static styles.'
-  $if: Conditionally render a node or template.
-  $each: 'Render an iterable; supports as and index.'
-  $bind: Two-way bind a form control or component value.
+  $name: 'Set a native DOM attribute named name; for example $aria-label="Borrower: ${row.name}" and $title="row.name". Do not invent $attr.aria-label: a dotted directive assigns a property path, not an attribute.'
+  $if: 'Conditionally render a node or template by truthiness. Truthy-to-truthy updates retain live nodes. Nested native $if/$each elements are removed with their owning conditional block and mount exactly once when it reopens.'
+  $each: 'Render an iterable JavaScript expression. Put the item alias in a separate as attribute and the index alias in index; do not use inline "items as item" syntax inside the expression.'
+  $bind: 'Two-way bind a form control or component value. Deferred native-control writes are superseded by a newer state update or real user edit; mounting a control must not later overwrite its edited value with an old snapshot.'
   $onname: 'Register an event handler; for example $onclick.'
-  $.path: 'Evaluate once during component initialization and assign its property path.'
-  .path: 'Bind an evaluated value to a DOM or component property path.'
+  $.path: 'Evaluate an expression and assign its property path. Components receive the initial value before initialization; State reads also register reactive updates afterward.'
+  .path: 'Assign a literal string to a DOM or component property path. Use $.path for expressions. HTML lowercases property names; declarative component properties must support lowercase names.'
   $$if: 'Evaluate its value once, then evaluate the resulting expression. Use schema expressions such as `$$if="item.if"`.'
   $$each: 'Two-stage equivalent of $each when the iterable expression itself is stored as data.'
 
@@ -33,6 +62,9 @@ expression:
   values: [State, Hash, LocalStorage, top-level const data, this, this.parent, event, thisNode]
   rules:
     - 'Define page data with top-level const before DOM parsing, then bind it directly: `$.state.list="users"`.'
+    - 'An attribute containing ${...} is already interpreted as template text. Do not add JavaScript backticks around it: use $text="Borrower: ${row.currentLoan?.borrower || ''''}". Ordinary expressions without interpolation remain JavaScript expressions.'
+    - 'Use a string expression for $class, for example $class="row.status === ''loaned'' ? ''text-bg-warning'' : ''text-bg-success''". Object maps of class names to booleans are not supported; existing static classes are preserved.'
+    - 'Conditional content may be rescanned during an update before removal. Use null-safe access for optional nested data, even inside $if, so clearing that data does not produce expression errors.'
     - Use `this` in a component template and `this.parent` from nested component/template content.
     - Use template around $if or $each when the surrounding DOM must remain intact.
     - Use key for large or identity-sensitive $each lists.
@@ -47,10 +79,23 @@ component:
     $onunload: Before a bound node is removed.
   rules:
     - Keep required public behavior declarative; do not expose internal DOM as an application contract.
+    - Component tag matching is case-insensitive. Loading Nav reserves the native nav tag too; use a div with role=navigation for a plain navigation region or slot receiver, and Nav only for the actual component.
     - A bindable component listens for bind and writes event.detail into its state.
-    - Slotted nodes are supplied by the application and transferred into the matching slot receiver. Their internal markup, layout, wrapping, labels, and interaction ownership remain with the application; the receiving component should only position the slot container.
+    - Slotted nodes are supplied by the application and transferred into the matching slot receiver. A non-template supplied element is preserved as that element inside the receiver; a supplied template contributes its content. Their internal markup, layout, wrapping, labels, and interaction ownership remain with the application; the receiving component should only position the slot container.
 
 examples:
+  navigation: |
+    Hash.go({ panel: 'settings', closedPanel: null })
+    const href = '#+' + new URLSearchParams({ panel: JSON.stringify('settings'), closedPanel: 'null' })
+    // Markdown: [Settings](#+panel=%22settings%22&closedPanel=null)
+    // A plain <a href="#">Home</a> still clears the complete route.
+  collection: |
+    <script>
+      const example_state = NewState({ rows: [{ id: 'ada', name: 'Ada' }] })
+    </script>
+    <ul>
+      <li $each="example_state.rows" as="row" key="id" $text="row.name"></li>
+    </ul>
   bindings: |
     <script>
       const users = [{ id: 'ada', name: 'Ada' }]
@@ -58,6 +103,11 @@ examples:
     <div $text>Hello ${users[0].name}</div>
     <List $.state.list="users"></List>
     <button $onclick="State.dark = !State.dark">Toggle</button>
+  changes: |
+    <div data-changebind-scope .changebind="Doc"><input $bind="doc_state.title"></div>
+    <button $disabled="!State.changes.Doc" $onclick="saveDoc()">Save</button>
+    <List .changebind="Doc" $bind="Hash.docPath" $.state.list="documents"></List>
+    <Nav .changebind="*" $bind="Hash.nav" $.state.list="modules"></Nav>
   component: |
     <script>
       Component.register('Counter', container => {

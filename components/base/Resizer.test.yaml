@@ -1,0 +1,81 @@
+testData: { size: 120 }
+cases:
+  - name: horizontal binding and target sizing
+    attributes: { id: subject, min: 50, max: 300 }
+    slots: {}
+    before:
+      - script: "const target=document.createElement('div'); target.id='resizeTarget'; subject.before(target); subject.target=target; subject.dispatchEvent(new CustomEvent('bind',{detail:testData.size})); return target.style.width === '120px'"
+      - property: { path: subject.target, equals: { expr: "document.querySelector('#resizeTarget')" } }
+      - script: "const event=new DragEvent('dragstart',{bubbles:true,cancelable:true}); subject.dispatchEvent(event); return event.defaultPrevented"
+      - script: "return subject.style.width==='9px' && getComputedStyle(subject).cursor==='col-resize'"
+    actions:
+      - script: |
+          const drag=x=>{
+            subject.dispatchEvent(new MouseEvent('mousedown',{bubbles:true,clientX:0,clientY:0}))
+            document.dispatchEvent(new MouseEvent('mousemove',{clientX:x,clientY:0}))
+            document.dispatchEvent(new MouseEvent('mouseup',{clientX:x,clientY:0}))
+          }
+          drag(30); drag(-500); drag(500)
+    after:
+      - property: { path: subject.isVertical, equals: false }
+      - dom: { selector: '#resizeTarget', exists: true }
+      - script: "return document.querySelector('#resizeTarget').style.width==='300px'"
+      - event: { name: resizing, count: 3 }
+      - event: { name: resize, count: 3 }
+      - event: { name: change, count: 3, last: 300 }
+  - name: vertical mode
+    attributes: { id: subject, vertical: true }
+    slots: {}
+    before:
+      - property: { path: subject.isVertical, equals: true }
+      - script: "const target=document.createElement('div'); target.id='heightTarget'; target.style.height='40px'; subject.before(target); subject.target=target; return true"
+    actions:
+      - script: |
+          subject.dispatchEvent(new MouseEvent('mousedown',{bubbles:true,clientX:0,clientY:0}))
+          document.dispatchEvent(new MouseEvent('mousemove',{clientX:0,clientY:20}))
+          document.dispatchEvent(new MouseEvent('mouseup',{clientX:0,clientY:20}))
+    after:
+      - script: "return document.querySelector('#heightTarget').style.height==='60px'"
+  - name: silent resize omits change
+    attributes: { id: subject, silent: true }
+    before:
+      - script: "const target=document.createElement('div'); target.id='silentTarget'; target.style.width='100px'; subject.before(target); subject.target=target; return true"
+    actions:
+      - script: |
+          subject.dispatchEvent(new MouseEvent('mousedown',{bubbles:true,clientX:0,clientY:0}))
+          document.dispatchEvent(new MouseEvent('mousemove',{clientX:20,clientY:0}))
+          document.dispatchEvent(new MouseEvent('mouseup',{clientX:20,clientY:0}))
+    after:
+      - script: "return document.querySelector('#silentTarget').style.width==='120px'"
+      - event: { name: resize, count: 1 }
+      - event: { name: change, count: 0 }
+  - name: binding clamps without output and live limits constrain keyboard
+    attributes: { id: subject, min: 80, max: 240 }
+    before:
+      - script: "const target=document.createElement('div'); target.style.width='100px'; subject.before(target); subject.target=target; subject.dispatchEvent(new CustomEvent('bind',{detail:999})); return target.style.width==='240px'"
+      - script: "subject.dispatchEvent(new CustomEvent('bind',{detail:NaN})); return subject.target.style.width==='240px'"
+      - event: { name: change, count: 0 }
+    actions:
+      - script: "subject.setAttribute('max','180'); subject.dispatchEvent(new KeyboardEvent('keydown',{key:'End',cancelable:true})); subject.dispatchEvent(new KeyboardEvent('keydown',{key:'ArrowLeft',shiftKey:true,cancelable:true}))"
+    after:
+      - script: "return subject.target.style.width==='140px' && subject.getAttribute('aria-valuenow')==='140' && subject.getAttribute('role')==='separator' && subject.tabIndex===0"
+      - event: { name: resize, count: 2 }
+      - event: { name: change, count: 2, last: 140 }
+  - name: vertical keyboard home and arrows
+    attributes: { id: subject, vertical: true, min: 40, max: 160 }
+    before:
+      - script: "const target=document.createElement('div'); target.style.height='100px'; subject.before(target); subject.target=target; return true"
+    actions:
+      - script: "for(const key of ['Home','ArrowDown','ArrowUp']) subject.dispatchEvent(new KeyboardEvent('keydown',{key,cancelable:true}))"
+    after:
+      - script: "return subject.target.style.height==='40px' && subject.getAttribute('aria-orientation')==='horizontal'"
+      - event: { name: change, count: 3, last: 40 }
+  - name: non-finite limits use defaults and non-primary mouse input is ignored
+    attributes: { id: subject, min: Infinity, max: invalid }
+    before:
+      - script: "const target=document.createElement('div'); target.style.width='120px'; subject.before(target); subject.target=target; subject.dispatchEvent(new CustomEvent('bind',{detail:2000})); return target.style.width==='1000px'"
+    actions:
+      - script: "subject.dispatchEvent(new MouseEvent('mousedown',{button:2,cancelable:true})); document.dispatchEvent(new MouseEvent('mousemove',{clientX:100})); document.dispatchEvent(new MouseEvent('mouseup'))"
+    after:
+      - script: "return subject.target.style.width==='1000px'"
+      - event: { name: change, count: 0 }

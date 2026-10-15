@@ -1,0 +1,38 @@
+name: ItemCollection
+kind: component
+src: /ui/components/base/ItemCollection.js
+dependencies: [SortableAPI]
+purpose: Render a bindable array using item and creator slots, with removal and drag sorting.
+attributes:
+  layout: "horizontal | vertical; defaults to horizontal"
+  type: "object | string | number | boolean; defaults to object"
+properties:
+  value: "The bound array. Non-array assignments normalize to an empty array."
+  newItem: "Reactive object or scalar used by the creator slot"
+methods:
+  add: "Validate and append newItem; returns false when beforeadd is canceled, otherwise true."
+  submitCreator: "Commit the visible native creator-control values, emit creatorsubmit, then call add() when the event is not canceled."
+  remove: "remove(index) removes one item."
+  reorder: "reorder(oldIndex, newIndex) moves one item and returns whether the order changed."
+slots:
+  item: "Optional template repeated with item and index variables; omitted content leaves the stable item wrapper and remove control."
+  creator: "Optional creator controls; bind object fields to this.newItem.xxx or bind a string creator directly to this.newItem."
+events:
+  creatorsubmit: "Cancelable; detail is { source }, where source is the creator slot receiver."
+  beforeadd: "Cancelable; detail is { item, source }. Call event.preventDefault() to reject."
+  change: "detail is the complete updated array."
+examples: |
+  <ItemCollection $bind="items">
+    <template slot="item"><span $text="item.name"></span></template>
+    <input slot="creator" class="form-control" $bind="this.newItem.name">
+  </ItemCollection>
+rules:
+  - Bind with $bind; do not configure $.state.value.
+  - Missing slots must not prevent programmatic add, remove, bind, or change behavior.
+  - Slotted item content is kept in a dedicated receiver; removal controls remain owned by ItemCollection.
+  - Collection action buttons never submit an ancestor form.
+  - Creator and Add align through intrinsic flex layout; no fixed button width/height or absolute pixel offsets. Removal occupies an in-flow action region and becomes visible on hover/focus or touch devices.
+  - Inherits ui-sm/ui-lg across item, creator and actions. Switching density must retain controls and bound draft values; creator slots should use ordinary Bootstrap controls rather than fixed small classes.
+  - Clicking Add commits visible native creator-control values even when browser autofill or programmatic display did not emit input/change first.
+tests:
+  - ItemCollection.test.yaml

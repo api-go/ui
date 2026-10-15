@@ -1,3 +1,9 @@
+reference:
+  docdbPath: /_system/AI/Development/Frontend/GraphCanvas.yaml
+  kind: utility
+  category: utility
+  source: /ui/utilities/GraphCanvas.js
+
 name: GraphCanvas
 purpose: Provide reusable graph viewport pan, pointer-centered zoom, coordinate conversion, fit, and cleanup.
 
@@ -39,6 +45,5 @@ examples: |
   canvas.fit(nodes)
 
 tests:
-  - GraphCanvas.test.html
-  - ../components/editor/Mindmap.test.html
-  - ../components/editor/GraphEditor.test.html
+  - ../components/editor/Mindmap.test.yaml
+  - ../components/editor/GraphEditor.test.yaml

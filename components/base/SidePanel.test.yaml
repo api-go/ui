@@ -1,0 +1,110 @@
+testData:
+  open: false
+  resources: []
+  tabs: [{ id: document, label: Document, icon: file-earmark-text }, { id: settings, label: Settings }]
+cases:
+  - name: single resource docking hides tabs and closing releases the resource
+    covers: [attributes.docked, attributes.single]
+    attributes: { id: subject, docked: true, single: true, "$.state.tabs": "[{id:'preview',label:'Preview'}]", "$.state.open": "true" }
+    slots:
+      content: '<div><section data-panel-tab="preview">Read-only resource</section></div>'
+    before:
+      - dom: { selector: '#subject [role=tablist]', count: 0 }
+      - dom: { selector: '#subject header', containsText: Preview }
+      - script: "return getComputedStyle(subject).position===(innerWidth<768?'fixed':'relative')"
+    actions:
+      - click: '#subject button[aria-label="Close panel"]'
+    after:
+      - property: { path: subject.state.tabs.length, equals: 0 }
+      - property: { path: subject.state.open, equals: false }
+  - name: opening switching closing and reopening preserves native content and drafts
+    covers: [state.open, state.tabs, state.active, methods.openTab, methods.closeTab, methods.toggle, events.change, slots.content]
+    attributes: { id: subject }
+    slots:
+      content: '<div><section data-panel-tab="document"><label>Document draft<input id="panel-draft" class="form-control"></label></section><section data-panel-tab="settings"><label>Setting<input class="form-control"></label></section></div>'
+    before:
+      - property: { path: subject.state.open, equals: false }
+      - property: { path: subject.state.tabs.length, equals: 0 }
+      - script: "return subject.hidden && subject.querySelector('#panel-draft').isConnected"
+    actions:
+      - call: { method: openTab, args: [{ id: document, label: Document, icon: file-earmark-text }] }
+      - fill: { selector: '#subject #panel-draft', value: Unsaved document draft }
+      - script: "testData.originalInput=subject.querySelector('#panel-draft')"
+      - call: { method: openTab, args: [{ id: settings, label: Settings }] }
+      - script: "if(!subject.querySelector('[data-panel-tab=document]').hidden||!subject.querySelector('[data-panel-tab=document]').inert)throw new Error('Inactive content remains interactive')"
+      - call: { method: closeTab, args: [document] }
+      - call: { method: openTab, args: [{ id: document, label: Document }] }
+      - call: { method: toggle, args: [false] }
+      - script: "if(!subject.hidden||!subject.querySelector('#panel-draft').isConnected)throw new Error('Hidden panel unmounted its draft')"
+      - call: { method: toggle, args: [true] }
+    after:
+      - property: { path: subject.state.open, equals: true }
+      - property: { path: subject.state.active, equals: document }
+      - dom: { selector: '#subject #panel-draft', value: Unsaved document draft }
+      - script: "return subject.querySelector('#panel-draft')===testData.originalInput && !subject.querySelector('[data-panel-tab=document]').hidden"
+      - event: { name: change, count: 6 }
+  - name: bound tab state supports keyboard activation and last-tab closure
+    attributes: { id: subject, "$.state.tabs": testData.tabs, "$.state.active": "'document'", "$.state.open": "true" }
+    slots:
+      content: '<div><section data-panel-tab="document"><input value="Document"></section><section data-panel-tab="settings">Settings body</section></div>'
+    actions:
+      - script: |
+          const tabs=()=>subject.querySelectorAll('[role=tab]');
+          tabs()[0].focus();tabs()[0].dispatchEvent(new KeyboardEvent('keydown',{key:'ArrowRight',bubbles:true,cancelable:true}));
+          await new Promise(resolve=>requestAnimationFrame(resolve));
+          if(subject.state.active!=='settings'||document.activeElement!==tabs()[1])throw new Error('Arrow navigation did not activate and focus the second tab');
+          tabs()[1].dispatchEvent(new KeyboardEvent('keydown',{key:'Home',bubbles:true,cancelable:true}));
+          if(subject.state.active!=='document')throw new Error('Home did not select first tab');
+          tabs()[0].dispatchEvent(new KeyboardEvent('keydown',{key:'End',bubbles:true,cancelable:true}));
+          if(subject.state.active!=='settings')throw new Error('End did not select last tab');
+          subject.closeTab('settings');subject.closeTab('document');
+    after:
+      - property: { path: subject.state.open, equals: false }
+      - property: { path: subject.state.active, equals: '' }
+      - property: { path: subject.state.tabs.length, equals: 0 }
+      - script: "return subject.querySelector('[data-panel-tab=document] input').isConnected"
+  - name: keyed host resources added after mount have stable accessible tab panels
+    attributes: { id: subject, "$.state.tabs": testData.resources }
+    slots:
+      content: '<div><section $each="testData.resources" as="resource" key="id" $data-panel-tab="resource.id"><input $bind="resource.draft"></section></div>'
+    actions:
+      - script: "testData.resources=[{id:'late-document',label:'Late document',draft:'Saved draft'}]"
+      - call: { method: openTab, args: [late-document] }
+      - wait: 30
+    after:
+      - dom: { selector: '#subject [data-panel-tab="late-document"] input', value: Saved draft }
+      - script: "const tab=subject.querySelector('[role=tab]'),section=subject.querySelector('[data-panel-tab]');return tab.getAttribute('aria-controls')===section.id && section.getAttribute('aria-labelledby')===tab.id && !section.hidden"
+  - name: close control and Escape hide the panel without removing its tabs
+    attributes: { id: subject, "$.state.tabs": testData.tabs, "$.state.open": "true" }
+    slots:
+      content: '<div><section data-panel-tab="document"><input id="escape-draft"></section></div>'
+    actions:
+      - click: '#subject button[aria-label="Close panel"]'
+      - call: { method: toggle, args: [true] }
+      - script: "subject.querySelector('#escape-draft').focus();subject.querySelector('#escape-draft').dispatchEvent(new KeyboardEvent('keydown',{key:'Escape',bubbles:true,cancelable:true}))"
+    after:
+      - property: { path: subject.state.open, equals: false }
+      - property: { path: subject.state.tabs.length, equals: 2 }
+      - event: { name: change, count: 3 }
+  - name: boolean binding and cancelable close let the host confirm before releasing content
+    covers: [events.statechange, events.beforeclose, events.tabclose]
+    attributes: { id: subject, "$bind": testData.open, "$.state.tabs": testData.tabs }
+    slots:
+      content: '<div><section data-panel-tab="document"><input value="Preserved"></section><section data-panel-tab="settings">Settings</section></div>'
+    actions:
+      - call: { method: toggle, args: [true] }
+      - script: "if(testData.open!==true)throw new Error('Opening did not update host binding')"
+      - script: "testData.open=false"
+      - script: "if(subject.state.open!==false)throw new Error('Host binding did not hide panel')"
+      - call: { method: toggle, args: [true] }
+      - prevent: beforeclose
+      - call: { method: closeTab, args: [document] }
+      - script: "if(subject.state.tabs.length!==2||subject.state.active!=='document')throw new Error('Canceled close changed tabs')"
+      - call: { method: closeTab, args: [document, { force: true }] }
+    after:
+      - property: { path: subject.state.tabs.length, equals: 1 }
+      - property: { path: subject.state.active, equals: settings }
+      - event: { name: beforeclose, count: 1, last: { id: document } }
+      - event: { name: tabclose, count: 1, last: { id: document } }
+      - event: { name: statechange, count: 3 }
+      - script: "return subject.querySelector('[data-panel-tab=document] input').isConnected"

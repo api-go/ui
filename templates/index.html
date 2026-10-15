@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>前端模板库</title>
+<script src="../frameworks/State.js"></script><script src="../frameworks/Bootstrap.js"></script>
+<script>
+const templateCatalog=[
+  {
+    "id": "customer-workspace",
+    "type": "workspace",
+    "title": "客户工作台",
+    "description": "Hash 筛选与选择、可调整列表、详情标签、本地关注偏好。"
+  },
+  {
+    "id": "settings-console",
+    "type": "workspace",
+    "title": "设置中心",
+    "description": "局部多列表单、共享草稿、跨页保留、显式保存与错误恢复。"
+  },
+  {
+    "id": "content-catalog",
+    "type": "document",
+    "title": "内容精选",
+    "description": "自然滚动、响应式资源卡片、可分享筛选与详情、本地收藏。"
+  },
+  {
+    "id": "note-studio",
+    "type": "application",
+    "title": "写作工作室",
+    "description": "Markdown 编辑与预览、Hash 视图、跨笔记保留草稿、统一保存。"
+  }
+]
+const templateKinds=[{id:'all',label:'全部模板'},{id:'workspace',label:'管理工作台'},{id:'application',label:'交互应用'},{id:'document',label:'自然滚动页面'}]
+Bootstrap.config({bindDarkMode:[LocalStorage,'templateDark']})
+</script></head>
+<body class="m-0 bg-body text-body">
+<main class="container py-5">
+ <header class="d-flex flex-wrap align-items-start justify-content-between gap-3 mb-4">
+  <div><span class="badge text-bg-primary mb-3">AI First</span><h1 class="display-6 fw-semibold">从完整模板开始</h1><p class="lead text-body-secondary mb-2">先选择交互结构，再替换业务数据。</p><p class="text-body-secondary mb-0">模板没有自定义 CSS 或内联样式，使用 Bootstrap、公共组件、Hash 与声明式数据绑定。</p></div>
+ </header>
+ <div class="d-flex flex-wrap gap-2 mb-4" aria-label="模板类型"><button class="btn" $each="templateKinds" as="kind" $class="(Hash.templateKind||'all')===kind.id?'btn-primary':'btn-outline-secondary'" $aria-pressed="(Hash.templateKind||'all')===kind.id?'true':'false'" $onclick="Hash.go({templateKind:kind.id})" $text="kind.label"></button></div>
+ <div class="row g-4">
+  <article class="col-12 col-xl-6" $each="templateCatalog.filter(item=>!Hash.templateKind||Hash.templateKind==='all'||item.type===Hash.templateKind)" as="entry" key="id">
+   <div class="border rounded overflow-hidden h-100">
+    <div class="ratio ratio-16x9 bg-body-tertiary"><iframe loading="lazy" $src="entry.id+'.html'" $title="entry.title+'预览'" class="border-0"></iframe></div>
+    <div class="p-4 border-top"><h2 class="h4" $text="entry.title"></h2><p class="text-body-secondary" $text="entry.description"></p><div class="d-flex flex-wrap gap-2"><a class="btn btn-primary" $href="entry.id+'.html'">打开完整模板</a><a class="btn btn-outline-secondary" $href="entry.id+'.html'" download>下载 HTML 源码</a></div></div>
+   </div>
+  </article>
+ </div>
+ <section class="border rounded bg-body-tertiary p-4 mt-5"><h2 class="h5">使用方式</h2><ol class="mb-0"><li>打开模板，验证它是否符合页面的交互类型。</li><li>下载 HTML，保留布局结构、Hash 字段和单一草稿所有权，替换名称、schema 与数据来源。</li><li>示例本地保存只能用于浏览器偏好。接入服务端数据时，替换保存适配器，等待服务端确认后再清除 dirty 状态。</li><li>运行宽窄屏、主题、刷新、前进后退、错误恢复和持久化验收。</li></ol></section>
+</main></body></html>

@@ -1,0 +1,20 @@
+name: ActionBar
+kind: component
+src: /ui/components/base/ActionBar.js
+purpose: Host-owned command bar with selected count and a narrow secondary-action menu.
+state:
+  actions: 'Array of {id,label,icon?,primary?,danger?,disabled?}; ids must be unique.'
+  selection: 'Array of selected stable IDs, default empty.'
+  busy: 'Disable generated commands during a host operation.'
+methods:
+  run: 'run(id) emits action for an enabled known command. Unknown/disabled/busy returns false.'
+events:
+  action: 'detail {id,selection}; host owns authorization, confirmation and persistence.'
+slots:
+  start: Optional navigation/title/context.
+  end: Optional host controls.
+rules:
+  - Primary commands stay visible. Secondary commands move into More below 36rem of actual bar width.
+  - Give the bar an available width such as w-100 or flex-fill. All visible groups wrap.
+  - Inherits global ui-sm/ui-lg. Bootstrap explicit size and spacing classes win.
+tests: [ActionBar.test.yaml]

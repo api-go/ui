@@ -31,6 +31,24 @@ const DataGridConfig = {
 	getFieldTypes: () => Array.from(DataGridConfig._fieldTypes.values())
 };
 
+const DataGridPageCache = {
+	limit: 10000,
+	session: '',
+	tables: new Map(),
+	getSession() {
+		if (!this.session) this.session = globalThis.crypto?.randomUUID?.() || `dg_${Date.now()}_${Math.random().toString(36).slice(2)}`;
+		return this.session;
+	},
+	reset() {
+		this.session = '';
+		this.tables.clear();
+	},
+	table(name) {
+		if (!this.tables.has(name)) this.tables.set(name, new Map());
+		return this.tables.get(name);
+	}
+};
+
 const DB_EDITOR_TYPE_MAP = {
 	i: 'number', ui: 'number', bi: 'number', ubi: 'number', ti: 'number', f: 'number', ff: 'number',
 	b: 'switch', d: 'date', dt: 'datetime', t: 'textarea', o: 'code'
@@ -138,6 +156,12 @@ const getDefaultDbType = (editorType, decimals = 0) => {
 	const typeInfo = DataGridConfig._fieldTypes.get(editorType);
 	return editorType === 'number' ? (Number(decimals) > 0 ? 'ff' : 'bi') : (typeInfo?.typeForDB || 'v100');
 };
+const normalizeDBType = (value, fallback = 'v100') => {
+	const type = String(value || '').trim().toLowerCase();
+	if (/^(?:i|ui|bi|ubi|ti|uti|f|uf|ff|uff|si|usi|mi|umi|t|o|dt|d|tm|b|bb|ver)$/.test(type)) return type;
+	const sized = type.match(/^(v|c)([1-9]\d*)$/);
+	return sized ? sized[1] + sized[2] : fallback;
+};
 
 const DB_TYPE_OPTIONS = [
 	['i', '{#Integer#}'], ['ui', '{#Unsigned Integer#}'], ['bi', '{#Big Integer#}'], ['ubi', '{#Unsigned Big Integer#}'], ['ti', '{#Tiny Integer#}'],
@@ -146,22 +170,24 @@ const DB_TYPE_OPTIONS = [
 ];
 
 globalThis.Component.register('DBTypeInput', container => {
-	const select = container.querySelector('select'), lengthInput = container.querySelector('input');
+	let value = normalizeDBType(container.value || 'v100');
 	container.state.options = DB_TYPE_OPTIONS.map(([value, label]) => ({ value, label }));
 	const parse = value => {
-		const match = String(value || 'v').match(/^(v|c)(\d+)?$/);
-		container.state.family = match ? match[1] : String(value || 'v');
-		container.state.length = match?.[2] || '';
+		const raw = String(value || 'v100').trim().toLowerCase();
+		const match = raw.match(/^(v|c)([1-9]\d*)$/);
+		container.state.family = match ? match[1] : (/^[vc]/.test(raw) ? raw[0] : normalizeDBType(raw));
+		container.state.length = match?.[2] || (/^[vc]/.test(raw) ? '100' : '');
 	};
 	const compose = () => {
 		const family = container.state.family || 'v';
-		const length = Math.max(1, Math.trunc(Number(container.state.length) || 0));
-		container.value = (family === 'v' || family === 'c') && length ? family + length : family;
+		const length = Math.max(1, Math.trunc(Number(container.state.length) || 100));
+		container.value = normalizeDBType((family === 'v' || family === 'c') ? family + length : family);
 		container.dispatchEvent(new Event('change', { bubbles: true }));
 	};
-	container.addEventListener('bind', event => parse(event.detail));
-	select?.addEventListener('change', () => setTimeout(compose));
-	lengthInput?.addEventListener('input', () => setTimeout(compose));
+	Object.defineProperty(container, 'value', { configurable: true, get: () => value, set: next => { value = normalizeDBType(next || 'v100'); parse(value); } });
+	container.addEventListener('bind', event => { if (event.target === container) container.value = event.detail; });
+	container.addEventListener('change', event => { if (event.target.matches('select')) setTimeout(compose); });
+	container.addEventListener('input', event => { if (event.target.matches('input')) setTimeout(compose); });
 	parse(container.value);
 }, globalThis.Util.makeDom(/*html*/`
 	<div class="input-group">
@@ -211,7 +237,8 @@ const createPerfMonitor = () => {
 };
 
 const createScrollManager = (container, state, onRenderedListChange) => {
-	const vs = globalThis.VirtualScroll({ itemHeight: 40 });
+	let rowHeight = parseFloat(getComputedStyle(container).getPropertyValue('--ui-grid-row')) || 40;
+	let vs = globalThis.VirtualScroll({ itemHeight: rowHeight });
 	let scrollEl = null;
 	const refresh = (isLayoutChange = false) => {
 		if (!scrollEl) return;
@@ -222,8 +249,21 @@ const createScrollManager = (container, state, onRenderedListChange) => {
 			onRenderedListChange?.(res.renderedList.length, isLayoutChange);
 		}
 	};
-	return {
-		init: () => { scrollEl = container.querySelector('.dt-main'); },
+	let stopDensity;
+	const manager = {
+		init: () => {
+			scrollEl = container.querySelector('.dt-main');
+			if (!stopDensity && globalThis.Bootstrap?.observeDensity) {
+				stopDensity = Bootstrap.observeDensity(container, (_, css) => {
+					const next = parseFloat(css.getPropertyValue('--ui-grid-row')) || 40;
+					if (next === rowHeight) return;
+					const top = scrollEl.scrollTop / rowHeight * next;
+					rowHeight = next; vs = globalThis.VirtualScroll({ itemHeight: rowHeight });
+					manager.reset(state.list); scrollEl.scrollTop = top; refresh(true);
+				});
+				DOMDisposer.add(container, stopDensity);
+			}
+		},
 		reset: (list) => {
 			state._listStartIndex = 0;
 			const validList = Array.isArray(list) ? list : [];
@@ -236,6 +276,7 @@ const createScrollManager = (container, state, onRenderedListChange) => {
 		},
 		refresh, onScroll: () => refresh(false)
 	};
+	return manager;
 };
 
 const createSelectionManager = (container, state) => {
@@ -352,6 +393,7 @@ globalThis.Component.register('DataGrid', container => {
 	const state = container.state
 	container.editable = container.hasAttribute('editable')
 	container.readonly = container.hasAttribute('readonly')
+	container.cacheEnabled = container.hasAttribute('cache')
 	container.getDataKey = getDataKey
 	container.getEditorType = getEditorType
 	container.apiUrl = container.getAttribute('api') || ''
@@ -365,7 +407,10 @@ globalThis.Component.register('DataGrid', container => {
 		filterConfig: {},
 		activeFieldId: null, activeField: null, activeModes: [],
 		_columnStats: {}, _internalUpdate: false, _appliedHash: '', _fieldsDirty: false, _masterCellNodes: null,
+		_skipNextListSnapshot: false,
 		isDirty: false, changedCells: [], isBulkEdit: null, advancedMode: false, fieldAdvanced: false, rowFormIndex: -1, table: state.table || '', apiLoading: false, total: 0,
+		cellDetailTitle: '', cellDetailValue: '',
+		revealTarget: null, revealReason: '', _revealedValues: {},
 		editable: container.editable, readonly: container.readonly, showAdvanced: !container.hasAttribute('no-advanced'), rowFormMin: 0, rowFormMax: -1
 	})
 
@@ -379,7 +424,7 @@ globalThis.Component.register('DataGrid', container => {
 		return fields;
 	};
 	const alignNumericColumns = () => setTimeout(() => {
-		const numeric = new Set(state._displayFields.map((field, index) => ((['i','ui','bi','ubi','ti','f','ff'].includes(field.type) || field.settings?.type === 'number') ? index : -1)).filter(index => index >= 0));
+		const numeric = new Set(state._displayFields.map((field, index) => ((['i', 'ui', 'bi', 'ubi', 'ti', 'f', 'ff'].includes(field.type) || field.settings?.type === 'number') ? index : -1)).filter(index => index >= 0));
 		container.querySelectorAll('.dt-row, .dt-header-row').forEach(row => row.querySelectorAll('.dt-cell').forEach((cell, index) => {
 			const isNumeric = numeric.has(index);
 			cell.classList.toggle('text-end', isNumeric);
@@ -403,6 +448,44 @@ globalThis.Component.register('DataGrid', container => {
 			state.apiLoading = false;
 		}
 	};
+	const protectedCellKey = (item, field) => `${String(item?.id || '')}\x00${String(field?.id || field?.name || '')}`;
+	container.protectedCellKey = protectedCellKey;
+	container.canRevealProtectedValue = (item, field) => {
+		const value = item?.[getDataKey(field)];
+		return !!container.apiUrl && !!state.table && String(value ?? '').includes('****') && !Object.hasOwn(state._revealedValues, protectedCellKey(item, field)) && ['Sensitive', 'Secret'].includes(normalizeProtection(field?.protection, !!field?.isSecret));
+	};
+	container.protectedCellValue = (item, field) => state._revealedValues[protectedCellKey(item, field)] ?? container.format(item?.[getDataKey(field)], field);
+	container.copyProtectedValue = async (item, field, event) => {
+		event?.preventDefault?.(); event?.stopPropagation?.();
+		const value = state._revealedValues[protectedCellKey(item, field)];
+		if (value === undefined) return false;
+		let copied = false;
+		try { await globalThis.navigator?.clipboard?.writeText(String(value)); copied = true; } catch (_) { /* Browser denied clipboard access. */ }
+		globalThis.Toast?.show(copied ? '{#Protected value copied#}' : '{#Protected value revealed; clipboard access was denied#}', { type: copied ? 'success' : 'warning' });
+		return copied;
+	};
+	container.toggleProtectedValue = (item, field, event) => {
+		event?.preventDefault?.(); event?.stopPropagation?.();
+		const key = protectedCellKey(item, field);
+		if (Object.hasOwn(state._revealedValues, key)) {
+			const values = { ...state._revealedValues }; delete values[key]; state._revealedValues = values; return;
+		}
+		if (!container.canRevealProtectedValue(item, field)) return;
+		state.revealTarget = { id: item.id, field: field.name, key };
+		state.revealReason = '';
+		container.querySelector('.datagrid-reveal-modal')?.show();
+	};
+	container.submitProtectedReveal = async () => {
+		const target = state.revealTarget, reason = String(state.revealReason || '').trim();
+		if (!target || !reason) { globalThis.Toast?.show('{#Reason is required#}', { type: 'warning' }); return false; }
+		let result; try { result = await requestApi('reveal', { id: target.id, field: target.field, reason }); } catch (_) { return false; }
+		const secret = String(result.secret ?? '');
+		state._revealedValues = { ...state._revealedValues, [target.key]: secret };
+		state.revealReason = ''; state.revealTarget = null;
+		container.querySelector('.datagrid-reveal-modal')?.hide(true);
+		await container.copyProtectedValue({ id: target.id }, { id: target.key.split('\x00')[1] });
+		return true;
+	};
 	const buildQuery = () => {
 		const filter = [];
 		Object.entries(state.filterConfig).forEach(([fieldId, config]) => {
@@ -416,6 +499,37 @@ globalThis.Component.register('DataGrid', container => {
 		return { filter, sort: sortField ? [`${sortField.name} ${state.sortConfig.direction === 'desc' ? 'DESC' : 'ASC'}`] : [] };
 	};
 	container.getQuery = () => buildQuery();
+	const mergeCachedRows = rows => {
+		if (!container.cacheEnabled) return rows;
+		const cache = DataGridPageCache.table(state.table);
+		return rows.map(row => {
+			const id = String(row?.id || '');
+			if (!id) throw new Error('DataGrid cache row is missing an id');
+			const isReference = Object.keys(row).length === 1;
+			if (isReference) {
+				const cached = cache.get(id);
+				if (!cached) throw new Error(`DataGrid cache miss: ${id}`);
+				return globalThis.Util.clone(cached);
+			}
+			if (cache.has(id) || cache.size < DataGridPageCache.limit) cache.set(id, globalThis.Util.clone(row));
+			return row;
+		});
+	};
+	const queryApi = async () => {
+		const payload = { ...buildQuery(), offset: 0, limit: 1000 };
+		if (container.cacheEnabled) payload.dataSession = DataGridPageCache.getSession();
+		let response = await requestApi('query', payload);
+		let rows = Array.isArray(response.data) ? response.data : (Array.isArray(response.list) ? response.list : []);
+		try { return { response, list: mergeCachedRows(rows) }; }
+		catch (error) {
+			if (!container.cacheEnabled) throw error;
+			DataGridPageCache.reset();
+			payload.dataSession = DataGridPageCache.getSession();
+			response = await requestApi('query', payload);
+			rows = Array.isArray(response.data) ? response.data : (Array.isArray(response.list) ? response.list : []);
+			return { response, list: mergeCachedRows(rows) };
+		}
+	};
 	container.load = async ({ fields = false } = {}) => {
 		if (!container.apiUrl || !state.table) return;
 		try {
@@ -430,8 +544,7 @@ globalThis.Component.register('DataGrid', container => {
 					return;
 				}
 			}
-			const response = await requestApi('query', { ...buildQuery(), offset: 0, limit: 1000 });
-			const list = Array.isArray(response.data) ? response.data : (Array.isArray(response.list) ? response.list : []);
+			const { response, list } = await queryApi();
 			state._internalUpdate = true; state.list = list; state._originalList = globalThis.Util.clone(list); state.total = Number(response.count ?? list.length); state._internalUpdate = false; state.isDirty = false; state.changedCells = [];
 		} catch (_) { /* requestApi already reports the error */ }
 	};
@@ -666,10 +779,15 @@ globalThis.Component.register('DataGrid', container => {
 		}
 
 		state._internalUpdate = true;
-		state.filterConfig = targetFilters;
-		state.sortConfig = targetSort;
+		Object.assign(state.filterConfig, targetFilters);
+		Object.assign(state.sortConfig, targetSort);
+		state._skipNextListSnapshot = true;
 		state.list = filtered;
 		state._internalUpdate = false;
+	};
+	container.deferSortFilter = () => {
+		clearTimeout(container._sortFilterTimer);
+		container._sortFilterTimer = setTimeout(() => container.applySortFilter(), 150);
 	};
 
 	container.showColumnMenu = (field, event) => {
@@ -698,11 +816,12 @@ globalThis.Component.register('DataGrid', container => {
 
 	container.toggleSelectedValue = (val) => {
 		const filter = state.filterConfig[state.activeFieldId]; if (!filter) return;
-		const idx = filter.selectedValues.indexOf(val); if (idx === -1) filter.selectedValues.push(val); else filter.selectedValues.splice(idx, 1);
-		state.filterConfig = { ...state.filterConfig }; container.applySortFilter();
+		const selectedValues = [...(filter.selectedValues || [])];
+		const idx = selectedValues.indexOf(val); if (idx === -1) selectedValues.push(val); else selectedValues.splice(idx, 1);
+		state.filterConfig[state.activeFieldId] = { ...filter, selectedValues }; container.deferSortFilter();
 	};
 
-	container.filterOnlyThis = (val) => { state.filterConfig[state.activeFieldId] = { mode: 'contains', value: '', selectedValues: [String(val)] }; state.filterConfig = { ...state.filterConfig }; container.applySortFilter(); };
+	container.filterOnlyThis = (val) => { state.filterConfig[state.activeFieldId] = { mode: 'contains', value: '', selectedValues: [String(val)] }; container.deferSortFilter(); };
 	container.hideColumnMenu = () => {
 		const menu = container.querySelector('.dt-column-menu');
 		if (menu) menu.style.display = 'none';
@@ -711,8 +830,8 @@ globalThis.Component.register('DataGrid', container => {
 			container._columnMenuOutsideHandler = null;
 		}
 	};
-	container.setSort = (dir) => { const newDir = state.sortConfig.direction === dir && state.sortConfig.fieldId === state.activeFieldId ? null : dir; container.applySortFilter({ sort: newDir }); };
-	container.clearColumnSettings = () => { if (!state.activeFieldId) return; state.filterConfig = { ...state.filterConfig, [state.activeFieldId]: { mode: state.activeModes[0] || 'contains', value: '', value2: '', selectedValues: [] } }; container.applySortFilter(); };
+	container.setSort = (dir) => { const newDir = state.sortConfig.direction === dir && state.sortConfig.fieldId === state.activeFieldId ? null : dir; clearTimeout(container._sortFilterTimer); container._sortFilterTimer = setTimeout(() => container.applySortFilter({ sort: newDir }), 0); };
+	container.clearColumnSettings = () => { if (!state.activeFieldId) return; state.filterConfig[state.activeFieldId] = { mode: state.activeModes[0] || 'contains', value: '', value2: '', selectedValues: [] }; container.deferSortFilter(); };
 
 	container._initRow = (rowNode) => {
 		const row = rowNode._ref?.item;
@@ -761,7 +880,9 @@ globalThis.Component.register('DataGrid', container => {
 	});
 
 	state.__watch('list', list => {
-		if (!state.isDirty) {
+		const skipSnapshot = state._skipNextListSnapshot;
+		state._skipNextListSnapshot = false;
+		if (!skipSnapshot && !state.isDirty) {
 			state._originalList = globalThis.Util.clone(list || []);
 			setTimeout(() => {
 				const stats = {};
@@ -778,7 +899,7 @@ globalThis.Component.register('DataGrid', container => {
 	});
 	state.__watch('advancedMode', () => { state.fields = [...state.fields]; state.list = [...state.list]; });
 	state.__watch('table', table => { if (container.apiUrl && table) container.load({ fields: true }); });
-	state.__watch('isDirty', dirty => globalThis.State?.setDirtySource?.(`DataGrid:${container.id || ''}`, !!dirty));
+	state.__watch('isDirty', dirty => { if (globalThis.State?.changes) globalThis.State.changes[String(container.changebind || `DataGrid:${container.id || ''}`)] = !!dirty });
 	if (container.apiUrl && state.table) setTimeout(() => container.load({ fields: true }));
 
 	container.editCell = (row, field, cellNode) => {
@@ -904,6 +1025,12 @@ globalThis.Component.register('DataGrid', container => {
 		}
 	};
 
+	container.showCellDetail = (value, field = {}) => {
+		state.cellDetailTitle = field.settings?.label || field.name || '{#Details#}'
+		state.cellDetailValue = typeof value === 'string' ? value : JSON.stringify(value, null, 2)
+		container.querySelector('.datagrid-cell-detail-modal')?.show()
+	};
+
 	container.onMainDblClick = e => {
 		if (!container.editable || state.readonly) return;
 		const directRow = e.target.classList?.contains('dt-body-row') ? e.target : null;
@@ -919,7 +1046,9 @@ globalThis.Component.register('DataGrid', container => {
 			const rIdx = row._ref?.rIdx ?? Array.from(container.querySelectorAll('.dt-body-row')).indexOf(row);
 			const absoluteRow = rIdx + state._listStartIndex;
 			if (e.ctrlKey || e.metaKey) { state.rowFormMin = 0; state.rowFormMax = state.list.length - 1; container.openRowForm(absoluteRow); return; }
-			if (state._displayFields[fIdx]?.type === 'b' || getEditorType(state._displayFields[fIdx]) === 'switch') return;
+			const field = state._displayFields[fIdx];
+			if (normalizeProtection(field?.protection, !!field?.isSecret)) return;
+			if (field?.type === 'b' || getEditorType(field) === 'switch') return;
 
 			if (item && state._displayFields[fIdx] && !state._displayFields[fIdx].system && !state._displayFields[fIdx].rowOrder) {
 				const bounds = selection.getSelectionBounds();
@@ -1078,11 +1207,12 @@ globalThis.Component.register('DataGrid', container => {
 		const dynamicSchema = types.reduce((acc, t) => acc.concat(t.schema || []), []);
 		const advancedSchema = state.fieldAdvanced ? [
 			{ type: 'divider', label: '{#Advanced Settings#}' },
+			{ name: 'semantics', label: '{#Semantics#}', type: 'TagsInput', options: ['Username', 'Password', 'Phone', 'TOTP'] },
 			{ name: 'required', label: '{#Required#}', type: 'switch' },
 			{ name: 'pattern', label: '{#Validation Pattern#}', type: 'text', setting: { placeholder: '{#Regular expression, e.g. ^[A-Z].+$#}' } },
 			{ name: 'db_type', label: '{#Database Type#}', type: 'dbtype', setting: { required: true } },
-			{ name: 'isIndex', label: '{#Index#}', type: 'switch' },
-			{ name: 'isSecret', label: '{#Secret#}', type: 'switch' },
+			{ name: 'index', label: '{#Index#}', type: 'select', options: [{ label: '{#None#}', value: '' }, { label: 'Index', value: 'Index' }, { label: 'Unique', value: 'Unique' }, { label: 'FullText', value: 'FullText' }] },
+			{ name: 'protection', label: '{#Protection#}', type: 'select', options: [{ label: '{#None#}', value: '' }, { label: 'Sensitive', value: 'Sensitive' }, { label: 'Secret', value: 'Secret' }, { label: 'Verifier', value: 'Verifier' }] },
 			{ name: 'memo', label: '{#Memo#}', type: 'text' },
 			{ name: 'attrs_json', label: '{#Settings#}', type: 'textarea', setting: { rows: 3, placeholder: '{"minlength":2,"maxlength":100}' } },
 			{ name: 'if_expr', label: '{#Display Condition#}', type: 'text', setting: { placeholder: 'this.data.role === "admin"' } }
@@ -1124,6 +1254,8 @@ globalThis.Component.register('DataGrid', container => {
 		try { new RegExp(pattern); return pattern; }
 		catch (_) { throw new Error('{#Validation Pattern must be a valid regular expression#}'); }
 	};
+	const normalizeIndex = value => ({ index: 'Index', unique: 'Unique', fulltext: 'FullText' }[String(value || '').toLowerCase()] || '');
+	const normalizeProtection = (value, legacySecret = false) => ({ sensitive: 'Sensitive', secret: 'Secret', verifier: 'Verifier' }[String(value || '').toLowerCase()] || (legacySecret ? 'Secret' : ''));
 	const bindFieldTypeDefaults = (form, data) => {
 		setTimeout(() => {
 			const typeInput = form.querySelector('select[name="user_type"]');
@@ -1145,7 +1277,7 @@ globalThis.Component.register('DataGrid', container => {
 	container.addField = async () => {
 		if (state.readonly) return;
 		container.hideColumnMenu();
-		const data = globalThis.NewState({ id: 'c' + Date.now().toString().slice(-4), tableID: state.fields[0]?.tableID || '', creator: '', createTime: '', updater: '', updateTime: '', name: '', _editing: false, user_type: 'text', pinned: '', db_type: getDefaultDbType('text'), _dbTypeAuto: true, decimals: 0, isIndex: false, isSecret: false, required: false, pattern: '', memo: '', options_str: '', attrs_json: '{}', if_expr: '' });
+		const data = globalThis.NewState({ id: 'c' + Date.now().toString().slice(-4), tableID: state.fields[0]?.tableID || '', creator: '', createTime: '', updater: '', updateTime: '', name: '', _editing: false, user_type: 'text', pinned: '', db_type: getDefaultDbType('text'), _dbTypeAuto: true, decimals: 0, index: '', protection: '', semantics: [], required: false, pattern: '', memo: '', options_str: '', attrs_json: '{}', if_expr: '' });
 		const d = container.querySelector(`Modal[id="${container.id}_field_modal"]`);
 		if (!d) return;
 		Object.assign(d.state, { title: '{#Add Field#}', buttons: ['{#Cancel#}', '{#Save#}'] });
@@ -1157,9 +1289,11 @@ globalThis.Component.register('DataGrid', container => {
 		d.show();
 		const result = await new Promise(resolve => d.addEventListener('fieldresult', event => resolve(event.detail), { once: true }));
 		if (result === 2) {
-			const dbType = data.db_type?.trim() || getDefaultDbType(data.user_type, data.decimals);
+			const dbType = normalizeDBType(data.db_type, getDefaultDbType(data.user_type, data.decimals));
 			let pattern; try { pattern = normalizePattern(data.pattern); } catch (error) { globalThis.Toast?.show(error.message, { type: 'danger' }); return; }
-			const field = { id: data.id, tableID: data.tableID, name: data.name, memo: data.memo, isIndex: !!data.isIndex, isSecret: !!data.isSecret, type: dbType, settings: { type: data.user_type, pinned: data.pinned || undefined, required: !!data.required, pattern, decimals: data.decimals, prefix: data.prefix, suffix: data.suffix, thousandSep: data.thousandSep, labelOn: data.labelOn, labelOff: data.labelOff, format: data.format, placeholder: data.placeholder, options: parseOptionsStr(data.options_str), attrs: parseAttrsJSON(data.attrs_json), if: data.if_expr?.trim() || undefined } };
+			const semantics = [...new Set(data.semantics || [])], password = semantics.includes('Password'), username = semantics.includes('Username');
+			const protection = password ? 'Verifier' : normalizeProtection(data.protection);
+			const field = { id: data.id, tableID: data.tableID, name: data.name, memo: data.memo, index: username ? 'Unique' : normalizeIndex(data.index), protection, isSecret: !!protection, type: dbType, settings: { type: password ? 'password' : data.user_type, semantics, pinned: data.pinned || undefined, required: !!data.required, pattern, decimals: data.decimals, prefix: data.prefix, suffix: data.suffix, thousandSep: data.thousandSep, labelOn: data.labelOn, labelOff: data.labelOff, format: data.format, placeholder: data.placeholder, options: parseOptionsStr(data.options_str), attrs: parseAttrsJSON(data.attrs_json), if: data.if_expr?.trim() || undefined } };
 			if (container.apiUrl) { try { await requestApi('setField', { fields: [field] }); } catch (_) { return; } }
 			state.fields = [...state.fields, field]; state.isDirty = !container.apiUrl; container.dispatchEvent(new CustomEvent('savefields', { detail: state.fields })); state.list = [...state.list];
 			d.dirty = false; d.hide();
@@ -1171,7 +1305,7 @@ globalThis.Component.register('DataGrid', container => {
 		if (!state.activeField) return;
 		container.hideColumnMenu();
 		const f = state.activeField; const s = f.settings || {};
-		const data = globalThis.NewState({ id: f.id, tableID: f.tableID || '', creator: f.creator || '', createTime: f.createTime || '', updater: f.updater || '', updateTime: f.updateTime || '', name: f.name, _editing: true, pinned: s.pinned || f.pinned || '', memo: f.memo || '', isIndex: !!f.isIndex, isSecret: !!f.isSecret, required: !!(s.required || s.attrs?.required), pattern: s.pattern || s.attrs?.pattern || '', user_type: getEditorType(f), db_type: f.type || '', _dbTypeAuto: true, decimals: s.decimals || 0, prefix: s.prefix || '', suffix: s.suffix || '', thousandSep: !!s.thousandSep, labelOn: s.labelOn || '', labelOff: s.labelOff || '', format: s.format || '', placeholder: s.placeholder || '', options_str: formatOptionsStr(s.options), attrs_json: formatAttrsJSON(s.attrs), if_expr: s.if || f.if || '' });
+		const data = globalThis.NewState({ id: f.id, tableID: f.tableID || '', creator: f.creator || '', createTime: f.createTime || '', updater: f.updater || '', updateTime: f.updateTime || '', name: f.name, _editing: true, pinned: s.pinned || f.pinned || '', memo: f.memo || '', index: normalizeIndex(f.index), protection: normalizeProtection(f.protection, !!f.isSecret), semantics: [...(s.semantics || [])], required: !!(s.required || s.attrs?.required), pattern: s.pattern || s.attrs?.pattern || '', user_type: getEditorType(f), db_type: f.type || '', _dbTypeAuto: true, decimals: s.decimals || 0, prefix: s.prefix || '', suffix: s.suffix || '', thousandSep: !!s.thousandSep, labelOn: s.labelOn || '', labelOff: s.labelOff || '', format: s.format || '', placeholder: s.placeholder || '', options_str: formatOptionsStr(s.options), attrs_json: formatAttrsJSON(s.attrs), if_expr: s.if || f.if || '' });
 		const d = container.querySelector(`Modal[id="${container.id}_field_modal"]`);
 		if (!d) return;
 		Object.assign(d.state, { title: '{#Edit Field#}', buttons: ['{#Cancel#}', '{#Save#}'] });
@@ -1187,9 +1321,11 @@ globalThis.Component.register('DataGrid', container => {
 			if (idx !== -1) {
 				// Preserve exact database definitions such as v30 when the
 				// editor is unchanged; only a UI-type switch gets a default.
-				const dbType = data.db_type?.trim() || (data.user_type === getEditorType(f) ? f.type : getDefaultDbType(data.user_type, data.decimals));
+				const dbType = normalizeDBType(data.db_type, data.user_type === getEditorType(f) ? normalizeDBType(f.type) : getDefaultDbType(data.user_type, data.decimals));
 				let pattern; try { pattern = normalizePattern(data.pattern); } catch (error) { globalThis.Toast?.show(error.message, { type: 'danger' }); return; }
-				const updatedField = { ...f, name: data.name, memo: data.memo, isIndex: !!data.isIndex, isSecret: !!data.isSecret, type: dbType, settings: { ...f.settings, type: data.user_type, pinned: data.pinned || undefined, required: !!data.required, pattern, decimals: data.decimals, prefix: data.prefix, suffix: data.suffix, thousandSep: data.thousandSep, labelOn: data.labelOn, labelOff: data.labelOff, format: data.format, placeholder: data.placeholder, options: parseOptionsStr(data.options_str), attrs: parseAttrsJSON(data.attrs_json), if: data.if_expr?.trim() || undefined } };
+				const semantics = [...new Set(data.semantics || [])], password = semantics.includes('Password'), username = semantics.includes('Username');
+				const protection = password ? 'Verifier' : normalizeProtection(data.protection);
+				const updatedField = { ...f, name: data.name, memo: data.memo, index: username ? 'Unique' : normalizeIndex(data.index), protection, isSecret: !!protection, type: dbType, settings: { ...f.settings, type: password ? 'password' : data.user_type, semantics, pinned: data.pinned || undefined, required: !!data.required, pattern, decimals: data.decimals, prefix: data.prefix, suffix: data.suffix, thousandSep: data.thousandSep, labelOn: data.labelOn, labelOff: data.labelOff, format: data.format, placeholder: data.placeholder, options: parseOptionsStr(data.options_str), attrs: parseAttrsJSON(data.attrs_json), if: data.if_expr?.trim() || undefined } };
 				if (container.apiUrl) { try { await requestApi('setField', { fields: [updatedField] }); } catch (_) { return; } }
 				state.fields[idx] = updatedField; state.fields = [...state.fields]; state.isDirty = !container.apiUrl; container.dispatchEvent(new CustomEvent('savefields', { detail: state.fields })); state.list = [...state.list];
 				d.dirty = false; d.hide();
@@ -1240,12 +1376,12 @@ globalThis.Component.register('DataGrid', container => {
                         <div class="dt-header-row fw-bold text-muted small">
                                 <template $each="this.state?._displayFields || []">
 						<div $data-id="item.id" $ondragover="event.preventDefault()" $ondrop="this.onFieldDrop(item,event)" $class="dt-cell dt-col border-end d-flex align-items-center header-cell \${item.system ? 'text-secondary' : ''} \${(item.settings?.pinned || item.pinned) ? 'pinned-' + (item.settings?.pinned || item.pinned) : ''}" $style="((item.settings?.pinned || item.pinned) ? 'position: sticky; z-index: 11; background-color: var(--bs-tertiary-bg); ' : 'position:relative; ') + 'padding: 0; ' + ((item.settings?.pinned || item.pinned) === 'left' ? 'left: var(--l-' + item.id + '); border-right: 1px solid var(--bs-border-color); box-shadow: 2px 0 5px -2px rgba(0,0,0,0.1);' : ((item.settings?.pinned || item.pinned) === 'right' ? 'right: var(--r-' + item.id + '); border-left: 1px solid var(--bs-border-color); box-shadow: -2px 0 5px -2px rgba(0,0,0,0.1);' : ''))">
-								<div class="d-flex align-items-center overflow-hidden flex-grow-1 h-100 px-2">
+								<div draggable="true" $ondragstart="this.onFieldDragStart(item,event)" $onclick="this.showColumnMenu(item, event)" class="d-flex align-items-center overflow-hidden flex-grow-1 h-100 px-2 cursor-grab">
                                                         <i $if="this.state?.filterConfig?.[item.id] && (this.state.filterConfig[item.id].value || this.state.filterConfig[item.id].selectedValues?.length)" class="bi bi-filter me-1 text-primary"></i>
                                                         <i $if="this.state?.sortConfig?.fieldId === item.id && this.state.sortConfig.direction" $class="bi bi-sort-\${this.state.sortConfig.direction === 'asc' ? 'down' : 'up-alt'} me-1 text-primary"></i>
-										<span draggable="true" $ondragstart="this.onFieldDragStart(item,event)" $class="text-truncate flex-grow-1 cursor-grab \${item.rowOrder ? 'd-flex align-items-center justify-content-center' : ''}" $onclick="this.showColumnMenu(item, event)"><i $if="item.rowOrder" class="bi bi-list" title="{#Row order#}"></i><span $if="!item.rowOrder" $text="item.settings?.label || item.name"></span></span>
+										<span $class="text-truncate flex-grow-1 \${item.rowOrder ? 'd-flex align-items-center justify-content-center' : ''}"><i $if="item.rowOrder" class="bi bi-list" title="{#Row order#}"></i><span $if="!item.rowOrder" $text="item.settings?.label || item.name"></span></span>
                                                 </div>
-				<button $if="!item.rowOrder" class="btn btn-xs btn-link text-muted p-0 border-0 me-1 header-menu-btn" $onclick="this.showColumnMenu(item, event)"><i class="bi bi-chevron-down"></i></button>
+				<button $if="!item.rowOrder" class="btn btn-link text-muted p-0 border-0 me-1 header-menu-btn" $onclick="this.showColumnMenu(item, event)"><i class="bi bi-chevron-down"></i></button>
 								<Resizer $.target="thisNode.parentElement" style="position:absolute; right:0; top:0; bottom:0; width:4px; z-index:10" min="50" max="1000" $onmousedown="event.stopPropagation()" $ondragstart="event.preventDefault();event.stopPropagation()" $onresizing="this.onColumnResizing(item, event)" $onresize="this.onColumnResize(item, event)"></Resizer>
                                         </div>
                                 </template>
@@ -1255,7 +1391,7 @@ globalThis.Component.register('DataGrid', container => {
                         <div class="dt-spacer-prev flex-shrink-0" style="display:none"></div>
                         <template $each="this.state?._renderedList || []" key="id" index="rIdx">
 				<div class="dt-row dt-body-row bg-body" $.="this._initRow(thisNode)" $ondragover="this.onRowDragOver(item,event)" $ondragleave="if(!thisNode.contains(event.relatedTarget))thisNode.classList.remove('dt-drop-row')" $ondrop="this.onRowDrop(item,event)">
-				<template $each="this.state?._displayFields || []" as="f" index="fIdx" key="id"><div $data-fidx="fIdx" $class="dt-cell border-end px-2 d-flex align-items-center \${f.system ? 'text-secondary' : ''} \${(f.settings?.pinned || f.pinned) ? 'pinned-' + (f.settings?.pinned || f.pinned) : ''}" $style="((f.settings?.pinned || f.pinned) ? 'position: sticky; z-index: 1; background-color: var(--bs-body-bg); ' : '') + ((f.settings?.pinned || f.pinned) === 'left' ? 'left: var(--l-' + f.id + '); border-right: 1px solid var(--bs-border-color); box-shadow: 2px 0 5px -2px rgba(0,0,0,0.1);' : ((f.settings?.pinned || f.pinned) === 'right' ? 'right: var(--r-' + f.id + '); border-left: 1px solid var(--bs-border-color); box-shadow: -2px 0 5px -2px rgba(0,0,0,0.1);' : ''))"><span $if="f.rowOrder" draggable="true" $onmousedown="event.stopPropagation()" $ondragstart="this.onRowDragStart(item,event)" $ondrop="this.onRowDrop(item,event)" $class="d-flex align-items-center justify-content-center w-100 h-100 \${this.canReorderRows() ? 'text-muted cursor-grab' : 'text-body-tertiary'}"><i class="bi bi-list"></i></span><input $if="!f.rowOrder && this.getEditorType(f)==='switch'" class="form-check-input mt-0" type="checkbox" $checked="!!item[this.getDataKey(f)]" $disabled="this.state?.readonly" $onchange="this.toggleSwitchCell(item,f,event)"><span $if="!f.rowOrder && this.getEditorType(f)!=='switch'" $text="this.format(item[this.getDataKey(f)], f)" class="text-truncate"></span></div></template>
+				<template $each="this.state?._displayFields || []" as="f" index="fIdx" key="id"><div $data-fidx="fIdx" $class="dt-cell border-end px-2 d-flex align-items-center \${f.system ? 'text-secondary' : ''} \${(f.settings?.pinned || f.pinned) ? 'pinned-' + (f.settings?.pinned || f.pinned) : ''}" $style="((f.settings?.pinned || f.pinned) ? 'position: sticky; z-index: 1; background-color: var(--bs-body-bg); ' : '') + ((f.settings?.pinned || f.pinned) === 'left' ? 'left: var(--l-' + f.id + '); border-right: 1px solid var(--bs-border-color); box-shadow: 2px 0 5px -2px rgba(0,0,0,0.1);' : ((f.settings?.pinned || f.pinned) === 'right' ? 'right: var(--r-' + f.id + '); border-left: 1px solid var(--bs-border-color); box-shadow: -2px 0 5px -2px rgba(0,0,0,0.1);' : ''))"><span $if="f.rowOrder" draggable="true" $onmousedown="event.stopPropagation()" $ondragstart="this.onRowDragStart(item,event)" $ondrop="this.onRowDrop(item,event)" $class="d-flex align-items-center justify-content-center w-100 h-100 \${this.canReorderRows() ? 'text-muted cursor-grab' : 'text-body-tertiary'}"><i class="bi bi-list"></i></span><input $if="!f.rowOrder && !f.settings?.cellSlot && this.getEditorType(f)==='switch'" class="form-check-input mt-0" type="checkbox" $checked="!!item[this.getDataKey(f)]" $disabled="this.state?.readonly" $onchange="this.toggleSwitchCell(item,f,event)"><span $if="!f.rowOrder && !f.settings?.cellSlot && this.getEditorType(f)!=='switch'" $text="this.protectedCellValue(item, f)" class="text-truncate flex-grow-1"></span><button $if="!f.rowOrder && !f.settings?.cellSlot && Object.hasOwn(this.state._revealedValues, this.protectedCellKey(item,f))" type="button" class="btn btn-link p-0 border-0 ms-1 lh-1" title="{#Copy protected value#}" $onclick="this.copyProtectedValue(item,f,event)"><i class="bi bi-copy"></i></button><button $if="!f.rowOrder && !f.settings?.cellSlot && this.canRevealProtectedValue(item,f)" type="button" class="btn btn-link p-0 border-0 ms-1 lh-1" title="{#Reveal protected value#}" $onclick="this.toggleProtectedValue(item,f,event)"><i $class="Object.hasOwn(this.state._revealedValues, this.protectedCellKey(item,f)) ? 'bi bi-eye-slash' : 'bi bi-eye'"></i></button><div $if="!f.rowOrder && f.settings?.cellSlot" class="w-100 min-w-0"><div slot-id="cell"></div></div></div></template>
                                 </div>
                         </template>
                         <div class="dt-spacer-post flex-shrink-0" style="display:none"></div>
@@ -1266,14 +1402,14 @@ globalThis.Component.register('DataGrid', container => {
         <div class="dt-column-menu bg-body shadow-lg rounded p-2" style="display:none; position:absolute; z-index:2000; min-width:240px; max-width:300px; border: 1px solid var(--bs-border-color)">
                 <template $if="this.state?.activeFieldId">
                         <div class="d-flex gap-1 mb-2">
-                                <button $class="btn btn-xs flex-grow-1 d-flex align-items-center justify-content-center \${this.state?.sortConfig?.direction === 'asc' && this.state?.sortConfig?.fieldId === this.state?.activeFieldId ? 'btn-primary' : 'btn-outline-secondary border'}" $onclick="this.setSort('asc')"><i class="bi bi-sort-alpha-down me-1"></i> {#ASC#}</button>
-                                <button $class="btn btn-xs flex-grow-1 d-flex align-items-center justify-content-center \${this.state?.sortConfig?.direction === 'desc' && this.state?.sortConfig?.fieldId === this.state?.activeFieldId ? 'btn-primary' : 'btn-outline-secondary border'}" $onclick="this.setSort('desc')"><i class="bi bi-sort-alpha-up-alt me-1"></i> {#DESC#}</button>
+                                <button $class="btn flex-grow-1 d-flex align-items-center justify-content-center \${this.state?.sortConfig?.direction === 'asc' && this.state?.sortConfig?.fieldId === this.state?.activeFieldId ? 'btn-primary' : 'btn-outline-secondary border'}" $onclick="this.setSort('asc')"><i class="bi bi-sort-alpha-down me-1"></i> {#ASC#}</button>
+                                <button $class="btn flex-grow-1 d-flex align-items-center justify-content-center \${this.state?.sortConfig?.direction === 'desc' && this.state?.sortConfig?.fieldId === this.state?.activeFieldId ? 'btn-primary' : 'btn-outline-secondary border'}" $onclick="this.setSort('desc')"><i class="bi bi-sort-alpha-up-alt me-1"></i> {#DESC#}</button>
                         </div>
 
                         <template $if="this.state?.activeModes?.length">
                         <div class="py-2 border-bottom" style="min-height: 48px">
-                                <div class="input-group input-group-sm mb-1">
-					<input type="text" class="form-control" $placeholder="(this.state?._MODE_LABELS?.[this.state?.filterConfig?.[this.state?.activeFieldId]?.mode] || '{#Search#}') + '...'" $bind="this.state.filterConfig[this.state.activeFieldId].value" $oninput="this.applySortFilter()" $onkeydown="if(event.key==='Enter'){this.applySortFilter();this.hideColumnMenu();}">
+                                <div class="input-group  mb-1">
+					<input type="text" class="form-control" $placeholder="(this.state?._MODE_LABELS?.[this.state?.filterConfig?.[this.state?.activeFieldId]?.mode] || '{#Search#}') + '...'" $bind="this.state.filterConfig[this.state.activeFieldId].value" $oninput="this.deferSortFilter()" $onkeydown="if(event.key==='Enter'){clearTimeout(this._sortFilterTimer);this.applySortFilter();this.hideColumnMenu();}">
 								<button class="btn btn-outline-secondary border dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false" title="{#Search Mode#}">
                                                 <i $class="bi \${this.state?._MODE_ICONS?.[this.state?.filterConfig?.[this.state?.activeFieldId]?.mode] || 'bi-filter'}"></i>
                                         </button>
@@ -1285,16 +1421,16 @@ globalThis.Component.register('DataGrid', container => {
                                                 </template>
                                         </ul>
                                 </div>
-								<input $if="this.state?.filterConfig?.[this.state?.activeFieldId]?.mode === 'between'" type="text" class="form-control form-control-sm" placeholder="{#And...#}" $bind="this.state.filterConfig[this.state.activeFieldId].value2" $oninput="this.applySortFilter()" $onkeydown="if(event.key==='Enter'){this.applySortFilter();this.hideColumnMenu();}">
+								<input $if="this.state?.filterConfig?.[this.state?.activeFieldId]?.mode === 'between'" type="text" class="form-control " placeholder="{#And...#}" $bind="this.state.filterConfig[this.state.activeFieldId].value2" $oninput="this.deferSortFilter()" $onkeydown="if(event.key==='Enter'){clearTimeout(this._sortFilterTimer);this.applySortFilter();this.hideColumnMenu();}">
                         </div>
                         </template>
 
                         <div class="mt-2" style="max-height: 180px; overflow-y: auto;">
                                 <template $each="this.state?._columnStats?.[this.state?.activeFieldId] || []">
                                         <label class="d-flex align-items-center mb-1 small cursor-pointer p-1 rounded-1 menu-item-row" onmouseover="this.style.background='var(--bs-light)'" onmouseout="this.style.background='transparent'">
-                                                <input type="checkbox" class="form-check-input me-2" $checked="this.state?.filterConfig?.[this.state?.activeFieldId]?.selectedValues?.includes(String(item.val))" $onclick="this.toggleSelectedValue(String(item.val))">
+										<input type="checkbox" class="form-check-input me-2" $checked="this.state?.filterConfig?.[this.state?.activeFieldId]?.selectedValues?.includes(String(item.val))" $onchange="this.toggleSelectedValue(String(item.val))">
 										<span class="text-truncate flex-grow-1"><span $text="item.val || '{#(Empty)#}'"></span> <span class="text-muted ms-1" style="font-size: 0.7rem" $text="'(' + item.count + ')'"></span></span>
-										<button class="btn btn-xs btn-link p-0 text-primary only-btn" style="font-size: 10px; text-decoration: none" $onclick="this.filterOnlyThis(item.val); event.preventDefault(); event.stopPropagation();">{#Only#}</button>
+										<button class="btn btn-link p-0 text-primary only-btn" style="font-size: 10px; text-decoration: none" $onclick="this.filterOnlyThis(item.val); event.preventDefault(); event.stopPropagation();">{#Only#}</button>
                                         </label>
                                 </template>
                         </div>
@@ -1304,9 +1440,9 @@ globalThis.Component.register('DataGrid', container => {
                         </div>
 
                         <div $if="this.state?.editable && !this.state?.readonly && !this.state?.activeField?.system" class="mt-3 pt-2 border-top d-flex gap-1 justify-content-between">
-				<button class="btn btn-sm btn-outline-secondary border-0 flex-grow-1" title="{#Edit Field#}" $onclick="this.editField()"><i class="bi bi-pencil"></i></button>
-				<button class="btn btn-sm btn-outline-secondary border-0 flex-grow-1" title="{#Add Field#}" $onclick="this.addField()"><i class="bi bi-plus-lg"></i></button>
-				<button class="btn btn-sm btn-outline-secondary border-0 flex-grow-1 text-danger" title="{#Delete Field#}" $onclick="this.deleteField()"><i class="bi bi-trash"></i></button>
+				<button class="btn btn-outline-secondary border-0 flex-grow-1" title="{#Edit Field#}" $onclick="this.editField()"><i class="bi bi-pencil"></i></button>
+				<button class="btn btn-outline-secondary border-0 flex-grow-1" title="{#Add Field#}" $onclick="this.addField()"><i class="bi bi-plus-lg"></i></button>
+				<button class="btn btn-outline-secondary border-0 flex-grow-1 text-danger" title="{#Delete Field#}" $onclick="this.deleteField()"><i class="bi bi-trash"></i></button>
                         </div>
                 </template>
         </div>
@@ -1315,8 +1451,8 @@ globalThis.Component.register('DataGrid', container => {
             <div slot="body"><AutoForm nobutton class="p-3"></AutoForm></div>
 			<div slot="footer" class="d-flex align-items-center w-100">
 				<label class="small me-auto mb-0"><input class="form-check-input me-1" type="checkbox" data-no-dirty $bind="thisNode.closest('DataGrid').state.fieldAdvanced">{#Advanced mode#}</label>
-                <button type="button" class="btn btn-sm btn-secondary" $onclick="thisNode.closest('DataGrid').finishFieldDialog(1)">{#Cancel#}</button>
-                <button type="button" class="btn btn-sm btn-primary" $onclick="thisNode.closest('DataGrid').finishFieldDialog(2)">{#Save#}</button>
+                <button type="button" class="btn btn-secondary" $onclick="thisNode.closest('DataGrid').finishFieldDialog(1)">{#Cancel#}</button>
+                <button type="button" class="btn btn-primary ms-2" $onclick="thisNode.closest('DataGrid').finishFieldDialog(2)">{#Save#}</button>
             </div>
 		</Modal>
 
@@ -1324,22 +1460,34 @@ globalThis.Component.register('DataGrid', container => {
 			<div slot="body"><AutoForm nobutton class="p-3" $oninput="thisNode.closest('DataGrid').rowFormChanged()" $onchange="thisNode.closest('DataGrid').rowFormChanged()"></AutoForm></div>
 			<div slot="footer" class="d-flex align-items-center w-100">
 				<span class="small text-muted me-auto" $text="((thisNode.closest('DataGrid').state.rowFormIndex ?? -1) + 1) + ' / ' + (thisNode.closest('DataGrid').state.list?.length || 0)"></span>
-				<button class="btn btn-sm btn-outline-secondary" $disabled="thisNode.closest('DataGrid').state.rowFormIndex <= thisNode.closest('DataGrid').state.rowFormMin" $onclick="const grid=thisNode.closest('DataGrid');grid.showRowFormAt(grid.state.rowFormIndex-1)"><i class="bi bi-arrow-left"></i> {#Previous#}</button>
-				<button class="btn btn-sm btn-outline-secondary" $disabled="thisNode.closest('DataGrid').state.rowFormIndex >= thisNode.closest('DataGrid').state.rowFormMax" $onclick="const grid=thisNode.closest('DataGrid');grid.showRowFormAt(grid.state.rowFormIndex+1)">{#Next#} <i class="bi bi-arrow-right"></i></button>
-				<button class="btn btn-sm btn-secondary" $onclick="thisNode.closest('Modal').hide(true)">{#Close#}</button>
+				<button class="btn btn-outline-secondary" $disabled="thisNode.closest('DataGrid').state.rowFormIndex <= thisNode.closest('DataGrid').state.rowFormMin" $onclick="const grid=thisNode.closest('DataGrid');grid.showRowFormAt(grid.state.rowFormIndex-1)"><i class="bi bi-arrow-left"></i> {#Previous#}</button>
+				<button class="btn btn-outline-secondary" $disabled="thisNode.closest('DataGrid').state.rowFormIndex >= thisNode.closest('DataGrid').state.rowFormMax" $onclick="const grid=thisNode.closest('DataGrid');grid.showRowFormAt(grid.state.rowFormIndex+1)">{#Next#} <i class="bi bi-arrow-right"></i></button>
+				<button class="btn btn-secondary" $onclick="thisNode.closest('Modal').hide(true)">{#Close#}</button>
 			</div>
 		</Modal>
 
+		<Modal class="datagrid-cell-detail-modal" size="lg">
+			<div slot="header" class="modal-header"><h6 class="modal-title" $text="thisNode.closest('DataGrid').state.cellDetailTitle"></h6><button type="button" class="btn-close" aria-label="{#Close#}" $onclick="thisNode.closest('Modal').hide()"></button></div>
+			<div slot="body"><pre class="text-wrap text-break m-0 p-3" $text="thisNode.closest('DataGrid').state.cellDetailValue"></pre></div>
+			<div slot="footer"><button type="button" class="btn btn-secondary" $onclick="thisNode.closest('Modal').hide()">{#Close#}</button></div>
+		</Modal>
+
+		<Modal class="datagrid-reveal-modal" guard-dirty .title="{#Reveal protected value#}">
+			<div slot="body" class="p-3"><label class="form-label">{#Reason#}</label><textarea class="form-control" rows="3" required $bind="thisNode.closest('DataGrid').state.revealReason"></textarea></div>
+			<div slot="footer"><button type="button" class="btn btn-secondary" $onclick="thisNode.closest('Modal').hide(true)">{#Cancel#}</button><button type="button" class="btn btn-primary ms-2" $disabled="!thisNode.closest('DataGrid').state.revealReason?.trim()" $onclick="thisNode.closest('DataGrid').submitProtectedReveal()"><i class="bi bi-eye me-1"></i>{#Reveal#}</button></div>
+		</Modal>
+
 		<div $if="!this.hasAttribute('notoolbar')" class="dt-toolbar border-bottom bg-body d-flex align-items-center px-3 py-1 shadow-sm text-nowrap" $.="this.ensureFooterHost(thisNode)" style="position:absolute; left:0; right:0; top:0; height:48px; z-index:30; overflow:hidden">
-                <div class="d-flex align-items-center flex-grow-1">
+                <div class="d-flex flex-wrap align-items-center flex-grow-1" style="min-width:0;gap:var(--ui-gap,.5rem)">
                         <div slot-id="toolbar-start" class="d-flex align-items-center gap-2"></div>
 					<div class="d-flex align-items-center gap-1 text-muted me-3" style="font-size: 0.75rem">
-								<button type="button" class="btn btn-link btn-sm p-0 border-0 lh-1" $onclick="this.state?.selectedRowCount ? this.clearSelection() : this.selectAllRows()" $title="this.state?.selectedRowCount ? '{#Clear Selection#}' : '{#Select All Rows#}'" aria-label="{#Toggle all rows selection#}"><i $class="this.state?.selectedRowCount ? 'bi bi-check-all fs-6 text-warning' : 'bi bi-check-all fs-6'"></i></button><span $text="this.state?.selectedRowCount || 0"></span><span>/</span><span $text="this.apiUrl ? (this.state?.total || 0) : (this.state?.list?.length || 0)"></span>
+								<button type="button" class="btn btn-link p-0 border-0 lh-1" $onclick="this.state?.selectedRowCount ? this.clearSelection() : this.selectAllRows()" $title="this.state?.selectedRowCount ? '{#Clear Selection#}' : '{#Select All Rows#}'" aria-label="{#Toggle all rows selection#}"><i $class="this.state?.selectedRowCount ? 'bi bi-check-all fs-6 text-warning' : 'bi bi-check-all fs-6'"></i></button><span $text="this.state?.selectedRowCount || 0"></span><span>/</span><span $text="this.apiUrl ? (this.state?.total || 0) : (this.state?.list?.length || 0)"></span>
 					</div>
                         <div $if="this.state?.editable && !this.state?.readonly" class="d-flex align-items-center gap-1 me-3">
-				<button class="btn btn-sm btn-outline-secondary border-0 d-flex align-items-center px-2 py-1" $onclick="this.addRow()" title="{#Add Row#}"><i class="bi bi-plus-lg text-primary"></i><span class="dt-toolbar-label ms-1">{#Add#}</span></button>
-				<button class="btn btn-sm btn-outline-secondary border-0 d-flex align-items-center px-2 py-1" $onclick="this.editSelectedRows()" $disabled="!this.state?.selectedRowCount" title="{#Edit Selected Rows#}"><i class="bi bi-pencil text-primary"></i><span class="dt-toolbar-label ms-1">{#Edit#}</span></button>
-				<button class="btn btn-sm btn-outline-secondary border-0 d-flex align-items-center px-2 py-1" $onclick="this.deleteSelectedRow()" $disabled="!this.state?.selectedRowCount" title="{#Delete Selected Rows#}"><i class="bi bi-trash text-danger"></i><span class="dt-toolbar-label ms-1">{#Delete#}</span></button>
+				<button class="btn btn-outline-secondary border-0 d-flex align-items-center px-2 py-1" $onclick="this.addRow()" title="{#Add Row#}"><i class="bi bi-plus-lg text-primary"></i><span class="dt-toolbar-label ms-1">{#Add#}</span></button>
+				<button class="btn btn-outline-secondary border-0 d-flex align-items-center px-2 py-1" $onclick="this.addField()" title="{#Add Field#}"><i class="bi bi-layout-three-columns text-primary"></i><span class="dt-toolbar-label ms-1">{#Field#}</span></button>
+				<button class="btn btn-outline-secondary border-0 d-flex align-items-center px-2 py-1" $onclick="this.editSelectedRows()" $disabled="!this.state?.selectedRowCount" title="{#Edit Selected Rows#}"><i class="bi bi-pencil text-primary"></i><span class="dt-toolbar-label ms-1">{#Edit#}</span></button>
+				<button class="btn btn-outline-secondary border-0 d-flex align-items-center px-2 py-1" $onclick="this.deleteSelectedRow()" $disabled="!this.state?.selectedRowCount" title="{#Delete Selected Rows#}"><i class="bi bi-trash text-danger"></i><span class="dt-toolbar-label ms-1">{#Delete#}</span></button>
                         </div>
 							<label $if="this.state?.showAdvanced" class="small d-flex align-items-center mb-0 text-nowrap me-3" title="{#System Fields#}"><input class="form-check-input" type="checkbox" $bind="this.state.advancedMode"><i class="bi bi-eye mx-1 dt-toolbar-icon"></i><span class="dt-toolbar-label ms-1">{#System Fields#}</span></label>
 							<div slot-id="footer-start" class="d-flex align-items-center gap-2 me-3"></div>
@@ -1347,7 +1495,7 @@ globalThis.Component.register('DataGrid', container => {
 				<div slot-id="toolbar-end" class="d-flex align-items-center gap-2"></div>
 				<div slot-id="footer-end" class="d-flex align-items-center gap-2"></div>
                 <div $if="this.state?.editable && !this.state?.readonly" class="d-flex align-items-center gap-2">
-		<button class="btn btn-sm btn-primary px-3 ms-2" $disabled="!this.state?.isDirty" $onclick="this.saveChanges()"><i class="bi bi-floppy me-1"></i>{#Save#}<span $if="this.getChangedRowCount()" $text="'(' + this.getChangedRowCount() + ')'" ></span></button>
+		<button class="btn btn-primary px-3 ms-2" $disabled="!this.state?.isDirty" $onclick="this.saveChanges()"><i class="bi bi-floppy me-1"></i>{#Save#}<span $if="this.getChangedRowCount()" $text="'(' + this.getChangedRowCount() + ')'" ></span></button>
                 </div>
         </div>
 </div>
@@ -1357,11 +1505,11 @@ globalThis.Component.register('DataGrid', container => {
 		.dt-editor-overlay.dt-editor-code { width:min(760px, calc(100vw - 2rem)) !important; border:1px solid var(--bs-border-color) !important; }
 		.modal.datagrid-field-modal .modal-dialog, .modal.datagrid-row-modal .modal-dialog { width:min(920px, calc(100vw - 2rem)); max-width:none; }
 		.modal.datagrid-field-modal .modal-content, .modal.datagrid-row-modal .modal-content { border:1px solid var(--bs-border-color); border-radius:.375rem; box-shadow:0 .5rem 1.5rem rgba(0,0,0,.18); }
-        .dt-root { font-size: 0.875rem; }
-		.dt-row, .dt-header-row { display: grid; grid-template-columns: var(--dt-grid-template); width: var(--dt-row-width, max-content); min-width: 0; height: 40px; box-sizing: content-box; position: relative; }
+        .dt-root { font-size: var(--ui-item-font,1rem); }
+		.dt-row, .dt-header-row { display: grid; grid-template-columns: var(--dt-grid-template); width: var(--dt-row-width, max-content); min-width: 0; height: var(--ui-grid-row,40px); box-sizing: content-box; position: relative; }
 		DataGrid, .dt-root { width: 100%; min-width: 0; max-width: 100%; overflow: hidden !important; }
 		.dt-main { position: relative; min-height: 0; min-width: 0; width: 100%; max-width: 100%; flex: 1 1 auto; padding-top: 0; overflow-x: auto; overflow-y: auto; }
-		.dt-toolbar { position: relative !important; order: -1; inset: auto !important; flex: 0 0 48px; overflow: visible !important; }
+		.dt-toolbar { position: relative !important; order: -1; inset: auto !important; flex: 0 0 auto; min-height:var(--ui-toolbar-height,48px);height:auto !important;flex-wrap:wrap;gap:var(--ui-gap,.5rem); overflow: visible !important; }
 		.dt-header-row { background-color: rgba(var(--bs-secondary-rgb), 0.08); }
 		.dt-body-row { background-color: rgba(var(--bs-secondary-rgb), 0.08) !important; cursor: pointer; }
 		.dt-body-row .dt-cell { background-color: var(--bs-body-bg); cursor: default; border-bottom: 1px solid var(--bs-border-color); }
@@ -1379,7 +1527,7 @@ globalThis.Component.register('DataGrid', container => {
         .header-cell .header-menu-btn { opacity: 0; transition: opacity 0.2s; }
         .header-cell:hover .header-menu-btn { opacity: 1; }
         .dt-column-menu { background-color: var(--bs-body-bg); border: 1px solid var(--bs-border-color); box-shadow: 0 10px 40px rgba(0,0,0,0.2) !important; z-index: 2100 !important; }
-        .btn-xs { padding: 1px 5px; line-height: 1.5; }
+        .{ padding: 1px 5px; line-height: 1.5; }
 		.cursor-pointer { cursor: pointer; }
 		.cursor-grab { cursor: grab; }
         .dt-filter-tabs i { font-size: 1.1rem; }

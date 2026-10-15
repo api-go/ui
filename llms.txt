@@ -1,16 +1,70 @@
 # @apigo.cc/ui
 
-> Build-free native JavaScript UI framework. This file is the authoritative AI entry point and documentation index.
+> AI-first, build-free native JavaScript UI framework. Start here: classify the page, read its composition contract, load only the capabilities it uses, then verify real behavior.
 
-Version: 1.0.9
+Version: 1.0.10
+
+Load `<script src="https://cdn.jsdelivr.net/npm/@apigo.cc/ui@1.0.10/ui.js" components="base,form,data"></script>` as a normal head script. All dependencies load from the same pinned package.
+
+## Start with the interface type
+
+Choose by layout and interaction, not To B / To C. One product can contain all three types.
+
+| Type | Choose when | Read next |
+| --- | --- | --- |
+| Natural scrolling page | Reading, discovery, product presentation, sequential flows; document owns scrolling | [DocumentPage.md](DocumentPage.md) |
+| Management workspace | Records, configuration, review and operations; bounded regions scroll independently | [AdminWorkspace.md](AdminWorkspace.md) |
+| Interactive application | Chat, inbox, editor, board or canvas; bounded working space retains context | [InteractiveApp.md](InteractiveApp.md) |
+
+Read [SOP.md](SOP.md), [State](frameworks/State.yaml), [Bootstrap](frameworks/Bootstrap.yaml), the selected type guide, then only contracts needed by its recipe. Hosts may add API, authorization and deployment rules. The master application uses its public Frontend Development contracts for those additions.
+
+## Composition defaults
+
+- Natural pages use content-driven height, readable containers and responsive section layouts.
+- Workspaces/apps fill their bounded host. Only the outer shell uses viewport height. Each content region has one scroll owner, with fixed headers/toolbars/actions outside it.
+- Use AppShell for the application frame, SplitPane for a resizable sidebar/main area, Pane for bounded regions, and PageHeader for page hierarchy. Read their contracts before use.
+- SplitPane owns the automatic Resizer. List remains reusable outside sidebars. Pane scroll=none delegates scrolling to List, DataGrid or an editor.
+- Navigable module/resource/tab identity binds explicitly to namespaced Hash fields. Width preferences bind to stable LocalStorage fields. Validate restored routes; show recovery for unavailable resources.
+- Bootstrap is the visual base. Reusable missing layout behavior belongs in components; do not repeat ad hoc height/overflow patches in each page.
+- Set ui-sm/ui-lg once on html/body; omit for BS default. Nearest ui-default/ui-sm/ui-lg scope wins. Explicit Bootstrap sizing and spacing remain higher-priority choices. See the [density and toolbar example](examples/density.html).
+- Use [FilterBar](components/base/FilterBar.yaml), [ActionBar](components/base/ActionBar.yaml) and [RequestState](components/base/RequestState.yaml) for repeated query, command and read-state behavior; hosts own Hash, requests and persistence.
+- A single primary action, consistent spacing, semantic theme colors, explicit request states and usable narrow layouts are defaults.
+- Use one canonical declarative expression of each behavior. Avoid hidden state mirrors, internal DOM access and equivalent competing APIs.
+
+## Start from a complete template
+
+Prefer a matching runnable HTML before composing markup. Open the [live template gallery](templates/index.html) or read the [template guide](Templates.md), then consult only the selected type and the component contracts it uses.
+
+- [Customer workspace](templates/customer-workspace.html): Hash filters/selection/tabs, resizable master/detail, local preferences.
+- [Settings console](templates/settings-console.html): global/local AutoForm columns, field spans, shared draft and explicit save/recovery.
+- [Writing studio](templates/note-studio.html): retained multi-note draft, Hash editor modes, CodeEditor and one save boundary.
+- [Content catalog](templates/content-catalog.html): responsive browsing, Hash search/category/sort/detail and local favorites.
+
+These templates contain no custom CSS, style blocks or inline styles. Public components own sizing and scrolling. They use current same-origin /ui assets; browser-only persistence is labeled explicitly.
+
+## Smaller composition recipes
+
+- Natural page: complete responsive catalog in [DocumentPage.md](DocumentPage.md).
+- List/detail workspace: complete resizable browser in [AdminWorkspace.md](AdminWorkspace.md).
+- Editor workspace: retained draft notebook in [InteractiveApp.md](InteractiveApp.md).
+- Read-only filtered table: [filteredTable](Patterns/filteredTable.md).
+- Grouped form with real browser persistence: [groupedPreferences](Patterns/groupedPreferences.md).
+- History and fixed composer: [conversationLayout](Patterns/conversationLayout.md).
+
+## Current host and published package
+
+Templates use relative package-owned assets and work on ordinary static hosting and pinned npm CDNs. New layout, toolbar and form components are included in this release.
+
 
 Choose one version-pinned npm CDN. `ui.js` loads all adjacent framework, utility, and component files from the same origin.
 
-- jsDelivr (primary): `https://cdn.jsdelivr.net/npm/@apigo.cc/ui@1.0.9/ui.js`
-- UNPKG (alternative): `https://unpkg.com/@apigo.cc/ui@1.0.9/ui.js`
-- JSDMirror (China-optimized alternative): `https://cdn.jsdmirror.com/npm/@apigo.cc/ui@1.0.9/ui.js`
+- jsDelivr (primary): `https://cdn.jsdelivr.net/npm/@apigo.cc/ui@1.0.10/ui.js`
+- UNPKG (alternative): `https://unpkg.com/@apigo.cc/ui@1.0.10/ui.js`
+- JSDMirror (China-optimized alternative): `https://cdn.jsdmirror.com/npm/@apigo.cc/ui@1.0.10/ui.js`
 
-Load the chosen URL in `<head>` without `async`, `defer`, or `type="module"`. A minimal complete page is:
+Load the chosen URL in `<head>` without `async`, `defer`, or `type="module"`. A minimal complete published-package page is:
+
+When the hosting service manages static asset versions and conditional caching, load `ui.js?autoversion=1`. In this mode child UI assets are loaded without the build-time `?v=` value so the host can apply its own version policy. Omit `autoversion=1` for CDN and ordinary static hosting.
 
 ```html
 <!doctype html>
@@ -18,7 +72,7 @@ Load the chosen URL in `<head>` without `async`, `defer`, or `type="module"`. A 
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
-  <script src="https://cdn.jsdelivr.net/npm/@apigo.cc/ui@1.0.9/ui.js" components="List"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@apigo.cc/ui@1.0.10/ui.js" components="List"></script>
   <script>
     const users = [{ id: 'ada', label: 'Ada', summary: 'Admin' }]
   </script>
@@ -31,12 +85,14 @@ Load the chosen URL in `<head>` without `async`, `defer`, or `type="module"`. A 
 
 ## Retrieval rules
 
-- Read this file first, then open only the framework, utility, and component documents required by the current task.
+- Read this file first. For application or component development, read [Frontend Development SOP](SOP.md) completely before implementation, then open only the framework, utility, and component documents required by the current task.
 - Resolve every relative link from the URL of this file. Linked YAML files are authoritative API contracts.
+- Flat names inside YAML related/dependencies refer to contract names: resolve them through this index across component categories. A sibling Name.test.yaml is the executable contract, not an extra production script.
 - Do not preload every linked document. Follow `related` and `tests` references only when they are relevant to the task.
 - Preserve declarative bindings when extending a component.
 - Use `$.state.*` for reactive component-property expressions, including asynchronous API result bindings such as `<List $.state.list="usersApi.result.list">`; do not omit `$`.
 - Do not change framework internals unless framework changes are requested.
+- Sibling YAML files and executable .test.yaml cases describe this exact release. Use the portable component runner described in [Component-Testing.md](Component-Testing.md).
 - Add or update a regression test for every public behavior change.
 - Before declaring a public API complete, compare its YAML attributes, properties, methods, events, slots, state fields, options, and rules against named test assertions and examples. Every documented item needs coverage; examples must visibly demonstrate the core behavior declaratively.
 - In an ordered value list, the first value is the default.
@@ -48,11 +104,10 @@ Load the chosen URL in `<head>` without `async`, `defer`, or `type="module"`. A 
 
 ## Loading rules
 
-- Always write the `components` attribute with every public component used by the page.
-- Use `base`, `form`, `data`, or `editor` to load a documented component category; individual names and category names can be mixed.
-- Do not list utilities or framework dependencies.
-- `ui.js` loads `frameworks/State.js` and `frameworks/Bootstrap.js` beside itself. Specialized utilities and embedded libraries are dependency-resolved before their components.
-- `npm run build` writes source modification versions into `ui.js`; `ui.min.js` loads matching adjacent `.min.js` files.
+- With the published ui.js loader, write its `components` attribute with every public component used. Names and categories (`base`, `form`, `data`, `editor`) may be mixed. Do not list utilities in that attribute; the package loader resolves them.
+- ui.js loads State and Bootstrap beside itself. Use only components available in that pinned package version.
+- With explicit same-origin scripts, load State, Bootstrap, then each selected component's transitive dependencies before the component and page state. No `components` attribute is needed. The complete type-guide examples use this portable form.
+- The master/Sites native srcs loader is another host-provided loading capability; it is not a browser feature. Follow the host contract when using it.
 
 ## Framework
 
@@ -61,6 +116,10 @@ Load the chosen URL in `<head>` without `async`, `defer`, or `type="module"`. A 
 
 ## Base components
 
+- [AppShell](components/base/AppShell.yaml): bounded application frame and narrow navigation.
+- [SplitPane](components/base/SplitPane.yaml): sidebar/main layout with automatic Resizer and retained narrow panes.
+- [Pane](components/base/Pane.yaml): fixed header/toolbar/footer and explicit content scrolling.
+- [PageHeader](components/base/PageHeader.yaml): consistent title, description and wrapping actions.
 - [API](components/base/API.yaml): declarative HTTP API element.
 - [AutoForm](components/base/AutoForm.yaml): schema-driven forms and submission.
 - [List](components/base/List.yaml): declarative list rendering and selection.
@@ -69,7 +128,9 @@ Load the chosen URL in `<head>` without `async`, `defer`, or `type="module"`. A 
 - [Toast](components/base/Toast.yaml): transient notifications.
 - [Nav](components/base/Nav.yaml): declarative navigation.
 - [Resizer](components/base/Resizer.yaml): resizable layout regions.
+- [ItemCollection](components/base/ItemCollection.yaml): bindable collection editing with slots, removal, and sortable layouts.
 - [View](components/base/View.yaml): lazily load modular HTML fragments with relative nested paths.
+- [SidePanel](components/base/SidePanel.yaml): retained resource previews and draft tabs with responsive side/bottom placement.
 
 ## Form components
 
@@ -77,10 +138,13 @@ Load the chosen URL in `<head>` without `async`, `defer`, or `type="module"`. A 
 - [ColorPicker](components/form/ColorPicker.yaml): color input.
 - [IconPicker](components/form/IconPicker.yaml): icon selection.
 - [TagsInput](components/form/TagsInput.yaml): editable tag collections.
+- [RemoteSelect](components/form/RemoteSelect.yaml): bounded remote option selection.
 
 ## Data components
 
 - [DataGrid](components/data/DataGrid.yaml): virtualized data table.
+- [CardGrid](components/data/CardGrid.yaml): wrapping card results and selection.
+- [DBTypeInput](components/data/DBTypeInput.yaml): bindable database type editor, also registered by DataGrid.
 - [Chart](components/data/Chart.yaml): native Chart.js configuration component.
 
 ## Editor components
@@ -95,12 +159,13 @@ Load the chosen URL in `<head>` without `async`, `defer`, or `type="module"`. A 
 
 - [HTTP](utilities/HTTP.yaml): HTTP requests and response handling.
 - [VirtualScroll](utilities/VirtualScroll.yaml): virtual scrolling behavior.
+- [Disposer](utilities/Disposer.yaml): release component-scoped observers and subscriptions.
+- [UUID](utilities/UUID.yaml): cryptographically random native UI identifiers.
 - [Editor](utilities/Editor.yaml): editor registry, schema merging, and optional document transport.
 - [SortableAPI](utilities/SortableAPI.yaml): shared SortableJS lifecycle adapter.
 - [GraphDocument](utilities/GraphDocument.yaml): graph JSON and tree layout helpers.
 - [GraphCanvas](utilities/GraphCanvas.yaml): graph viewport pan and zoom controller.
 
-## Optional
+## Verification
 
-- [README](README.md): package loading and build overview.
-- [Changelog](CHANGELOG.md): read only when upgrading or investigating version differences.
+Exercise the primary task, long content, loading/empty/error, route reload/history, narrow and wide layouts, both themes and keyboard operation. Component contracts require executable regression coverage; application tasks require real host interaction and persistence evidence. A Bootstrap-based screenshot alone is not acceptance.

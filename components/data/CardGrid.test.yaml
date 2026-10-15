@@ -1,0 +1,151 @@
+component: CardGrid
+source: /ui/components/data/CardGrid.js
+testData:
+  cards:
+    - {id: a, name: Alpha, status: pending}
+    - {id: b, name: Beta, status: approved}
+    - {id: c, name: Gamma, status: pending}
+  schema:
+    - {name: name, label: Name, type: text}
+  sorts:
+    - {value: name, label: Name ascending}
+    - {value: -name, label: Name descending}
+  filters:
+    - {value: pending, label: Pending}
+    - {value: approved, label: Approved}
+  params: {scope: cards}
+cases:
+  - name: local cards and ordinary selection
+    attributes:
+      id: subject
+      editable: true
+      "$.state.list": testData.cards
+      "$.state.schema": testData.schema
+      "$.state.sortoptions": testData.sorts
+    before:
+      - dom: {selector: '#subject .card-grid-card', count: 3}
+      - property: {path: subject.state.total, equals: 3}
+    actions:
+      - script: "subject.selectItem(subject.state.list[0],{}); return true"
+    after:
+      - property: {path: subject.state.selected.length, equals: 1}
+      - event: {name: selectionchange, count: 1}
+      - event: {name: load, count: 2}
+  - name: additive range and public selection methods
+    attributes:
+      id: subject
+      "$.state.list": testData.cards
+    actions:
+      - script: "subject.selectItem(testData.cards[0],{}); subject.selectItem(testData.cards[2],{shiftKey:true}); return true"
+      - call: {method: getSelectedItems, args: [], saveAs: selected}
+    after:
+      - property: {path: selected.length, equals: 3}
+      - property: {path: subject.state.selected.length, equals: 3}
+  - name: toolbar can be hidden
+    attributes:
+      id: subject
+      notoolbar: true
+      limit: 2
+      title-field: name
+      id-field: id
+      query-action: find
+      save-action: put
+      remove-action: drop
+      "$.state.list": testData.cards
+    before:
+      - dom: {selector: '#subject .card-grid-toolbar', count: 0}
+      - dom: {selector: '#subject .card-grid-card', count: 2}
+  - name: quick filter limits local cards and can clear
+    covers: [state.filter]
+    attributes:
+      id: subject
+      "$.state.list": testData.cards
+      "$.state.filteroptions": testData.filters
+    actions:
+      - script: "subject.setFilter('pending'); await new Promise(resolve=>setTimeout(resolve,30)); return true"
+    after:
+      - dom: {selector: '#subject .card-grid-card', count: 2}
+  - name: sort changes visible card order
+    attributes:
+      id: subject
+      "$.state.list": testData.cards
+      "$.state.sortoptions": testData.sorts
+    actions:
+      - script: "subject.setSort('-name'); await new Promise(resolve=>setTimeout(resolve,30)); return true"
+    after:
+      - property: {path: "subject.state.list[0].name", equals: Gamma}
+  - name: editor opens from double click
+    attributes:
+      id: subject
+      editable: true
+      "$.state.list": testData.cards
+      "$.state.schema": testData.schema
+    actions:
+      - script: "subject.openEditor(testData.cards[0]); return true"
+      - wait: 300
+    after:
+      - property: {path: subject.state.editor.name, equals: Alpha}
+      - property: {path: subject.state.editorOpen, equals: true}
+      - dom: {selector: '#subject .card-grid-editor.show', count: 1}
+      - event: {name: beforeedit, count: 1}
+  - name: slots render at component boundaries
+    attributes:
+      id: subject
+      "$.state.list": testData.cards
+    slots:
+      toolbar-start: <span class="custom-start">Bulk</span>
+      toolbar-actions: <button class="custom-action">Approve</button>
+      toolbar-end: <span class="custom-end">End</span>
+      card: <div class="custom-card" $text="item.name"></div>
+      empty: <span class="custom-empty">Empty</span>
+    before:
+      - dom: {selector: '#subject .custom-start', count: 1}
+      - dom: {selector: '#subject .custom-action', count: 1}
+      - dom: {selector: '#subject .custom-end', count: 1}
+      - dom: {selector: '#subject .custom-card', count: 3}
+  - name: public collection and editor methods
+    covers: [methods.selectItem, methods.selectAll, methods.clearSelection, methods.openEditor, methods.newItem, methods.saveEditor, methods.removeItems, methods.removeSelected, methods.reload, events.itemclick, events.itemactivate, events.save, events.remove, state.query, state.sort, state.loading, state.saving]
+    attributes:
+      id: subject
+      editable: true
+      "$.state.list": testData.cards
+      "$.state.schema": testData.schema
+    actions:
+      - call: {method: selectAll, args: []}
+      - call: {method: clearSelection, args: []}
+      - script: |
+          subject.selectItem(subject.state.list[0],{})
+          subject.onCardDoubleClick(subject.state.list[0],{preventDefault(){}})
+          await new Promise(resolve=>setTimeout(resolve,100))
+          subject.querySelector('.card-grid-editor').hide(true); subject.state.editorOpen=false
+          subject.newItem()
+          await new Promise(resolve=>setTimeout(resolve,100))
+          subject.querySelector('AutoForm').data.name='Delta'
+          await subject.saveEditor()
+          const confirm=Dialog.confirm; Dialog.confirm=async()=>true
+          subject.selectItem(subject.state.list.at(-1),{})
+          await subject.removeSelected()
+          await subject.removeItems([])
+          Dialog.confirm=confirm
+          subject.selectAll(); subject.clearSelection()
+          await subject.reload()
+          return true
+    after:
+      - property: {path: subject.state.loading, equals: false}
+      - property: {path: subject.state.saving, equals: false}
+      - event: {name: itemclick, count: 2}
+      - event: {name: itemactivate, count: 1}
+      - event: {name: beforeedit, count: 2}
+      - event: {name: save, count: 1}
+      - event: {name: remove, count: 1}
+  - name: api query and failure boundary
+    covers: [attributes.api, state.params, events.loaderror]
+    attributes:
+      id: subject
+      api: /admin/ui-check-fixture-missing
+      "$.state.params": testData.params
+    actions:
+      - wait: 200
+    after:
+      - property: {path: subject.state.loading, equals: false}
+      - event: {name: loaderror, count: 1}

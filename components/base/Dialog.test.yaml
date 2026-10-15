@@ -1,0 +1,90 @@
+timeout: 10000
+testData:
+  dialog: { title: "Delete", message: "Remove user?", buttons: ["No", "Yes"], type: danger }
+cases:
+  - name: state renders title message buttons and type
+    attributes: { id: subject, "$.state.title": testData.dialog.title, "$.state.message": testData.dialog.message, "$.state.buttons": testData.dialog.buttons, "$.state.type": testData.dialog.type }
+    slots: {}
+    before:
+      - dom: { selector: '#subject', containsText: Delete }
+      - dom: { selector: '#subject', containsText: "Remove user?" }
+      - dom: { selector: '#subject .modal-footer button', count: 2 }
+      - dom: { selector: '#subject .border-danger', count: 1 }
+    actions: []
+    after: []
+  - name: Dialog show resolves selected index
+    covers: [methods.Dialog.show]
+    attributes: { id: subject }
+    slots: {}
+    before: []
+    actions:
+      - script: |
+          const promise=Dialog.show({ ...testData.dialog, message: 'Show selected fixture' })
+          await new Promise(resolve=>setTimeout(resolve,400))
+          const dialog=[...document.querySelectorAll('Dialog')].find(d => d.state?.message === 'Show selected fixture')
+          if(!dialog.classList.contains('show')) throw new Error('dialog not shown')
+          Array.from(dialog.querySelectorAll('.modal-footer button')).at(-1).click()
+          if(await promise!==2) throw new Error('wrong result')
+    after: []
+  - name: Dialog alert resolves close
+    covers: [methods.Dialog.alert]
+    attributes: { id: subject }
+    slots: {}
+    before: []
+    actions:
+      - script: |
+          const promise=Dialog.alert('Saved')
+          await new Promise(resolve=>setTimeout(resolve,400))
+          const dialog=[...document.querySelectorAll('Dialog')].find(d => d.state?.message === 'Saved')
+          if(!dialog.textContent.includes('Saved')) throw new Error('alert message missing')
+          dialog.querySelector('.modal-footer button').click()
+          if(await promise!==1) throw new Error('alert result mismatch')
+    after: []
+  - name: Dialog confirm true and false
+    covers: [methods.Dialog.confirm]
+    attributes: { id: subject }
+    slots: {}
+    before: []
+    actions:
+      - script: |
+          const yes=Dialog.confirm('Continue?')
+          await new Promise(resolve=>setTimeout(resolve,400))
+          let dialog=[...document.querySelectorAll('Dialog')].find(d => d.state?.message === 'Continue?')
+          Array.from(dialog.querySelectorAll('.modal-footer button')).at(-1).click()
+          if(await yes!==true) throw new Error('confirm true mismatch')
+          const no=Dialog.confirm('Continue?')
+          await new Promise(resolve=>setTimeout(resolve,400))
+          dialog=[...document.querySelectorAll('Dialog')].find(d => d.state?.message === 'Continue?')
+          dialog.querySelector('.modal-footer button').click()
+          if(await no!==false) throw new Error('confirm false mismatch')
+    after: []
+  - name: Enter chooses final button and Escape cancels
+    attributes: { id: subject, "$.state.buttons": testData.dialog.buttons }
+    slots: {}
+    before:
+      - dom: { selector: '#subject .modal-footer button', count: 2 }
+    actions:
+      - script: |
+          let hidden=0
+          subject.hide=()=>hidden++
+          subject.dispatchEvent(new KeyboardEvent('keydown',{key:'Enter',bubbles:true}))
+          if(subject.result!==2 || hidden!==1) throw new Error('Enter failed')
+          subject.dispatchEvent(new KeyboardEvent('keydown',{key:'Escape',bubbles:true}))
+          if(subject.result!==0 || hidden!==2) throw new Error('Escape failed')
+    after: []
+  - name: early confirmation completes the real modal lifecycle
+    covers: [methods.Dialog.confirm]
+    attributes: { id: subject }
+    slots: {}
+    before: []
+    actions:
+      - script: |
+          const promise = Dialog.confirm('Early confirmation')
+          await new Promise(resolve => setTimeout(resolve, 50))
+          const dialog = [...document.querySelectorAll('Dialog')].find(d => d.state?.message === 'Early confirmation')
+          const button = [...dialog.querySelectorAll('.modal-footer button')].at(-1)
+          button.focus()
+          button.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }))
+          if (await promise !== true) throw new Error('early confirmation did not settle')
+          if (dialog.isConnected || document.querySelector('.modal-backdrop')) throw new Error('early confirmation left an overlay')
+    after: []

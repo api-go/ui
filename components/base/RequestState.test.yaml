@@ -1,0 +1,38 @@
+cases:
+  - name: read transitions retain content and retry guard
+    attributes:
+      id: subject
+      "$.state.loading": 'true'
+      "$.state.error": "'Unavailable'"
+      "$.state.empty": 'true'
+      "$.state.hasdata": 'false'
+    slots:
+      content: <input aria-label="Draft" value="Keep draft">
+      empty: <span>No matches</span>
+    before:
+      - dom: {selector: '#subject [role=status]', containsText: Loading}
+      - dom: {selector: '#subject [role=alert]', count: 0}
+    actions:
+      - call: {method: retry}
+      - script: "testData.requestInput=subject.querySelector('input');subject.state.loading=false"
+      - call: {method: retry}
+      - script: "subject.state.error='';subject.state.hasdata=true"
+      - fill: {selector: '#subject input', value: Edited draft}
+      - script: "subject.state.loading=true"
+    after:
+      - event: {name: retry, count: 1}
+      - script: "return subject.querySelector('input')===testData.requestInput && testData.requestInput.value==='Edited draft' && !testData.requestInput.parentElement.hidden"
+  - name: successful empty read and retry button
+    attributes:
+      id: subject
+      "$.state.empty": 'true'
+    slots:
+      empty: <span>No matches</span>
+    before:
+      - dom: {selector: '#subject [role=status]', containsText: No matches}
+    actions:
+      - script: "subject.state.error='Read failed'"
+      - click: '#subject button'
+    after:
+      - event: {name: retry, count: 1}
+      - dom: {selector: '#subject [role=alert]', containsText: Read failed}

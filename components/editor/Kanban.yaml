@@ -1,4 +1,7 @@
 name: Kanban
+kind: component
+src: /ui/components/editor/Kanban.js
+dependencies: [Editor, SortableAPI, Disposer, AutoForm, Modal, Dialog]
 purpose: Edit, reorder, load, and save Kanban JSON documents with zero-config default fields and extensible slots.
 
 attributes:
@@ -100,4 +103,4 @@ related:
   - ../base/Modal.yaml
 
 tests:
-  - Kanban.test.html
+  - Kanban.test.yaml

@@ -1,4 +1,6 @@
 name: View
+kind: component
+src: /ui/components/base/View.js
 purpose: Load and cache an HTML fragment, then initialize its markup, styles, scripts, and nested views.
 
 attributes:
@@ -39,4 +41,4 @@ examples:
     <View file="../Shared.html"></View>
 
 tests:
-  - View.test.html
+  - View.test.yaml

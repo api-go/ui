@@ -3,7 +3,9 @@
  */
 globalThis.Component.register('Nav', container => {
 	container.vertical = container.hasAttribute('vertical')
-	container.homepage = container.getAttribute('homepage') || '#'
+	container.sm = container.hasAttribute('sm')
+	container.homepage = container.homepage || container.getAttribute('homepage') || '#'
+    container.homeurl = container.homeurl || container.getAttribute('homeurl') || ''
 	container.state.openName = container.state.openName || null
 	container.state.value = container.state.value || null
 
@@ -11,24 +13,41 @@ globalThis.Component.register('Nav', container => {
 		container.state.value = e.detail
 	})
 
-	container.click = (item, noselect) => {
+	container.confirmChange = async item => {
+		if (item?.changeguard === false) return { allowed: true, discarded: false }
+		const source = String(container.changebind || '')
+		const changed = source === '*' ? globalThis.State?._exitBlocks > 0 : !!source && globalThis.State?.changes?.[source] === true
+		if (!changed) return { allowed: true, discarded: false }
+		if (!await globalThis.Dialog?.confirm?.('{#There are unsaved changes. Discard them#}?', { type: 'warning' })) return { allowed: false, discarded: false }
+		if (source === '*') {
+			for (const key of Object.keys(globalThis.State.changes)) if (globalThis.State.changes[key] === true) globalThis.State.changes[key] = false
+		} else globalThis.State.changes[source] = false
+		return { allowed: true, discarded: true }
+	}
+	container.click = async (item, noselect, event) => {
+		const menuTrigger = item.closemenu && event?.currentTarget?.closest('.dropdown')?.querySelector('[data-bs-toggle="dropdown"]')
+		const guard = await container.confirmChange(item)
+		if (!guard.allowed) return
+		if (menuTrigger) globalThis.bootstrap.Dropdown.getInstance(menuTrigger)?.hide()
 		const selected = !item.noselect && !noselect
 		if (selected) {
 			container.state.value = item.name
 			container.dispatchEvent(new CustomEvent('change', { detail: item.name, bubbles: false }))
 		}
-		container.dispatchEvent(new CustomEvent('nav', { detail: { item, name: item.name, selected }, bubbles: false }))
+		container.dispatchEvent(new CustomEvent('nav', { detail: { item, name: item.name, selected, discarded: guard.discarded }, bubbles: false }))
 	}
-	container.clickSubitem = item => {
-		container.click(item)
+	container.clickHome = async () => {
+		const guard = await container.confirmChange()
+		if (guard.allowed) { if(container.homeurl)location.href=container.homeurl;else location.hash=container.homepage }
 	}
+	container.clickSubitem = (item,event) => container.click(item, false, event)
 	container.toggleGroup = item => {
 		container.state.openName = container.state.openName === item.name ? null : item.name
 		container.dispatchEvent(new CustomEvent('nav', { detail: { item, name: item.name, open: container.state.openName === item.name, selected: false }, bubbles: false }))
 	}
 }, globalThis.Util.makeDom(/*html*/`
 <div $class="\${this.vertical ? 'd-flex flex-column border-end h-100 align-self-stretch overflow-visible' : 'navbar navbar-expand border-bottom'} bg-body-secondary px-2 \${this.vertical ? 'py-3' : 'py-1'} align-items-center \${this.vertical ? 'align-items-start' : ''}" $style="this.vertical ? 'min-height:0;' : ''">
-	<div class="d-none d-md-flex align-items-center gap-2" style="cursor:pointer" title="Home" $onclick="location.hash=this.homepage">
+	<div class="d-none d-md-flex align-items-center gap-2" style="cursor:pointer" title="Home" $onclick="this.clickHome()">
         <template $if="this.state?.brand?.image">
                 <img $src="this.state.brand.image" $class="\${this.vertical ? 'mb-2' : 'mx-1'}" style="height:30px;width:auto;max-width:300px">
         </template>
@@ -42,21 +61,21 @@ globalThis.Component.register('Nav', container => {
 	<div $class="d-flex \${this.vertical ? 'w-100 flex-fill mt-2 flex-column gap-1' : 'ms-2 align-items-center flex-fill'}" $style="this.vertical ? 'min-height:0; overflow-y:auto; overflow-x:visible;' : ''">
 		<template $each="this.state?.list || []">
 			<div $class="\${this.vertical ? 'nav nav-pills flex-column w-100 position-relative' : 'navbar-nav flex-row align-items-center'} \${!this.vertical && item.type==='fill' ? 'flex-fill' : ''}"><template $if="item.type==='slot'"><div $attr="'slot-id=' + item.name"></div></template>
-			<template $if="item.type==='fill'"><div slot-id="tools-end" class="d-flex align-items-center justify-content-end flex-shrink-0"></div></template>
+			<template $if="item.type==='fill'"><div slot-id="tools-end" class="d-flex align-items-center justify-content-end flex-shrink-0 ms-auto"></div></template>
 			<template $if="item.type==='label'">
 				<div $class="\${this.vertical ? 'small text-uppercase text-body-secondary fw-semibold px-2 py-1 mt-2' : 'navbar-text small text-uppercase text-body-secondary fw-semibold px-2'} \${item.class || ''}" $text="item.label"></div>
 			</template>
 			<template $if="item.type==='button'">
-				<button $class="nav-link \${this.state.value===item.name?'active':''} \${this.vertical ? 'w-100 text-start py-2 px-2' : ''} \${item.class || ''}" $onclick="this.click(item)">
-						<i $if="item.icon" $class="bi bi-\${item.icon} me-2"></i><span $class="\${this.vertical ? 'text-truncate' : 'd-none d-' + (this.state?.list?.length>5?'lg':'md') + '-inline'}" $text="item.label"></span>
+								<button type="button" $aria-label="item.label || item.name" $class="nav-link \${this.state.value===item.name?'active':''} \${this.vertical ? 'w-100 text-start' : ''} \${item.class || ''}" $onclick="this.click(item)">
+						<i $if="item.icon" $class="bi bi-\${item.icon}"></i><span $if="item.label" $class="\${this.vertical ? 'text-truncate' : !item.icon ? '' : 'd-none d-' + (this.state?.list?.length>5?'lg':'md') + '-inline'} \${this.sm ? 'small' : ''}" $text="item.label"></span>
 				</button>
 				</template>
 				<template $if="item.type==='dropdown'">
 					<template $if="this.vertical">
 						<div class="w-100">
-							<button type="button" $class="nav-link w-100 text-start py-2 px-2 d-flex align-items-center justify-content-between \${item.class || ''}" $onclick="this.toggleGroup(item)">
+							<button type="button" $class="nav-link w-100 text-start d-flex align-items-center justify-content-between \${item.class || ''}" $onclick="this.toggleGroup(item)">
 								<span class="d-inline-flex align-items-center">
-									<i $if="item.icon" $class="bi bi-\${item.icon} me-2"></i><span class="text-truncate" $text="item.label"></span>
+									<i $if="item.icon" $class="bi bi-\${item.icon}"></i><span class="text-truncate" $text="item.label"></span>
 								</span>
 								<i $class="bi \${this.state.openName===item.name?'bi-chevron-down':'bi-chevron-right'} small ms-2"></i>
 							</button>
@@ -67,13 +86,13 @@ globalThis.Component.register('Nav', container => {
 											<div $class="small text-uppercase text-body-secondary fw-semibold px-2 py-1 \${subitem.class || ''}" $text="subitem.label"></div>
 										</template>
 										<template $if="subitem.type==='button'">
-											<button $class="nav-link w-100 text-start py-2 px-2 \${this.state.value===subitem.name?'active':''} \${subitem.class || ''}" $onclick="this.clickSubitem(subitem)">
-											<i $if="subitem.icon" $class="bi bi-\${subitem.icon} me-2 d-inline-block" style="width: 16px;"></i><span $text="subitem.label"></span>
+											<button $class="nav-link w-100 text-start \${this.state.value===subitem.name?'active':''} \${subitem.class || ''}" $onclick="this.clickSubitem(subitem,event)">
+											<i $if="subitem.icon" $class="bi bi-\${subitem.icon} me-2 d-inline-block" style="width:1em;"></i><span $text="subitem.label"></span>
 											</button>
 										</template>
 										<template $if="subitem.type==='switch'">
 											<div $class="d-flex align-items-center px-2 py-2 \${subitem.class || ''}">
-											<i $if="subitem.icon" $class="bi bi-\${subitem.icon} me-2 d-inline-block" style="width: 16px;"></i><span $text="subitem.label"></span><div class="flex-fill"></div>
+											<i $if="subitem.icon" $class="bi bi-\${subitem.icon} me-2 d-inline-block" style="width:1em;"></i><span $text="subitem.label"></span><div class="flex-fill"></div>
 												<div class="form-switch ms-2"><input class="form-check-input" type="checkbox" $bind="subitem.bind[subitem.name]"></div>
 											</div>
 										</template>
@@ -84,22 +103,22 @@ globalThis.Component.register('Nav', container => {
 					</template>
 					<template $if="!this.vertical">
 						<div class="dropdown">
-							<button type="button" $class="nav-link dropdown-toggle \${item.class || ''}" data-bs-toggle="dropdown">
-								<i $if="item.icon" $class="bi bi-\${item.icon} me-2"></i><span $class="'d-none d-' + (this.state?.list?.length>5?'lg':'md') + '-inline'" $text="item.label"></span>
+							<button type="button" $class="nav-link \${item.caret===false?'':'dropdown-toggle'} \${item.class || ''}" data-bs-toggle="dropdown" data-bs-auto-close="outside" $aria-label="item.label || item.name">
+								<i $if="item.icon" $class="bi bi-\${item.icon}"></i><span $if="item.label" $class="item.icon ? 'd-none d-' + (this.state?.list?.length>5?'lg':'md') + '-inline' : ''" $text="item.label"></span>
 							</button>
-							<div class="dropdown-menu dropdown-menu-end p-2 bg-body-secondary shadow" $style="'width: ' + (item.width || 250) + 'px; z-index: 1080;'">
+							<div class="dropdown-menu p-2 bg-body-secondary shadow" $class="item.align==='start'?'dropdown-menu-start':'dropdown-menu-end'" $style="'width: ' + (item.width || 250) + 'px; z-index: 1080;'">
 								<template $each="item.items || item.list" as="subitem">
 									<template $if="subitem.type==='label'">
 										<div $class="dropdown-header \${subitem.class || ''}" $text="subitem.label"></div>
 									</template>
 									<template $if="subitem.type==='button'">
-										<button $class="dropdown-item \${this.state.value===subitem.name?'active':''} \${subitem.class || ''}" $onclick="this.clickSubitem(subitem)">
-											<i $if="subitem.icon" $class="bi bi-\${subitem.icon} me-2 d-inline-block" style="width: 16px;"></i><span $text="subitem.label"></span>
+										<button $class="dropdown-item \${this.state.value===subitem.name?'active':''} \${subitem.class || ''}" $onclick="this.clickSubitem(subitem,event)">
+											<i $if="subitem.icon" $class="bi bi-\${subitem.icon} me-2 d-inline-block" style="width:1em;"></i><span $text="subitem.label"></span>
 										</button>
 									</template>
 									<template $if="subitem.type==='switch'">
 										<div $class="d-flex align-items-center px-3 py-2 \${subitem.class || ''}">
-											<i $if="subitem.icon" $class="bi bi-\${subitem.icon} me-2 d-inline-block" style="width: 16px;"></i><span $text="subitem.label"></span><div class="flex-fill"></div>
+											<i $if="subitem.icon" $class="bi bi-\${subitem.icon} me-2 d-inline-block" style="width:1em;"></i><span $text="subitem.label"></span><div class="flex-fill"></div>
 												<div class="form-switch ms-2"><input class="form-check-input" type="checkbox" $bind="subitem.bind[subitem.name]"></div>
 										</div>
 									</template>
@@ -118,6 +137,6 @@ globalThis.Component.register('Nav', container => {
 		color: inherit !important;
 		font-weight: 600;
 	}
-	Nav .nav-link { border-radius: .5rem; }
+	Nav .nav-link { display:flex;align-items:center;gap:var(--ui-gap,.5rem);border-radius: .5rem; font-size:var(--ui-item-font,1rem);padding:var(--ui-item-y,.5rem) var(--ui-item-x,1rem); }
 	Nav .dropdown-item.active { border-radius: .375rem; }
 </style>`))

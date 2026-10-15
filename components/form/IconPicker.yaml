@@ -1,5 +1,11 @@
 name: IconPicker
+kind: component
+src: /ui/components/form/IconPicker.js
+dependencies: [AutoForm]
 purpose: Search and choose a Bootstrap Icons name.
+
+attributes:
+  sm: boolean; use Bootstrap small button sizing for the picker control
 
 properties:
   value: string; selected icon name without the 'bi-' prefix
@@ -22,4 +28,4 @@ related:
   - ../base/AutoForm.yaml
 
 tests:
-  - IconPicker.test.html
+  - IconPicker.test.yaml

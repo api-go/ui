@@ -1,9 +1,18 @@
 name: Nav
+kind: component
+src: /ui/components/base/Nav.js
+dependencies: [Dialog]
 purpose: Render horizontal or vertical navigation from declarative brand and item data.
 
 attributes:
   vertical:
     type: boolean
+  changebind: 'Use `.changebind="SourceKey"` for local protection or `.changebind="*"` to protect every true State.changes source.'
+  homepage: 'Hash destination for the brand; defaults to #.'
+  homeurl: 'Full destination for the brand, overriding homepage. Can also be bound through $.homeurl. Existing change protection applies before navigation.'
+
+methods:
+  clickHome: 'Navigate to homeurl or homepage after honoring change protection.'
 
 state:
   brand: "{ image?, icon?, label? }"
@@ -21,9 +30,12 @@ events:
   change:
     detail: Selected item name. Fires only when the selected value changes.
   nav:
-    detail: '{ item, name, selected } or { item, name, selected, open } for vertical dropdown changes. Fires for every activated button, including noselect action items.'
+    detail: '{ item, name, selected, discarded } or { item, name, selected, open } for vertical dropdown changes. Fires for every accepted button activation, including noselect action items.'
 
-item_shape: "{ type, name?, label?, icon?, items?, bind?, class?, width? }"
+item_shape: "{ type, name?, label?, icon?, items?, bind?, class?, width?, caret?, align?, closemenu? }"
+
+slots:
+  tools-end: Controls placed at the right of a fill item, before the following navigation items. Use one fill item when supplying this slot. Slotted controls own their events and navigation guards.
 
 examples:
   basic: |
@@ -43,11 +55,15 @@ examples:
     <Nav class="border-end" $.state.brand="navBrand" $.state.list="navItems" $bind="Hash.nav" vertical></Nav>
 
 rules:
-	- The brand is hidden below the Bootstrap `md` breakpoint so horizontal navigation keeps room for action icons.
-  - Bind `$bind="Hash.nav"` when the selected navigation item must survive a page refresh.
-  - Use `noselect: true` and nav for actions such as Logout, including buttons inside dropdowns: `$onnav="if(event.detail.name==='logout') logout()"`. Use change only for selected-page state.
-  - Use the same `navItems` data for horizontal and vertical navigation when comparing layouts.
-  - Selected items use the same neutral secondary surface in horizontal and vertical modes; selection must not depend on the application primary color.
+  - 'Set closemenu:true on a dropdown button that navigates. Its accepted activation closes the containing horizontal menu; immediate preference controls keep their existing menu behavior. Cancelled change protection leaves it open.'
+  - 'Horizontal dropdowns accept caret: false for icon-only triggers and align: start for left-aligned menus. Defaults are caret: true and align: end.'
+  - 'Horizontal items without an icon keep their text label visible at every breakpoint. Icon-backed items may hide their label on narrow screens and retain an accessible name.'
+  - 'The brand is hidden below the Bootstrap `md` breakpoint so horizontal navigation keeps room for action icons.'
+  - 'Bind `$bind="Hash.nav"` when the selected navigation item must survive a page refresh.'
+  - 'Use `noselect: true` and nav for actions such as Logout, including buttons inside dropdowns: `$onnav="if(event.detail.name===''logout'') logout()"`. Use change only for selected-page state.'
+  - 'Use the same `navItems` data for horizontal and vertical navigation when comparing layouts.'
+  - 'Selected items use the same neutral secondary surface in horizontal and vertical modes; selection must not depend on the application primary color.'
+  - 'Change protection runs before selection and nav. Cancellation emits neither event. Confirmed local discard clears its source; `*` clears only State.changes entries strictly equal to true.'
 
 tests:
-  - Nav.test.html
+  - Nav.test.yaml

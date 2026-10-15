@@ -1,0 +1,22 @@
+cases:
+  - name: viewport shell and persistent navigation
+    attributes: { id: subject, viewport: true }
+    slots:
+      header: '<span>Global tools</span>'
+      navigation: '<button class="btn">Module</button>'
+      content: '<div class="overflow-auto"><div style="height:1800px">Workspace</div></div>'
+    before:
+      - property: { path: subject.state.navOpen, equals: false }
+      - dom: { selector: '#subject', containsText: Global tools }
+      - script: "return Math.abs(subject.clientHeight-innerHeight)<2 && subject.querySelector('[data-shell-content]').clientHeight<innerHeight"
+    actions:
+      - call: { method: toggleNavigation }
+    after:
+      - property: { path: subject.state.navOpen, equals: true }
+      - dom: { selector: '#subject [data-shell-navigation] button', count: 1 }
+  - name: embedded shell fills only its bounded host
+    attributes: { id: subject, style: "height:260px;flex:none" }
+    slots:
+      content: '<div>Embedded content</div>'
+    before:
+      - script: "return subject.clientHeight===260 && getComputedStyle(subject.querySelector('[data-shell-navigation]')).display==='none' && subject.querySelector('[data-shell-toggle]').hidden"

@@ -1,0 +1,69 @@
+timeout: 10000
+testData: {}
+cases:
+  - name: generated notifications release their DOM after closing
+    covers: [methods.show]
+    attributes: { id: subject }
+    actions:
+      - script: |
+          const toast=await Toast.show('Saved',{delay:0})
+          await new Promise(resolve=>setTimeout(resolve,250))
+          const closeName=toast.querySelector('button.bi-x-lg').getAttribute('aria-label')
+          toast.querySelector('button.bi-x-lg').click()
+          await new Promise(resolve=>setTimeout(resolve,300))
+          if(toast.isConnected) throw new Error('Closed notification retained its DOM')
+          if(!closeName) throw new Error('Close button has no accessible name')
+  - name: hidden countdown never restarts on mouseleave
+    attributes: { id: subject }
+    before:
+      - script: "subject.state.delay=5000;return true"
+    actions:
+      - call: { method: show }
+      - wait: 250
+      - script: "subject.hide()"
+      - wait: 250
+      - script: "testData.hiddenLeft=subject.state.left;subject.dispatchEvent(new MouseEvent('mouseleave'))"
+      - wait: 1100
+    after:
+      - script: "return subject.state.left===testData.hiddenLeft"
+  - name: show type delay buttons and custom container
+    covers: [methods.show]
+    attributes: { id: subject }
+    slots: {}
+    before: []
+    actions:
+      - script: |
+          const host=document.createElement('div')
+          host.setAttribute('toast-container','custom')
+          document.body.appendChild(host)
+          const toast=await Toast.show('Retry upload?',{type:'warning',delay:0,buttons:['Retry'],container:'custom'})
+          await new Promise(resolve=>setTimeout(resolve,50))
+          if(toast.parentElement!==host || toast.state.delay!==0 || !toast.querySelector('.text-bg-warning') || !toast.textContent.includes('Retry')) throw new Error('show options mismatch')
+          toast.remove(); host.remove()
+    after: []
+  - name: confirm resolves true
+    covers: [methods.confirm]
+    attributes: { id: subject }
+    slots: {}
+    before: []
+    actions:
+      - script: |
+          const promise=Toast.confirm('Delete?',{delay:0})
+          await new Promise(resolve=>setTimeout(resolve,50))
+          const toast=[...document.querySelectorAll('Toast')].at(-1)
+          toast.querySelector('button[data-bs-dismiss="toast"]:not(.bi-x-lg)').click()
+          if(await promise!==true) throw new Error('confirm true mismatch')
+    after: []
+  - name: confirm resolves false
+    covers: [methods.confirm]
+    attributes: { id: subject }
+    slots: {}
+    before: []
+    actions:
+      - script: |
+          const promise=Toast.confirm('Delete?',{delay:0})
+          await new Promise(resolve=>setTimeout(resolve,50))
+          const toast=[...document.querySelectorAll('Toast')].at(-1)
+          toast.querySelector('button.bi-x-lg').click()
+          if(await promise!==false) throw new Error('confirm false mismatch')
+    after: []

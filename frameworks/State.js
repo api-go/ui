@@ -151,8 +151,46 @@
 	* Core Execution Module
 	* Provides _runCode, _returnCode, and Global States.
 	*/
-	var _hashParams = new URLSearchParams(typeof globalThis !== "undefined" ? globalThis.location?.hash?.substring(1) || "" : "");
-	var Hash = NewState({}, (k) => Util.safeJson(_hashParams.get(k)), (k, v) => {
+	const hashFragment = () => globalThis.location?.hash?.substring(1) || "";
+	const mergeHashParams = (base, patch) => {
+		const next = new URLSearchParams(base);
+		for (const [key, value] of patch) {
+			if (key === "go") throw new TypeError("Hash.go is reserved for navigation");
+			if (value == null) next.delete(key);
+			else {
+				const serialized = JSON.stringify(value);
+				if (serialized === void 0) throw new TypeError("Hash values must be JSON-serializable");
+				next.set(key, serialized);
+			}
+		}
+		return next;
+	};
+	const parseHashPatch = (fragment) => {
+		const patch = [];
+		for (const [key, value] of new URLSearchParams(fragment)) {
+			if (key === "go") continue;
+			try { patch.push([key, JSON.parse(value)]); } catch (_) { /* Invalid entries never delete existing route values. */ }
+		}
+		return patch;
+	};
+	const initialFragment = hashFragment();
+	var _hashParams = initialFragment.startsWith("+") ? mergeHashParams([], parseHashPatch(initialFragment.substring(1))) : new URLSearchParams(initialFragment);
+	if (initialFragment.startsWith("+")) globalThis.history.replaceState(globalThis.history.state, "", "#" + _hashParams.toString());
+	const applyHashParams = (next, navigate) => {
+		const keys = new Set([..._hashParams.keys(), ...next.keys()]);
+		const changed = [...keys].filter(key => key !== "go" && _hashParams.get(key) !== next.get(key));
+		_hashParams = next;
+		if (navigate) globalThis.location.hash = "#" + next.toString();
+		// Every observer sees the complete route, rather than partially applied patch fields.
+		changed.forEach(key => Hash[key] = Hash[key]);
+		return "#" + next.toString();
+	};
+	const goHash = (patch) => {
+		if (!patch || typeof patch !== "object" || Array.isArray(patch)) throw new TypeError("Hash.go requires an object patch");
+		return applyHashParams(mergeHashParams(_hashParams, Object.entries(patch)), true);
+	};
+	var Hash = NewState({}, (k) => k === "go" ? goHash : Util.safeJson(_hashParams.get(k)), (k, v) => {
+		if (k === "go") throw new TypeError("Hash.go is reserved for navigation");
 		const oldStr = _hashParams.get(k);
 		const newStr = v === void 0 ? void 0 : JSON.stringify(v);
 		if (oldStr === newStr || oldStr === null && newStr === void 0) return;
@@ -160,10 +198,10 @@
 		globalThis.location.hash = "#" + _hashParams.toString();
 	});
 	if (typeof globalThis !== "undefined") globalThis.addEventListener("hashchange", () => {
-		const newParams = new URLSearchParams(globalThis.location.hash?.substring(1) || "");
-		const keys = /* @__PURE__ */ new Set([..._hashParams.keys(), ...newParams.keys()]);
-		_hashParams = newParams;
-		keys.forEach((k) => Hash[k] = Hash[k]);
+		const fragment = hashFragment();
+		const next = fragment.startsWith("+") ? mergeHashParams(_hashParams, parseHashPatch(fragment.substring(1))) : new URLSearchParams(fragment);
+		if (fragment.startsWith("+")) globalThis.history.replaceState(globalThis.history.state, "", "#" + next.toString());
+		applyHashParams(next, false);
 	});
 	var LocalStorage = NewState({}, (k) => Util.safeJson(localStorage.getItem(k)), (k, v) => {
 		const oldStr = localStorage.getItem(k);
@@ -191,6 +229,27 @@
 	var Lang = NewState({});
 	if (Cookie.language === void 0 && typeof navigator !== "undefined") Cookie.language = navigator.languages?.[0] || navigator.language || "en-US";
 	var State = NewState({});
+	State.changes = NewState({});
+	State._exitBlocks = 0;
+	State.changes.__watch(null, () => {
+		State._exitBlocks = Object.values(State.changes).filter(value => value === true).length;
+	});
+	if (typeof globalThis !== "undefined") globalThis.addEventListener("beforeunload", (event) => {
+		if (State._exitBlocks <= 0) return;
+		event.preventDefault();
+		event.returnValue = "";
+	});
+	if (typeof document !== "undefined") {
+		const markChanged = (event) => {
+			if (event.target?.closest?.('[data-no-changebind]')) return;
+			const owner = event.target?.closest?.('View,[data-changebind-scope]');
+			const source = owner?.changebind;
+			if (source && source !== '*') State.changes[source] = true;
+		};
+		document.addEventListener("input", markChanged, true);
+		document.addEventListener("changed", markChanged, true);
+		document.addEventListener("change", markChanged, true);
+	}
 	globalThis.Hash = Hash;
 	globalThis.LocalStorage = LocalStorage;
 	globalThis.Cookie = Cookie;
@@ -361,9 +420,14 @@
 				_findSlotPlaceholders(node).forEach((placeholder) => {
 					const slotName = placeholder.getAttribute("slot-id");
 					if (slots[slotName]) {
+						const supplied = slots[slotName];
 						placeholder.removeAttribute("slot-id");
 						placeholder.innerHTML = "";
-						_mergeNode(slots[slotName], placeholder, scanObj, exists);
+						// A supplied slot owns the receiver's content. Content bindings on the
+						// fallback receiver would otherwise run later and erase the supplied node.
+						["$text", "$html", "st-text", "st-html"].forEach((attr) => placeholder.removeAttribute(attr));
+						if (supplied.tagName === "TEMPLATE") _mergeNode(supplied, placeholder, scanObj, exists);
+						else placeholder.appendChild(supplied);
 					}
 				});
 			}
@@ -466,6 +530,7 @@
 				if (result) {
 					if (!node._renderedNodes || node._renderedNodes.length === 0) node._renderedNodes = [node._children.map((child) => {
 						const cloned = child.cloneNode(true);
+						cloned._renderOwner = node;
 						node.parentNode.insertBefore(cloned, node);
 						cloned._ref = { ...node._ref };
 						cloned._thisObj = node._thisObj;
@@ -504,7 +569,6 @@
 						if (existingNodes) {
 							node._keyedNodes.delete(keyVal);
 							existingNodes.forEach((child) => {
-								node.parentNode.insertBefore(child, node);
 								child._ref[indexName] = k;
 								child._ref[asName] = item;
 								_scanTree(child);
@@ -513,6 +577,7 @@
 							existingNodes = [];
 							node._children.forEach((child) => {
 								const cloned = child.cloneNode(true);
+								cloned._renderOwner = node;
 								cloned._ref = {
 									...node._ref,
 									[indexName]: k,
@@ -530,6 +595,12 @@
 						_clearRenderedNodes(child);
 						child.remove();
 					}));
+					let anchor = node;
+					for (let i = currentRenderedNodes.length - 1; i >= 0; i--) {
+						const nodes = currentRenderedNodes[i];
+						if (nodes.length && nodes[nodes.length - 1].nextSibling !== anchor) nodes.forEach((child) => node.parentNode.insertBefore(child, anchor));
+						if (nodes.length) anchor = nodes[0];
+					}
 					node._keyedNodes = newKeyedNodes;
 					node._renderedNodes = currentRenderedNodes;
 				} else {
@@ -552,9 +623,14 @@
 					if (node.checked !== isChecked) node.checked = isChecked;
 				} else if (node.type === "radio") {
 					if (node.checked !== (node.value === String(result ?? ""))) node.checked = node.value === String(result ?? "");
-				} else if ("value" in node && node.type !== "file") setTimeout(() => {
-					if (node.value !== String(result ?? "")) node.value = result;
-				});
+				} else if ("value" in node && node.type !== "file") {
+					const version = node._bindValueVersion = (node._bindValueVersion || 0) + 1;
+					setTimeout(() => {
+						// A user edit or newer state update supersedes this deferred value.
+						if (!node.isConnected || node._bindValueVersion !== version) return;
+						if (node.value !== String(result ?? "")) node.value = result;
+					});
+				}
 				else if (node.isContentEditable) {
 					if (node.innerHTML !== String(result ?? "")) node.innerHTML = result;
 				}
@@ -563,6 +639,13 @@
 					detail: result
 				}));
 			} else {
+				if (attr === "text" || attr === "html") {
+					let content = result ?? "";
+					if (typeof content !== "string") content = typeof content === "object" ? JSON.stringify(content) : String(content);
+					if (attr === "text") node.textContent = content;
+					else node.innerHTML = content;
+					result = void 0;
+				}
 				if ([
 					"checked",
 					"disabled",
@@ -591,21 +674,12 @@
 	}
 	function _initBinding(binding) {
 		if (!binding.node._bindings) binding.node._bindings = [];
-		binding.node._bindings.push({
-			attr: binding.attr,
-			prop: binding.prop,
-			tpl: binding.tpl,
-			exp: binding.exp
-		});
+		binding.node._bindings.push(binding);
 		_updateBinding(binding);
 	}
 	function _parseNode(node, scanObj) {
 		if (node._bindings) {
-			node._states = /* @__PURE__ */ new Set();
-			node._bindings.forEach((b) => _updateBinding({
-				node,
-				...b
-			}));
+			node._bindings.forEach((b) => _updateBinding(b));
 			if (node._hasOnUpdate) node.dispatchEvent(new Event("update", { bubbles: false }));
 			return;
 		}
@@ -706,6 +780,7 @@
 					_registerNodeEvent(node, bindEventName);
 					node.addEventListener(bindEventName, (e) => {
 						if (e.target !== node) return;
+						node._bindValueVersion = (node._bindValueVersion || 0) + 1;
 						let newVal = node.isContentEditable ? e.target.innerHTML : node.type === "checkbox" ? e.target.checked : node.type === "file" ? e.target.files : e.target.value ?? e.detail;
 						_setNoWriteBack(node);
 						setDisableRunCodeError(true);
@@ -770,13 +845,25 @@
 				"$$each",
 				"st-st-if",
 				"st-st-each"
-			].includes(attr.name) || (node.hasAttribute("$each") || node.hasAttribute("st-each") || node.hasAttribute("$$each") || node.hasAttribute("st-st-each")) && ["as", "index"].includes(attr.name)).forEach((attr) => {
+			].includes(attr.name) || (node.hasAttribute("$each") || node.hasAttribute("st-each") || node.hasAttribute("$$each") || node.hasAttribute("st-st-each")) && ["as", "index", "key"].includes(attr.name)).forEach((attr) => {
 				template.setAttribute(attr.name, attr.value);
 				node.removeAttribute(attr.name);
 			});
 			node.parentNode.insertBefore(template, node);
 			template.content.appendChild(node);
 			template._ref = node._ref;
+			// A rendered element may itself become a structural template. Its
+			// parent must retain that live anchor, not the inert original now in
+			// template.content, so closing/reopening the parent removes every child.
+			const owner = node._renderOwner;
+			if (owner?._renderedNodes) {
+				for (const nodes of owner._renderedNodes) {
+					const index = nodes.indexOf(node);
+					if (index >= 0) nodes[index] = template;
+				}
+				template._renderOwner = owner;
+				delete node._renderOwner;
+			}
 			_scanTree(template, scanObj);
 			return;
 		}
@@ -800,7 +887,7 @@
 				"st-each",
 				"$$each",
 				"st-st-each"
-			].includes(attr.name)) Array.from(node.attributes).filter((attr) => ["as", "index"].includes(attr.name)).forEach((attr) => {
+			].includes(attr.name)) Array.from(node.attributes).filter((attr) => ["as", "index", "key"].includes(attr.name)).forEach((attr) => {
 				template.setAttribute(attr.name, attr.value);
 				node.removeAttribute(attr.name);
 			});

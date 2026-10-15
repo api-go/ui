@@ -1,11 +1,16 @@
 name: TagsInput
+kind: component
+src: /ui/components/form/TagsInput.js
+dependencies: [AutoForm]
 purpose: Enter a list of unique string tags; Enter or leaving the input commits a tag. Spaces and commas remain valid tag content.
 
 attributes:
+  sm: boolean; use Bootstrap small form-control sizing
   placeholder: string; input placeholder (the built-in default is localized)
 
 properties:
   value: array of strings; current unique tags
+  options: "Optional candidates as strings or {value,label} objects. Candidates appear on focus while free-text entry remains supported."
 
 examples:
   standalone_and_form: |
@@ -21,8 +26,12 @@ examples:
 events:
   change: detail is the complete updated string array
 
+rules:
+  - Enter commits the current tag without submitting an ancestor form.
+  - The candidate menu is not rendered when every option is already selected or no options remain.
+
 related:
   - ../base/AutoForm.yaml
 
 tests:
-  - TagsInput.test.html
+  - TagsInput.test.yaml

@@ -1,0 +1,47 @@
+testData: { width: 260 }
+cases:
+  - name: desktop resize writes binding and preserves bounded regions
+    attributes: { id: subject, min: 180, max: 500, main-min: 250, "$bind": testData.width, "$.state.width": testData.width, "$.state.pane": "'sidebar'", style: "width:1000px;height:320px;flex:none" }
+    slots:
+      sidebar: '<div class="overflow-auto"><div style="height:1500px">Sidebar</div></div>'
+      main: '<div class="overflow-auto"><div style="height:1500px">Main</div></div>'
+    before:
+      - property: { path: subject.state.width, equals: 260 }
+      - property: { path: subject.state.pane, equals: sidebar }
+      - property: { path: subject.state.narrow, equals: false }
+      - script: "return subject.querySelector('[data-split-sidebar]').offsetWidth===260 && subject.scrollHeight===subject.clientHeight"
+    actions:
+      - script: "const handle=subject.querySelector('Resizer'); handle.focus(); handle.dispatchEvent(new KeyboardEvent('keydown',{key:'ArrowRight',bubbles:true,cancelable:true}))"
+    after:
+      - data: { path: testData.width, equals: 270 }
+      - event: { name: change, count: 1, last: 270 }
+      - script: "return subject.querySelector('[data-split-sidebar]').offsetWidth===270 && subject.querySelector('[data-split-main]').clientWidth>=250"
+  - name: narrow host retains content and switches panes
+    attributes: { id: subject, style: "width:390px;height:300px;flex:none" }
+    slots:
+      sidebar: '<input value="Retained input">'
+      main: '<div>Detail content</div>'
+    before:
+      - property: { path: subject.state.narrow, equals: true }
+      - script: "return subject.querySelector('Resizer').hidden && !subject.querySelector('[data-split-sidebar]').hidden && subject.querySelector('[data-split-sidebar]').clientWidth===390"
+    actions:
+      - click: '#subject button:nth-child(2)'
+    after:
+      - property: { path: subject.state.pane, equals: main }
+      - event: { name: panechange, count: 1, last: main }
+      - script: "return subject.querySelector('[data-split-sidebar]').hidden && subject.querySelector('input').value==='Retained input'"
+  - name: container shrink preserves width preference and invalid switches are rejected
+    attributes: { id: subject, "$.state.width": '450', style: "width:1000px;height:240px;flex:none" }
+    before:
+      - script: "return subject.querySelector('[data-split-sidebar]').offsetWidth===450"
+    actions:
+      - script: "subject.style.width='390px'; await new Promise(resolve=>setTimeout(resolve,70))"
+      - call: { method: show, args: [main] }
+      - script: "try { subject.show('invalid'); throw new Error('accepted invalid pane') } catch(error) { if(!error.message.includes('expected')) throw error }"
+      - script: "subject.style.width='1000px'; await new Promise(resolve=>setTimeout(resolve,70))"
+    after:
+      - property: { path: subject.state.width, equals: 450 }
+      - property: { path: subject.state.narrow, equals: false }
+      - event: { name: panechange, count: 1, last: main }
+      - event: { name: change, count: 0 }
+      - script: "return subject.querySelector('[data-split-sidebar]').offsetWidth===450"

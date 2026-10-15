@@ -1,0 +1,92 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<title>客户工作台 · UI 模板</title>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<script src="../frameworks/State.js"></script>
+<script src="../frameworks/Bootstrap.js"></script>
+<script src="../utilities/Disposer.js"></script>
+<script src="../utilities/MouseMover.js"></script>
+<script src="../utilities/VirtualScroll.js"></script>
+<script src="../components/base/Resizer.js"></script>
+<script src="../components/base/Modal.js"></script>
+<script src="../components/base/Dialog.js"></script>
+<script src="../components/base/Nav.js"></script>
+<script src="../components/base/List.js"></script>
+<script src="../components/base/SplitPane.js"></script>
+<script src="../components/base/PageHeader.js"></script>
+<script src="../components/base/Pane.js"></script>
+<script src="../components/base/AppShell.js"></script>
+<script>
+Bootstrap.config({bindDarkMode:[LocalStorage,'templateDark']})
+const customerRecords=Array.from({length:120},(_,i)=>({id:'customer-'+i,label:['星河科技','远山设计','青禾商贸','云帆咨询'][i%4]+' '+(i+1),summary:i%3===0?'待跟进':'合作中',contact:['林悦','陈墨','周宁'][i%3],email:'contact'+i+'@example.test',city:['上海','杭州','深圳'][i%3],orders:12+i,revenue:32000+i*1250}))
+const customerTabs=[{type:'button',name:'overview',label:'客户概览',icon:'person-vcard'},{type:'button',name:'activity',label:'往来记录',icon:'clock-history'}]
+const customers_state=NewState({message:''})
+if(!Hash.customerTab)Hash.go({customerTab:'overview'})
+function selectedCustomer(){return customerRecords.find(row=>row.id===Hash.customerID)}
+function visibleCustomers(){return customerRecords.filter(row=>(!Hash.customerQuery||row.label.includes(Hash.customerQuery))&&(!Hash.customerStatus||row.summary===Hash.customerStatus))}
+function toggleCustomerFavorite(){
+  const id=Hash.customerID
+  if(!selectedCustomer())return
+  const current=LocalStorage.customerFavorites||[]
+  try {LocalStorage.customerFavorites=current.includes(id)?current.filter(value=>value!==id):[...current,id];customers_state.message=''}
+  catch(error){customers_state.message='偏好保存失败，请重试。'}
+}
+</script>
+</head>
+<body class="m-0">
+<AppShell viewport>
+  <div slot="header" class="d-flex align-items-center gap-2 flex-fill">
+    <i class="bi bi-grid-1x2-fill text-primary" aria-hidden="true"></i><span class="fw-semibold">客户中心</span>
+    <span class="badge text-bg-secondary">工作台模板</span>
+    <a class="btn  btn-link ms-auto" href="index.html">模板目录</a>
+    <button type="button" class="btn  btn-outline-secondary" aria-label="切换主题" $aria-pressed="LocalStorage.templateDark?'true':'false'" $onclick="LocalStorage.templateDark=!LocalStorage.templateDark"><i class="bi bi-circle-half" aria-hidden="true"></i></button>
+  </div>
+  <SplitPane slot="content" $bind="LocalStorage.customerSidebarWidth" $.state.pane="Hash.customerID?'main':'sidebar'">
+    <Pane slot="sidebar" scroll="none">
+      <div slot="header"><h2 class="h4 mb-1">客户</h2><p class="small text-body-secondary mb-0">浏览客户资料与合作进展</p></div>
+      <div slot="toolbar" class="d-flex flex-column gap-2">
+        <label for="customerQuery" class="visually-hidden">搜索客户</label>
+        <input id="customerQuery" type="search" class="form-control" placeholder="搜索客户名称" $bind="Hash.customerQuery">
+        <label for="customerStatus" class="visually-hidden">合作状态</label>
+        <select id="customerStatus" class="form-select" $bind="Hash.customerStatus"><option value="">全部状态</option>合作中</option><option>待跟进</option></select>
+      </div>
+      <div slot="content" class="d-flex flex-column">
+        <p class="text-body-secondary p-3" role="status" $if="visibleCustomers().length===0">没有匹配客户，请调整筛选条件。</p>
+        <List class="flex-fill" auto-select iconfield="icon" $.state.list="visibleCustomers()" $bind="Hash.customerID"></List>
+      </div>
+      <span slot="footer" class="small text-body-secondary" $text="'共 '+visibleCustomers().length+' 位客户'"></span>
+    </Pane>
+    <Pane slot="main">
+      <div slot="header">
+        <PageHeader $.state.title="selectedCustomer()?.label||'客户档案'" $.state.description="selectedCustomer()?selectedCustomer().city+' · '+selectedCustomer().summary:'选择左侧客户，查看完整档案'">
+          <template slot="actions"><button class="btn btn-outline-primary" type="button" $disabled="!selectedCustomer()" $aria-pressed="(LocalStorage.customerFavorites||[]).includes(Hash.customerID)?'true':'false'" $onclick="toggleCustomerFavorite()"><i class="bi bi-star me-1" aria-hidden="true"></i><span $text="(LocalStorage.customerFavorites||[]).includes(Hash.customerID)?'已关注':'关注客户'"></span></button></template>
+        </PageHeader>
+      </div>
+      <Nav slot="toolbar" $.state.list="customerTabs" $bind="Hash.customerTab"></Nav>
+      <div slot="content" class="p-4">
+        <p role="alert" class="alert alert-danger" $if="customers_state.message" $text="customers_state.message"></p>
+        <div $if="!Hash.customerID" class="text-center py-5">
+          <i class="bi bi-person-lines-fill display-4 text-body-secondary" aria-hidden="true"></i><h2 class="h5 mt-3">从一位客户开始</h2><p class="text-body-secondary">选择客户后，这里会展示联系信息、订单与往来记录。</p>
+        </div>
+        <div $if="Hash.customerID&&!selectedCustomer()" class="alert alert-warning" role="alert">客户不存在或已不可用。<button class="btn  btn-link" $onclick="Hash.go({customerID:null})">返回客户列表</button></div>
+        <template $if="selectedCustomer()">
+          <section $if="Hash.customerTab==='overview'">
+            <div class="row g-3 mb-4">
+              <div class="col-12 col-md-6"><div class="border rounded p-3"><p class="small text-body-secondary mb-1">合作订单</p><p class="h3 mb-0" $text="selectedCustomer()?.orders"></p></div></div>
+              <div class="col-12 col-md-6"><div class="border rounded p-3"><p class="small text-body-secondary mb-1">累计合作金额（元）</p><p class="h3 mb-0" $text="selectedCustomer()?.revenue.toLocaleString('zh-CN')"></p></div></div>
+            </div>
+            <h2 class="h6 mb-3">联系信息</h2>
+            <dl class="row gy-2"><dt class="col-4 text-body-secondary fw-normal">联系人</dt><dd class="col-8" $text="selectedCustomer()?.contact"></dd><dt class="col-4 text-body-secondary fw-normal">邮箱</dt><dd class="col-8 text-break" $text="selectedCustomer()?.email"></dd><dt class="col-4 text-body-secondary fw-normal">所在城市</dt><dd class="col-8" $text="selectedCustomer()?.city"></dd></dl>
+            <div class="bg-body-tertiary rounded p-3 mt-4"><h2 class="h6">下一步建议</h2><p class="text-body-secondary mb-0">核对客户资料后，查看往来记录，安排下一次沟通。</p></div>
+          </section>
+          <section $if="Hash.customerTab==='activity'"><h2 class="h6 mb-3">最近往来</h2><ol class="list-group list-group-numbered"><li class="list-group-item" $each="Array.from({length:40},(_,i)=>i)" as="activity"><div class="d-inline-block ms-2"><span class="fw-semibold" $text="'第 '+(activity+1)+' 次合作跟进'"></span><p class="small text-body-secondary mb-0">已确认需求与交付计划，等待下一次沟通。</p></div></li></ol></section>
+          <div $if="!['overview','activity'].includes(Hash.customerTab)" class="alert alert-warning" role="alert">未知页面。<button class="btn  btn-link" $onclick="Hash.go({customerTab:'overview'})">返回客户概览</button></div>
+        </template>
+      </div>
+      <span slot="footer" class="small text-body-secondary">示例客户数据仅供浏览；关注偏好保存在当前浏览器。</span>
+    </Pane>
+  </SplitPane>
+</AppShell>
+</body></html>

@@ -1,16 +1,22 @@
 name: AutoForm
+kind: component
+src: /ui/components/base/AutoForm.js
+dependencies: [Toast, UUID, Disposer]
 purpose: Render and submit a form from a schema array.
 
 attributes:
+  sm: boolean; use Bootstrap small sizing for labels, controls, custom form components, and the submit button
   vertical: boolean
   horizontal: boolean
   inline: boolean
   nobutton: boolean
   submitlabel: string
+  columns: 'Preferred field columns, integer 1 through 4. Explicitly setting this opts into column layout with top labels by default. Actual columns adapt to the AutoForm host width. Missing defaults to legacy layout; invalid counts fall back to 1.'
 
 state:
   data: object; form values, keyed by schema.name
   schema: array; field definitions
+  columns: 'Reactive preferred column count, 1 through 4. Overrides the initial columns attribute. Missing defaults to 1; invalid counts render as 1. Existing inputs retain their DOM and data when columns or host width changes.'
 
 properties:
   api: API element used by submit when present.
@@ -18,15 +24,30 @@ properties:
   response: Latest full HTTP response after submit.
   result: Latest response.result after submit.
 
+methods:
+  submit: "submit(options?) validates the form, emits cancelable submit, and sends through api or request.url."
+
+events:
+  submit: "Cancelable; detail is the complete form data."
+  response: "detail is the successful HTTP response, including null or primitive result values; those values are preserved without being treated as application errors."
+  error: "detail is the Error raised by transport or an application error result."
+
+slots:
+  actions: "Custom action controls rendered beside the default submit button; combine with nobutton to replace it."
+
 schema:
-  item: "{name, type, label?, setting?, options?, placeholder?, if?, appendTo?}"
-  types: "text|password|email|number|date|datetime|file|select|checkbox|radio|switch|textarea|label|divider|DatePicker|ColorPicker|IconPicker|TagsInput|code"
+  item: "{name, type, label?, setting?, options?, placeholder?, if?, appendTo?, colspan?}"
+  types: "text|password|email|number|date|datetime|file|select|checkbox|radio|switch|textarea|label|divider|group|DatePicker|ColorPicker|IconPicker|TagsInput|code"
+  datetime: "Uses native datetime-local. Data remains a local date/time string (YYYY-MM-DDTHH:mm); the component does not assign a timezone or serialize it to UTC."
   options: "select/checkbox/radio options: ['A', {value:'b', label:'B'}], or a $$each expression string evaluated against the form (for example `categories[this.data.type] || []`)"
   setting: "native/control attributes copied to the control. Do not place schema metadata such as type or options here. Omit absent values instead of supplying undefined. Boolean required, readonly, and disabled values may be JavaScript expression strings evaluated against this.data, for example { readonly: '!!this.data.id' }."
+  control_id: 'Native field labels target the control id from setting.id when supplied, or an instance-unique generated id otherwise. Generated ids stay stable when conditional fields hide and reappear. Multiple radio/checkbox options use the base id for the first option and indexed suffixes for later options; callers must keep explicit ids unique across forms.'
   if: 'JavaScript expression evaluated by `$$if`; use component data through `this.data`, for example `this.data.role === "admin"`.'
   appendTo: "Root field name declared earlier in the schema. The current control is rendered in that root field's control group while keeping its own data binding. Multiple controls may appendTo the same root; appended fields must reference the root directly."
   label: Read-only text displaying item.value or data[item.name].
   divider: Full-width section divider; label is its optional section title.
+  group: 'Layout-only {type:"group", label?, columns?, if?, items:[field,...]}. Group columns override the form count locally; omitted inherits it. Fields retain their flat data keys and one form submit boundary. Sibling groups may have different counts. Nested groups or a non-array items value throw a descriptive error.'
+  colspan: 'Root field width in column layout: a positive integer or full. Defaults to 1 and clamps to the effective local column count. Dividers always span all columns. appendTo fields share the root width; their own colspan is ignored.'
   database_fields: 'Data-API field definitions with tableID are accepted and converted for rendering only: name stays the data key; settings.type is the control type; settings.options are control options; only settings.attrs become control attributes. Other custom settings remain field metadata and must not be expanded onto the native control. The original fields and data are not changed.'
 
 submit:
@@ -36,6 +57,20 @@ submit:
   result: "response is full HTTP response; result is response.result"
 
 examples:
+  columns_and_groups: |
+    <script>
+      const customer_state = NewState({ draft: NewState({name:'Ada',email:'',city:'',postal:'',notes:''}) })
+      const customerSchema = [
+        {name:'name',label:'Name',type:'text',setting:{required:true}},
+        {name:'email',label:'Email',type:'email'},
+        {type:'group',label:'Address',columns:2,items:[
+          {name:'city',label:'City',type:'text'},
+          {name:'postal',label:'Postal code',type:'text'}
+        ]},
+        {name:'notes',label:'Notes',type:'textarea',colspan:'full'}
+      ]
+    </script>
+    <AutoForm columns="2" $.state.data="customer_state.draft" $.state.schema="customerSchema"></AutoForm>
   basic: |
     <script>
       const profile = { name: 'Ada', role: 'admin', tags: ['math'] }
@@ -85,6 +120,14 @@ examples:
     <AutoForm $.state.data="data" $.state.schema="schema"></AutoForm>
 
 rules:
+  - Inherits global ui-sm/ui-lg density; existing sm attribute remains an explicit small-size compatibility choice. Density changes recalculate host column capacity without remounting fields.
+  - Below 36rem of actual host width, horizontal labels stack above controls, including the legacy forced horizontal mode.
+  - Column layout is enabled by an explicit columns attribute, a preferred count greater than 1, a group, or a colspan hint. Without these, existing horizontal/vertical/inline layouts remain unchanged.
+  - Column layout uses top labels by default. horizontal keeps labels beside their controls within each field; vertical keeps top labels. inline cannot be combined with column layout and throws a descriptive error.
+  - Each field needs about 18rem plus a 1.5rem gap. Columns reduce automatically using the actual host width and root font size, including narrow embedding hosts and text zoom. Changing width updates layout without remounting controls.
+  - A group is layout metadata, not a nested object or another AutoForm. Conditions use the same this.data as fields. appendTo only targets a preceding root within the same group/ungrouped section.
+  - Data field names stay unique across the complete form, including sibling groups. A group's optional label is presentation and is never a data key.
+  - Native reportValidity identifies and focuses invalid controls before submit. Validation failure emits no submit event, makes no request and does not create an overlapping Toast; keep the save action available for correction and retry.
   - appendTo is AutoForm layout metadata, not a control setting.
   - An appended field references a preceding root field directly; chains are not resolved.
   - The root provides the shared label, and every grouped control keeps its own name, condition, settings, and data binding.
@@ -99,4 +142,4 @@ related:
   - ../editor/CodeEditor.yaml
 
 tests:
-  - AutoForm.test.html
+  - AutoForm.test.yaml

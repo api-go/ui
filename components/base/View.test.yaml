@@ -1,0 +1,24 @@
+testData: {}
+cases:
+  - name: relative nested fragment and idempotent load
+    attributes: { id: subject, file: /ui/components/base/View.fixtures/parent.html }
+    slots: {}
+    before:
+      - property: { path: subject.fileURL, equals: { expr: "new URL('/ui/components/base/View.fixtures/parent.html',location.href).href" } }
+      - dom: { selector: '#subject #parentContent', text: parent }
+      - dom: { selector: '#subject #childContent', text: child }
+      - dom: { selector: '#subject #sharedContent', text: shared }
+    actions:
+      - call: { method: load, saveAs: firstLoad }
+      - call: { method: load, saveAs: secondLoad }
+    after:
+      - script: "return firstLoad === secondLoad && subject.querySelectorAll('style[data-view-test]').length === 1"
+      - event: { name: ready, count: 1 }
+  - name: missing fragment emits error
+    attributes: { id: subject, file: /ui/components/base/View.fixtures/missing.html }
+    slots: {}
+    before: []
+    actions:
+      - wait: 100
+    after:
+      - event: { name: error, count: 1 }

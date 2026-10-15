@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>全局密度与工具栏</title>
+<script src="../frameworks/State.js"></script>
+<script src="../frameworks/Bootstrap.js"></script>
+<script src="../utilities/Disposer.js"></script>
+<script src="../utilities/UUID.js"></script>
+<script src="../utilities/MouseMover.js"></script>
+<script src="../utilities/VirtualScroll.js"></script>
+<script src="../utilities/HTTP.js"></script>
+<script src="../components/base/API.js"></script>
+<script src="../components/base/Toast.js"></script>
+<script src="../components/base/Modal.js"></script>
+<script src="../components/base/Dialog.js"></script>
+<script src="../components/base/Resizer.js"></script>
+<script src="../components/base/AutoForm.js"></script>
+<script src="../components/form/DatePicker.js"></script>
+<script src="../components/form/ColorPicker.js"></script>
+<script src="../components/form/IconPicker.js"></script>
+<script src="../components/form/TagsInput.js"></script>
+<script src="../components/base/List.js"></script>
+<script src="../components/base/ItemCollection.js"></script>
+<script src="../components/base/ActionBar.js"></script>
+<script src="../components/base/FilterBar.js"></script>
+<script src="../components/base/RequestState.js"></script>
+<script src="../components/data/DataGrid.js"></script>
+<script>
+const density_state=NewState({query:NewState({search:''}),notice:'',loading:false,error:'',dark:false,contacts:['客户负责人'],draft:NewState({field0:'切换密度时保留编辑'})})
+const densityRows=Array.from({length:2000},(_,i)=>({id:'r'+i,label:'客户 '+i,name:'客户 '+i}))
+const densityFields=[{id:'name-field',name:'name',type:'v100',settings:{type:'text'}}]
+const densitySchema=Array.from({length:6},(_,i)=>({name:'field'+i,label:'字段 '+(i+1),type:'text'}))
+const densityActions=[{id:'create',label:'新建客户',icon:'plus-lg',primary:true},{id:'export',label:'导出',icon:'download'},{id:'archive',label:'归档',icon:'archive'}]
+function densityApply(query){Hash.go({query:query.search||null});density_state.notice='已应用：'+(query.search||'全部')}
+Bootstrap.config({bindDarkMode:[density_state,'dark']})
+</script></head>
+<body $class="['sm','lg'].includes(Hash.density)?'ui-'+Hash.density:'ui-default'">
+<main class="container py-4">
+<header class="d-flex flex-wrap align-items-center gap-3 mb-4"><div class="flex-fill"><h1 class="h4">全局密度与工具栏</h1><p class="text-body-secondary mb-0">一处切换，所有默认控件继承。显式 BS 尺寸保持优先。</p></div><label>密度<select id="density-choice" class="form-select" $bind="Hash.density"><option value="default">默认</option><option value="sm">紧凑 sm</option><option value="lg">宽松 lg</option></select></label><label class="form-check"><input class="form-check-input" type="checkbox" $bind="density_state.dark">深色</label></header>
+<section class="border rounded p-3 mb-4"><ActionBar class="w-100" $.state.actions="densityActions" $.state.selection="['r1','r2']" $onaction="density_state.notice='动作：'+event.detail.id"><strong slot="start">客户管理</strong></ActionBar><hr><FilterBar $.state.query="density_state.query" $.state.defaults="{search:''}" $onapply="densityApply(event.detail)" data-no-changebind><label slot="fields">搜索客户<input class="form-control" $bind="density_state.query.search"></label></FilterBar><p role="status" class="mb-0 mt-2 text-body-secondary" $text="density_state.notice"></p></section>
+<section class="mb-4"><h2 class="h5">默认控件与显式覆盖</h2><div class="d-flex flex-wrap gap-3 align-items-center"><button id="density-native" class="btn btn-primary">继承密度</button><button id="density-explicit-sm" class="btn btn-primary btn-sm">固定 sm</button><button id="density-explicit-lg" class="btn btn-primary btn-lg">固定 lg</button><input id="density-native-input" class="form-control" aria-label="继承密度输入" value="密度不改变数据"><div class="ui-default"><button id="density-local-default" class="btn btn-secondary">局部默认</button></div><div class="input-group input-group-lg"><input aria-label="固定大输入组" class="form-control"><button class="btn btn-secondary">固定 lg 组</button></div></div></section>
+<section class="mb-4"><h2 class="h5">可编辑集合 · 保留草稿并切换 lg / sm</h2><ItemCollection id="density-collection" type="string" $bind="density_state.contacts"><template slot="item"><span class="badge text-bg-secondary" $text="item"></span></template><input slot="creator" class="form-control" placeholder="添加联系人" $bind="this.newItem"></ItemCollection></section>
+<section class="mb-4"><h2 class="h5">容器自适应多列表单</h2><AutoForm id="density-form" columns="3" nobutton $.state.schema="densitySchema" $.state.data="density_state.draft"></AutoForm></section>
+<section class="mb-4"><h2 class="h5">请求状态与保留内容</h2><div class="d-flex flex-wrap gap-2"><button class="btn btn-link" $onclick="density_state.loading=!density_state.loading">切换加载</button><button class="btn btn-link" $onclick="density_state.error=density_state.error?'':'暂时无法刷新，原内容已保留。'">切换错误</button></div><RequestState $.state.loading="density_state.loading" $.state.error="density_state.error" $.state.hasdata="true" $onretry="density_state.error='' "><input slot="content" class="form-control" aria-label="保留草稿" value="刷新时保留草稿"></RequestState></section>
+<section class="row g-3"><div class="col-12 col-lg-4"><h2 class="h5">虚拟列表 · 2,000 条</h2><div class="ratio ratio-1x1"><List fast auto-select class="border rounded" $.state.list="densityRows"></List></div></div><div class="col-12 col-lg-8"><h2 class="h5">虚拟表格 · 2,000 条</h2><div class="ratio ratio-16x9"><div><DataGrid readonly $.state.fields="densityFields" $.state.list="densityRows"></DataGrid></div></div></div></section>
+</main></body></html>

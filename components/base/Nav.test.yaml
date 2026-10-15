@@ -1,0 +1,101 @@
+testData:
+  horizontal: { selected: null }
+  vertical: { selected: null }
+  brand: { icon: box, label: Apigo }
+  items:
+    - { type: label, label: Main }
+    - { type: button, name: home, label: Home, icon: house }
+    - { type: dropdown, name: admin, label: Admin, items: [{ type: button, name: roles, label: Roles }, { type: button, name: logout, label: Logout, noselect: true }] }
+    - { type: fill }
+    - { type: button, name: settings, label: Settings }
+cases:
+  - name: navigation closes the menu while preference actions keep it open
+    attributes: { id: subject, "$.state.list": "[{type:'dropdown',name:'menu',label:'Menu',items:[{type:'button',name:'theme',label:'Theme',noselect:true},{type:'button',name:'settings',label:'Settings',noselect:true,closemenu:true}]}]" }
+    actions:
+      - click: '#subject [data-bs-toggle]'
+      - script: "[...subject.querySelectorAll('.dropdown-item')].find(button=>button.textContent.trim()==='Theme').click()"
+    after:
+      - dom: { selector: '#subject .dropdown-menu.show', count: 1 }
+      - script: "subject.querySelectorAll('.dropdown-item')[1].click();await new Promise(resolve=>setTimeout(resolve,50));return !subject.querySelector('.dropdown-menu.show')"
+  - name: brand home URL and hash destination honor change protection
+    covers: [attributes.homepage, attributes.homeurl, methods.clickHome]
+    attributes: { id: subject, homepage: '#legacy-home', homeurl: '#workspace-home', ".changebind": '*' }
+    before:
+      - property: { path: subject.homepage, equals: '#legacy-home' }
+      - property: { path: subject.homeurl, equals: '#workspace-home' }
+      - script: "testData.originalHash=location.hash;testData.originalConfirm=Dialog.confirm;State.changes.NavHome=true;Dialog.confirm=async()=>false;return true"
+    actions:
+      - call: { method: clickHome }
+    after:
+      - script: "return location.hash===testData.originalHash && State.changes.NavHome===true"
+      - script: "State.changes.NavHome=false;await subject.clickHome();const full=location.hash==='#workspace-home';subject.homeurl='';await subject.clickHome();const hash=location.hash==='#legacy-home';location.hash=testData.originalHash;Dialog.confirm=testData.originalConfirm;return full&&hash"
+  - name: toolbar controls share the fill slot before the menu
+    attributes: { id: subject, "$.state.list": "[{type:'fill'},{type:'dropdown',name:'menu',icon:'three-dots',caret:false,items:[]}]" }
+    slots:
+      tools-end: '<button id="searchAction" $onclick="testData.toolbarClicked=true">Search</button>'
+    before:
+      - dom: { selector: '#searchAction', count: 1 }
+      - script: "return !!(subject.querySelector('#searchAction').compareDocumentPosition(subject.querySelector('[data-bs-toggle]')) & Node.DOCUMENT_POSITION_FOLLOWING)"
+      - script: "return subject.querySelector('[data-bs-toggle]').getBoundingClientRect().left-subject.querySelector('#searchAction').getBoundingClientRect().right<24"
+    actions:
+      - click: '#searchAction'
+    after:
+      - data: { path: testData.toolbarClicked, equals: true }
+      - event: { name: nav, count: 0 }
+  - name: icon menu without caret aligned start
+    attributes: { id: subject, "$.state.list": "[{type:'dropdown',name:'menu',icon:'three-dots',caret:false,align:'start',items:[{type:'button',name:'settings',label:'Settings'}]}]" }
+    before:
+      - dom: { selector: '#subject .dropdown-toggle', count: 0 }
+      - dom: { selector: '#subject .dropdown-menu-start', count: 1 }
+    actions:
+      - script: "subject.querySelector('[data-bs-toggle]').click()"
+    after:
+      - dom: { selector: '#subject .dropdown-menu.show', count: 1 }
+  - name: horizontal rendering selection and events
+    attributes: { id: subject, "$.state.brand": testData.brand, "$.state.list": testData.items, "$bind": testData.horizontal.selected }
+    slots: {}
+    before:
+      - dom: { selector: '#subject', containsText: Apigo }
+      - dom: { selector: '#subject .nav-link', count: 3 }
+      - property: { path: subject.state.value, equals: null }
+    actions:
+      - script: "[...subject.querySelectorAll('.nav-link')].find(node => node.textContent.includes('Home')).click()"
+    after:
+      - data: { path: testData.horizontal.selected, equals: home }
+      - event: { name: change, count: 1, last: home }
+      - event: { name: nav, count: 1 }
+      - script: "return __componentTestEvents.nav.at(-1).name === 'home'"
+  - name: vertical dropdown and noselect action
+    attributes: { id: subject, vertical: true, "$.state.brand": testData.brand, "$.state.list": testData.items, "$bind": testData.vertical.selected }
+    slots: {}
+    before: [{ property: { path: subject.vertical, equals: true } }]
+    actions:
+      - script: "[...subject.querySelectorAll('.nav-link')].find(node => node.textContent.includes('Admin')).click()"
+      - script: "[...subject.querySelectorAll('.nav-link')].find(node => node.textContent.includes('Logout')).click()"
+    after:
+      - property: { path: subject.state.openName, equals: admin }
+      - data: { path: testData.vertical.selected, equals: null }
+      - event: { name: nav, count: 2 }
+      - script: "return __componentTestEvents.nav.some(detail => detail.name === 'logout' && detail.selected === false)"
+  - name: global change protection cancels navigation
+    covers: [attributes.changebind]
+    attributes: { id: subject, ".changebind": '*', "$.state.list": "[{type:'button',name:'next',label:'Next'}]" }
+    before:
+      - script: "State.changes.NavTest=true;globalThis.Dialog.confirm=async()=>false;return true"
+    actions:
+      - script: "subject.querySelector('.nav-link').click()"
+      - wait: 20
+    after:
+      - property: { path: State.changes.NavTest, equals: true }
+      - event: { name: nav, count: 0 }
+
+  - name: text-only horizontal navigation remains visible in narrow containers
+    attributes: { id: subject, style: 'width:320px', "$.state.list": "[{type:'button',name:'home',label:'Home'},{type:'dropdown',name:'menu',label:'Menu',items:[]}]" }
+    before:
+      - script: "return [...subject.querySelectorAll('.nav-link > span')].every(span=>!span.classList.contains('d-none') && getComputedStyle(span).display!=='none')"
+      - script: "return subject.querySelector('.nav-link').getAttribute('aria-label')==='Home' && subject.querySelector('.nav-link').type==='button'"
+    actions:
+      - click: '#subject .nav-link'
+    after:
+      - property: { path: subject.state.value, equals: home }
+      - event: { name: change, count: 1, last: home }

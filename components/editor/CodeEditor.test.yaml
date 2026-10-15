@@ -1,0 +1,218 @@
+timeout: 15000
+dependencies: [/ui/libraries/Markdown.js]
+testData:
+  source: "const value = 1;"
+  markdown: "# Preview\n\nline one\nline two\n\n<mark>safe</mark>"
+cases:
+  - name: empty editor shows placeholder guidance
+    attributes: { id: subject, lang: markdown, placeholder: "Describe the expected result" }
+    slots: {}
+    before:
+      - script: "await subject.ready; return subject.value===''"
+      - dom: { selector: '#subject .cm-placeholder', text: "Describe the expected result" }
+      - script: "return subject.querySelector('.cm-content').getAttribute('aria-placeholder')==='Describe the expected result'"
+    actions: []
+    after: []
+  - name: JavaScript binding ready edit diagnostics and tools
+    attributes: { id: subject, lang: javascript, "$bind": testData.source }
+    slots: {}
+    before:
+      - script: "await subject.ready; return subject.language==='javascript' && subject.value===testData.source"
+      - property: { path: subject.view, equals: { expr: subject.view } }
+      - property: { path: subject.ready, equals: { expr: subject.ready } }
+      - property: { path: subject.language, equals: javascript }
+      - property: { path: subject.value, equals: testData.source }
+      - property: { path: subject.diagnostics, equals: [] }
+      - property: { path: subject.documentMode, equals: false }
+      - property: { path: subject.editorTools, equals: { expr: subject.editorTools } }
+    actions:
+      - call: { method: focus }
+      - script: "subject.view.dispatch({changes:{from:subject.view.state.doc.length,insert:'\\n// changed'}})"
+      - call: { method: validate }
+      - call: { method: reindent }
+      - call: { method: setWrap, args: [true] }
+      - call: { method: getTools, saveAs: codeTools }
+      - call: { method: runTool, args: [validate] }
+    after:
+      - data: { path: testData.source, equals: "const value = 1;\n// changed" }
+      - event: { name: ready, count: 1 }
+      - event: { name: input, count: 1 }
+      - event: { name: change, count: 1 }
+      - script: "return codeTools.some(tool=>tool.id==='validate') && subject.hasAttribute('wrap')"
+
+  - name: language alias js
+    attributes: { id: subject, lang: js, value: "let x=1" }
+    slots: {}
+    before: [{ script: "await subject.ready; return subject.language==='javascript'" }]
+    actions: []
+    after: []
+  - name: language JSON and diagnostics
+    attributes: { id: subject, lang: json, value: "{\"ok\":true}" }
+    slots: {}
+    before: [{ script: "await subject.ready; return subject.language==='json' && subject.validate().length===0" }]
+    actions:
+      - script: "subject.value='{'; subject.validate()"
+    after:
+      - script: "return subject.diagnostics.length>0"
+      - event: { name: diagnostics, count: 1 }
+  - name: language YAML
+    attributes: { id: subject, lang: yaml, value: "ok: true" }
+    slots: {}
+    before: [{ script: "await subject.ready; return subject.language==='yaml'" }]
+    actions: []
+    after: []
+  - name: language alias yml
+    attributes: { id: subject, lang: yml, value: "ok: true" }
+    slots: {}
+    before: [{ script: "await subject.ready; return subject.language==='yaml'" }]
+    actions: []
+    after: []
+  - name: language Python
+    attributes: { id: subject, lang: python, value: "print('ok')" }
+    slots: {}
+    before: [{ script: "await subject.ready; return subject.language==='python'" }]
+    actions: []
+    after: []
+  - name: language alias py
+    attributes: { id: subject, lang: py, value: "print('ok')" }
+    slots: {}
+    before: [{ script: "await subject.ready; return subject.language==='python'" }]
+    actions: []
+    after: []
+  - name: Go path highlighting and parser diagnostics
+    attributes: { id: subject, lang: go, path: main.go, value: "package main\nfunc main() {}" }
+    slots: {}
+    before: [{ script: "await subject.ready; return subject.language==='go' && !!subject.querySelector('.cm-line span[class]')" }]
+    actions:
+      - script: |
+          subject.value=`package main
+          func {`;
+          subject.validate();
+    after:
+      - script: "return subject.diagnostics.length>0"
+  - name: Java path highlighting and parser diagnostics
+    attributes: { id: subject, lang: java, path: Main.java, value: "class Main { public static void main(String[] args) {} }" }
+    slots: {}
+    before: [{ script: "await subject.ready; return subject.language==='java' && !!subject.querySelector('.cm-line span[class]')" }]
+    actions:
+      - script: "subject.value='class Main {'; subject.validate()"
+    after:
+      - script: "return subject.diagnostics.length>0"
+  - name: Shell path highlighting
+    attributes: { id: subject, lang: shell, path: run.sh, value: "#!/bin/sh\nif true; then echo ok; fi" }
+    slots: {}
+    before: [{ script: "await subject.ready; return subject.language==='shell' && !!subject.querySelector('.cm-line span[class]')" }]
+    actions: []
+    after: []
+  - name: language alias sh
+    attributes: { id: subject, lang: sh, value: "echo ok" }
+    slots: {}
+    before: [{ script: "await subject.ready; return subject.language==='shell'" }]
+    actions: []
+    after: []
+  - name: language CSS
+    attributes: { id: subject, lang: css, value: "body { color: red; }" }
+    slots: {}
+    before: [{ script: "await subject.ready; return subject.language==='css'" }]
+    actions: []
+    after: []
+  - name: Markdown source mode toolbar and slot
+    covers: [events.toolschange]
+    attributes: { id: subject, lang: markdown, mode: source, toolbar: true, allowhtml: true, breaks: true, "$bind": testData.markdown }
+    slots:
+      toolbar-start: <span class="custom-toolbar-start">Document</span>
+    before:
+      - script: "await subject.ready; return subject.mode==='source'"
+      - dom: { selector: '#subject .custom-toolbar-start', count: 1 }
+      - script: "return !subject.querySelector('.code-editor-toolbar').hidden"
+    actions:
+      - call: { method: setMode, args: [split] }
+      - call: { method: refreshPreview }
+    after:
+      - property: { path: subject.mode, equals: split }
+      - dom: { selector: '#subject .code-editor-markdown mark', text: safe }
+      - dom: { selector: '#subject .code-editor-markdown br', count: 1 }
+      - event: { name: modechange, count: 1 }
+      - event: { name: preview, count: 2 }
+      - script: "return __componentTestEvents.toolschange.length>=1"
+  - name: Markdown split mode
+    attributes: { id: subject, lang: md, mode: split, value: "# Split" }
+    slots: {}
+    before:
+      - script: "await subject.ready; await new Promise(resolve=>setTimeout(resolve,50)); return subject.mode==='split' && !!subject.querySelector('.code-editor-markdown h1')"
+    actions: []
+    after: []
+  - name: Markdown preview mode alias
+    attributes: { id: subject, lang: markdown, mode: preview, value: "# Only preview" }
+    slots: {}
+    before:
+      - script: "await subject.ready; await new Promise(resolve=>setTimeout(resolve,50)); return subject.mode==='preview' && subject.querySelector('.code-editor-source').hidden"
+    actions: []
+    after: []
+  - name: language alias md
+    attributes: { id: subject, lang: md, value: "# Alias" }
+    slots: {}
+    before: [{ script: "await subject.ready; return subject.language==='markdown'" }]
+    actions: []
+    after: []
+  - name: HTML sandbox scripts and automatic preview
+    attributes: { id: subject, lang: html, mode: preview, previewscripts: true, previewauto: true, value: "<h1>HTML</h1><script>parent.postMessage('ran','*')</script>" }
+    slots: {}
+    before:
+      - script: "await subject.ready; await subject.refreshPreview(); const frame=subject.querySelector('iframe'); return frame.getAttribute('sandbox')==='allow-scripts' && frame.srcdoc.includes('<h1>HTML</h1>')"
+    actions: []
+    after: []
+  - name: readonly dark theme wrapping and hidden toolbar
+    attributes: { id: subject, lang: js, readonly: true, theme: dark, wrap: true, toolbar: true, notoolbar: true, value: "const longLine = 'abcdefghijklmnopqrstuvwxyz'" }
+    slots: {}
+    before:
+      - script: "await subject.ready; return subject.view.state.readOnly && subject.view.lineWrapping && subject.querySelector('.code-editor-toolbar').hidden"
+    actions: []
+    after: []
+  - name: light theme
+    attributes: { id: subject, lang: js, theme: light, value: "const light=true" }
+    slots: {}
+    before: [{ script: "await subject.ready; return subject.language==='javascript'" }]
+    actions: []
+    after: []
+  - name: automatic theme
+    attributes: { id: subject, lang: js, theme: auto, value: "const auto=true" }
+    slots: {}
+    before: [{ script: "await subject.ready; return subject.language==='javascript'" }]
+    actions: []
+    after: []
+  - name: document path API load save and versions
+    attributes: { id: subject, api: /admin/ui-check-editor-fixture, path: fixtures/example.code, version: 3 }
+    slots: {}
+    before:
+      - script: "await subject.ready; await new Promise(resolve=>setTimeout(resolve,120)); return subject.documentMode && subject.value.includes('loaded')"
+    actions:
+      - call: { method: load }
+      - call: { method: save, saveAs: codeSave }
+    after:
+      - property: { path: subject.documentMode, equals: true }
+      - event: { name: loaded, count: 2 }
+      - event: { name: save, count: 1 }
+      - event: { name: saved, count: 1 }
+      - script: "return codeSave.succeeded===1 && codeSave.baseVersion===3 && subject.state.loadedVersion===4"
+  - name: document transport error
+    attributes: { id: subject, api: /admin/ui-check-editor-fixture, path: fixtures/error.code }
+    slots: {}
+    before:
+      - wait: 150
+    actions: []
+    after:
+      - event: { name: error, count: 1 }
+  - name: document version conflict preserves structured result and loaded version
+    attributes: { id: subject, api: /admin/ui-check-editor-fixture, path: fixtures/conflict.code, version: 3 }
+    slots: {}
+    before:
+      - script: "await subject.ready; await new Promise(resolve=>setTimeout(resolve,120)); return subject.state.loadedVersion===3"
+    actions:
+      - script: |
+          try { await subject.save(); return false }
+          catch (error) { testData.conflict=error; return true }
+    after:
+      - event: { name: error, count: 1 }
+      - property: { path: subject.state.loadedVersion, equals: 3 }
+      - script: "return testData.conflict?.result?.conflict===true && testData.conflict.result.baseVersion===3 && testData.conflict.result.currentVersion===5 && testData.conflict.result.diffTruncated===true"

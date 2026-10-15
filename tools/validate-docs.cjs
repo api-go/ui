@@ -1,96 +1,25 @@
-const { access, readFile, readdir } = require('node:fs/promises');
-const { basename, dirname, join, relative, resolve, sep } = require('node:path');
-
-const root = join(__dirname, '..');
-const publicDirs = ['frameworks', 'utilities', 'components'];
-const posixPath = file => relative(root, file).split(sep).join('/');
-
-const filesBelow = async directory => {
-  const entries = await readdir(directory, { withFileTypes: true });
-  const files = await Promise.all(entries.map(entry => {
-    const file = join(directory, entry.name);
-    return entry.isDirectory() ? filesBelow(file) : [file];
-  }));
-  return files.flat();
-};
-
-const sectionItems = (source, section) => {
-  const lines = source.split('\n');
-  const start = lines.findIndex(line => line === `${section}:`);
-  if (start < 0) return [];
-  const items = [];
-  for (const line of lines.slice(start + 1)) {
-    const match = line.match(/^  - (.+)$/);
-    if (!match) break;
-    items.push(match[1]);
+const fs=require('node:fs'),path=require('node:path'),YAML=require('yaml'),{contracts}=require('./contract-page.cjs'),define=require('./contract-definition.cjs')
+const root=path.join(__dirname,'..')
+async function validateDocs(){
+ const all=contracts(),llms=fs.readFileSync(path.join(root,'llms.txt'),'utf8'),ui=fs.readFileSync(path.join(root,'ui.js'),'utf8'),pkg=JSON.parse(fs.readFileSync(path.join(root,'package.json'))),errors=[]
+ const links=[...llms.matchAll(/\]\(([^)]+)\)/g)].map(m=>m[1]).filter(s=>!/^\w+:/.test(s))
+ for(const link of links)if(!fs.existsSync(path.resolve(root,link.split(/[?#]/)[0])))errors.push('Missing llms link '+link)
+ const implemented=[...ui.matchAll(/^    (\w+): \{ path: '(components\/[^']+)\.js'/gm)].map(m=>[m[1],m[2]+'.yaml'])
+ for(const [name,p]of implemented)if(!links.includes(p))errors.push('Missing component index '+name)
+ for(const c of Object.values(all)){
+  if(!c.name||!c.purpose||path.basename(c.file)!==c.name+'.yaml')errors.push('Invalid contract '+c.file)
+  if(c.src||c.reference?.source){const p=(c.src||c.reference.source).replace(/^\/ui\//,'');if(!fs.existsSync(path.join(root,p)))errors.push('Missing asset '+p)}
+  for(const key of ['related','tests'])for(const p of c[key]||[])if(!/^\w+:/.test(p)&&!fs.existsSync(path.resolve(path.dirname(c.file),p)))errors.push('Missing reference '+c.name+' '+p)
+  if(c.kind==='component'){
+   const p=c.file.replace(/\.yaml$/,'.test.yaml');if(!fs.existsSync(p)){errors.push('Missing test '+c.name);continue}
+   const test=YAML.parse(fs.readFileSync(p,'utf8')),d=define(c.name,c,test)
+   if(!test.cases?.length)errors.push('Empty test '+c.name)
+   if(d.coverage.missing.length||d.coverage.unknown.length)errors.push(c.name+' coverage '+JSON.stringify(d.coverage))
   }
-  return items;
-};
-
-const validateDocs = async () => {
-  const errors = [];
-  const [packageMetadata, llms, uiSource] = await Promise.all([
-    readFile(join(root, 'package.json'), 'utf8').then(JSON.parse),
-    readFile(join(root, 'llms.txt'), 'utf8'),
-    readFile(join(root, 'ui.js'), 'utf8')
-  ]);
-
-  const localLinks = [...llms.matchAll(/\]\(([^)]+)\)/g)]
-    .map(match => match[1])
-    .filter(link => !/^[a-z]+:/i.test(link));
-  for (const link of localLinks) {
-    const file = resolve(root, link.split(/[?#]/, 1)[0]);
-    try { await access(file); } catch (_) { errors.push(`llms.txt links to missing file: ${link}`); }
-  }
-
-  const documentedComponents = new Map(
-    localLinks
-      .filter(link => /^components\/.+\.yaml$/.test(link))
-      .map(link => [basename(link, '.yaml'), link])
-  );
-  const modulesBlock = uiSource.match(/const modules = \{([\s\S]*?)\n  \};/)?.[1] || '';
-  const implementedComponents = new Map(
-    [...modulesBlock.matchAll(/^    (\w+): \{ path: '(components\/.+)\.js'/gm)]
-      .map(match => [match[1], `${match[2]}.yaml`])
-  );
-  for (const [name, file] of documentedComponents) {
-    if (implementedComponents.get(name) !== file) errors.push(`llms.txt documents component not registered by ui.js: ${name}`);
-  }
-  for (const [name, file] of implementedComponents) {
-    if (documentedComponents.get(name) !== file) errors.push(`ui.js registers component missing from llms.txt: ${name}`);
-  }
-
-  const yamlFiles = (await Promise.all(publicDirs.map(dir => filesBelow(join(root, dir)))))
-    .flat()
-    .filter(file => file.endsWith('.yaml'));
-  for (const file of yamlFiles) {
-    const source = await readFile(file, 'utf8');
-    const path = posixPath(file);
-    const name = source.match(/^name: (.+)$/m)?.[1];
-    if (!name) errors.push(`${path} is missing name`);
-    if (name && basename(file, '.yaml') !== name) errors.push(`${path} name must match its basename`);
-    if (!/^purpose: .+$/m.test(source)) errors.push(`${path} is missing purpose`);
-    if (!/^examples:/m.test(source)) errors.push(`${path} is missing examples`);
-    if (/^(example|property):/m.test(source)) errors.push(`${path} must use plural examples/properties`);
-
-    for (const section of ['related', 'tests']) {
-      for (const item of sectionItems(source, section)) {
-        if (/^[a-z]+:\/\//i.test(item)) continue;
-        const target = resolve(dirname(file), item);
-        try { await access(target); } catch (_) { errors.push(`${path} ${section} points to missing file: ${item}`); }
-      }
-    }
-  }
-
-  const versions = [...llms.matchAll(/@apigo\.cc\/ui@([^/`"\s]+)/g)].map(match => match[1]);
-  if (!versions.length || versions.some(version => version !== packageMetadata.version)) {
-    errors.push(`llms.txt CDN versions must all equal package.json version ${packageMetadata.version}`);
-  }
-
-  if (errors.length) throw new Error(`AI documentation validation failed:\n- ${errors.join('\n- ')}`);
-  console.log(`Validated AI documentation (${localLinks.length} links; ${yamlFiles.length} YAML files; ${documentedComponents.size} components)`);
-};
-
-if (require.main === module) validateDocs().catch(error => { console.error(error); process.exit(1); });
-
-module.exports = { validateDocs };
+ }
+ const versions=[...llms.matchAll(/@apigo\.cc\/ui@([^/"\s]+)/g)].map(m=>m[1]);if(!versions.length||versions.some(v=>v!==pkg.version))errors.push('llms version mismatch')
+ if(errors.length)throw new Error(errors.join('\n'))
+ console.log(`Validated ${Object.keys(all).length} contracts and ${implemented.length} public components`)
+}
+if(require.main===module)validateDocs().catch(e=>{console.error(e);process.exit(1)})
+module.exports={validateDocs}

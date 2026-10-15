@@ -1,0 +1,28 @@
+cases:
+  - name: primary secondary selection busy and disabled commands
+    attributes:
+      id: subject
+      class: w-100
+      "$.state.actions": "[{id:'save',label:'Save',primary:true,icon:'floppy'},{id:'remove',label:'Delete',danger:true},{id:'blocked',label:'Blocked',disabled:true}]"
+      "$.state.selection": "['one','two']"
+      "$.state.busy": "false"
+    slots:
+      start: <span>Records</span>
+      end: <span>Context</span>
+    before:
+      - dom: {selector: '#subject', containsText: Records}
+      - dom: {selector: '#subject', containsText: Context}
+      - dom: {selector: '#subject [role=status]', containsText: '2'}
+    actions:
+      - call: {method: run, args: [save]}
+      - call: {method: run, args: [blocked]}
+      - call: {method: run, args: [missing]}
+      - script: "subject.state.busy=true; subject.run('remove')"
+    after:
+      - event: {name: action, count: 1, last: {id: save, selection: [one, two]}}
+      - dom: {selector: '#subject button:not([disabled])', count: 0}
+  - name: empty action list and empty selection
+    attributes: {id: subject}
+    before:
+      - dom: {selector: '#subject button', count: 0}
+      - dom: {selector: '#subject [role=status]', count: 0}

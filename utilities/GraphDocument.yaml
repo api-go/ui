@@ -1,3 +1,9 @@
+reference:
+  docdbPath: /_system/AI/Development/Frontend/GraphDocument.yaml
+  kind: utility
+  category: utility
+  source: /ui/utilities/GraphDocument.js
+
 name: GraphDocument
 purpose: Normalize, mutate, and automatically lay out reusable node-and-edge JSON documents.
 
@@ -12,6 +18,7 @@ global:
       addEdge: Add a unique directed edge between existing nodes.
       removeNode: Remove a node, attached edges, and optional descendant subtree.
       removeEdge: Remove an edge by ID.
+      layoutGraph: Compute a compact deterministic layout for arbitrary connected or disconnected graphs.
       layoutTree: Compute visible node rectangles and routed edge paths for left or right tree layout.
 
 data_shape:
@@ -22,7 +29,7 @@ data_shape:
 rules:
   - GraphDocument is a JSON utility and has no DOM or server dependency.
   - Unknown node, edge, and top-level fields are preserved.
-  - Mindmap uses layoutTree; GraphEditor preserves explicit x and y coordinates.
+  - Graph Map overviews use layoutGraph, Mindmap uses layoutTree, and GraphEditor preserves explicit x and y coordinates.
 
 examples: |
   const graph = GraphDocument.normalize({
@@ -32,6 +39,5 @@ examples: |
   const layout = GraphDocument.layoutTree(graph, { direction: 'right' })
 
 tests:
-  - GraphDocument.test.html
-  - ../components/editor/Mindmap.test.html
-  - ../components/editor/GraphEditor.test.html
+  - ../components/editor/Mindmap.test.yaml
+  - ../components/editor/GraphEditor.test.yaml

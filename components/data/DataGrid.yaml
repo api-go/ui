@@ -1,4 +1,7 @@
 name: DataGrid
+kind: component
+src: /ui/components/data/DataGrid.js
+dependencies: [VirtualScroll, AutoForm, Dialog, Resizer, DatePicker, ColorPicker, IconPicker, TagsInput]
 purpose: Manage editable, virtualized data-API tables while preserving server field definitions.
 
 attributes:
@@ -8,6 +11,15 @@ attributes:
   api:
     type: string
     behavior: POST endpoint for the data-table action protocol. Requires state.table.
+  cache:
+    type: boolean
+    behavior: Enable bounded page-memory row reuse for API queries. DataGrid sends a page-lifetime dataSession; an object containing only id reuses the cached row, while every other object replaces it. The page retains at most 10000 complete rows across sorting and filtering. Rows without updateTime remain valid full rows but are not reusable server-side. A missing local reference clears page caches, rotates dataSession, and retries once.
+  notoolbar:
+    type: boolean
+    behavior: Hide the complete built-in toolbar. Use an external toolbar when selection counts, row actions, system-field controls, and DataGrid slots are not part of the workflow.
+  no-advanced:
+    type: boolean
+    behavior: Hide the System Fields control while retaining the rest of the built-in toolbar.
 
 state:
   table: Table name sent as request.name when api is configured.
@@ -20,6 +32,7 @@ state:
   isDirty: Whether edits are pending save.
 
 slots:
+  cell: Field display content repeated for fields with settings.cellSlot=true; scope exposes item, f, and DataGrid methods.
   toolbar-start: Content rendered at the far left of the top toolbar, before the selection count and built-in actions.
   toolbar-end: Content rendered near the right edge of the top toolbar, before save status.
   footer-start: Compatibility alias rendered after the built-in actions in the top toolbar.
@@ -28,11 +41,12 @@ slots:
 editing:
   formTypes: [text, number, select, checkbox, radio, switch, textarea, code, date, datetime, TagsInput, DatePicker, ColorPicker, IconPicker]
   rule: Double-click an editable cell, then click outside the editor or press Enter to save its bound value.
-  field_settings: Field Name, Field Type, and type-specific options are shown first. Advanced mode exposes a friendly Database Type selector covering i/ui/bi/ubi/ti/v[N]/c[N]/t/o/dt/d/tm/f/ff/b/bb; Object fields use a larger JSON code editor for cell editing, and its outer editing surface can be resized from the bottom-right corner. VARCHAR and CHAR show an inline length input and still submit one encoded type string. It also exposes Index, Memo, AutoForm Control Attributes JSON, and Display Condition.
+  field_settings: Field Name, Field Type, and type-specific options are shown first. Advanced mode exposes Semantics candidates Username, Password, Phone, and TOTP plus a friendly Database Type selector covering i/ui/bi/ubi/ti/v[N]/c[N]/t/o/dt/d/tm/f/ff/b/bb. Protection supports None, Sensitive, Secret, and Verifier; Username automatically uses a Unique index, while Password automatically forces Verifier protection and a password control. Legacy isSecret fields load as Secret. Object fields use a larger JSON code editor for cell editing, and its outer editing surface can be resized from the bottom-right corner. VARCHAR and CHAR show an inline length input and still submit one encoded type string. It also exposes a single-field ascending Index as None/Index/Unique/FullText, Memo, AutoForm Control Attributes JSON, and Display Condition. Composite or descending indexes are managed by the Table module.
   row_form: Double-click the trailing tinted background of a row to open an AutoForm bound to that local row. Object fields are presented as pretty JSON code and parsed back to objects after valid edits. Previous/Next and Ctrl/Cmd+ArrowLeft/ArrowRight switch rows. Changes remain local until the grid Save action.
 
 filtering:
   rule: Click a column header, enter a value in its menu, and the grid filters immediately. Use the menu controls for sort and reset.
+  local_snapshot: Local filtering and sorting always operate on the last externally assigned list; filtered views never replace that source snapshot.
 
 field:
   required: [id, tableID, name, type, settings]
@@ -42,7 +56,8 @@ field:
     name: Database column name and row value key.
     type: Database storage type, for example v100, v30, ff, b, or dt. It is preserved when editing an unchanged UI type; changing settings.type assigns that UI type's default storage type.
     memo: Field description.
-    settings: "Extensible field metadata. Built-ins are { type, label, options, attrs, if, width, pinned, decimals, prefix, suffix, thousandSep, labelOn, labelOff }. Applications may add custom keys. DataGrid interprets only documented built-ins; only attrs maps to AutoForm control attributes, so the complete settings object must never be expanded onto a native control. Omit absent attrs such as pattern instead of storing undefined."
+    protection: "Field protection level: empty, Sensitive, Secret, or Verifier. isSecret remains a derived compatibility flag."
+    settings: "Extensible field metadata. Built-ins are { type, label, options, semantics, attrs, if, width, pinned, cellSlot, decimals, prefix, suffix, thousandSep, labelOn, labelOff }. semantics is an array selected from Username, Password, Phone, and TOTP. cellSlot delegates display rendering to the cell slot. Applications may add custom keys. DataGrid interprets only documented built-ins; only attrs maps to AutoForm control attributes, so the complete settings object must never be expanded onto a native control. Omit absent attrs such as pattern instead of storing undefined."
     formatter: Function receiving value and field.
 
 methods:
@@ -60,6 +75,10 @@ methods:
   applySortFilter: Apply current or supplied sorting and filters.
   onScroll: Refresh the virtual row window after scrolling.
   openRowForm: Open the local row AutoForm by absolute row index.
+  showCellDetail: "showCellDetail(value, field) opens the built-in read-only long-value dialog."
+  toggleProtectedValue: Open the reason dialog for one masked Sensitive or Secret cell, or hide a value already revealed in component memory. Protected cells never enter the ordinary cell editor.
+  copyProtectedValue: Copy an already revealed protected cell value without writing it into row data.
+  submitProtectedReveal: Submit the current single-value reveal request. The returned plaintext is never written into state.list and is copied to the clipboard when browser permission allows.
 
 events:
   save:
@@ -73,12 +92,14 @@ api:
   request: "POST { action, name: state.table, ...payload }"
   actions:
     fields: "response { ok, fields }; loaded when table changes."
-    query: "request { filter, sort, offset: 0, limit: 1000 }; response { ok, data, count } or { ok, list, count }. Filter items are { field, operator, value }; sort is ['field DESC']."
+    query: "request { filter, sort, offset: 0, limit: 1000, dataSession? }; response { ok, data, count } or { ok, list, count }. With cache enabled, unchanged reusable rows may contain only id; every other object is a complete row. Filter items are { field, operator, value }; sort is ['field DESC']."
     setField: "request { fields: [field] }; called after adding or editing a field."
     removeField: "request { fields: [field] }; called after deleting a field."
     save: "request { data: list }; called by Save."
     remove: "request { data: ids }; called by Delete; ids contains stable record ID strings, not row objects."
+    reveal: "request { id, field, reason }; response { ok, secret }. Available only for masked Sensitive or Secret fields; reason is required and server authorization remains authoritative."
   behavior: Sorting and filters build validated filter plus sort structures and reload from the server. Pending edits require confirmation before a reload.
+  cache_scope: The dataSession and bounded row cache are shared by cache-enabled DataGrid instances for the current page lifetime and are never persisted in browser storage.
   field_layout: Header drag reorder writes Field.priority; completed column resize writes settings.width. API-backed grids immediately call setField with complete field records, so these metadata-only operations do not make the row Save button dirty.
   row_order: A real data field named priority with database type ff becomes a 42px drag handle. It follows the same optional Pin Column setting as ordinary fields and is not pinned implicitly. Reordering is available only with no active user sort or filter. Normally only the moved row is saved with a midpoint priority; exhausted floating-point gaps re-space at most 21 nearby rows rather than the whole table.
   empty_table: When fields returns an empty array, DataGrid does not query the not-yet-created physical table and shows Add Field in the toolbar.
@@ -104,6 +125,7 @@ related:
   - ../form/TagsInput.yaml
 
 rules:
+  - Inherits ui-sm/ui-lg for row heights and default control sizing. Density switches rebuild virtual height caches and retain the approximate logical scroll anchor. Toolbar wraps instead of clipping commands; explicit host size classes remain overrides.
   - Bind fields and list with $.state.fields and $.state.list.
   - DataGrid uses field.name (not field.id) to read and update each row value.
   - DataGrid only supports data-API field definitions; use datatable for generic tabular display.
@@ -120,9 +142,9 @@ examples:
   local_and_api: |
     <script>
       const orderFields = [
-        { id: 'f-name', tableID: 'orders', name: 'name', type: 'v100', isIndex: true, memo: '', settings: { type: 'text' } },
-        { id: 'f-total', tableID: 'orders', name: 'total', type: 'ff', isIndex: false, memo: '', settings: { type: 'number', prefix: '$', decimals: 2 } },
-        { id: 'f-status', tableID: 'orders', name: 'status', type: 'v30', isIndex: false, memo: '', settings: { type: 'select', options: ['draft', 'paid'] } }
+        { id: 'f-name', tableID: 'orders', name: 'name', type: 'v100', index: 'Index', memo: '', settings: { type: 'text' } },
+        { id: 'f-total', tableID: 'orders', name: 'total', type: 'ff', index: '', memo: '', settings: { type: 'number', prefix: '$', decimals: 2 } },
+        { id: 'f-status', tableID: 'orders', name: 'status', type: 'v30', index: '', memo: '', settings: { type: 'select', options: ['draft', 'paid'] } }
       ]
       const orders = [{ name: 'Ada', total: 42, status: 'paid', paid: true, tags: ['priority'], due: '2026-07-12' }]
       const saveRows = rows => console.log(rows)
@@ -133,4 +155,4 @@ examples:
     <DataGrid editable api="/admin/table" $.state.table="Hash.table"></DataGrid>
 
 tests:
-  - DataGrid.test.html
+  - DataGrid.test.yaml

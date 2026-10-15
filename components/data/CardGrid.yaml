@@ -1,0 +1,77 @@
+name: CardGrid
+kind: component
+src: /ui/components/data/CardGrid.js
+dependencies: [AutoForm, Modal, Dialog, RemoteSelect]
+purpose: Browse and edit a bounded window of up to 200 objects as compact wrapping cards with file-browser selection.
+
+attributes:
+  editable: Enable add, edit, save, and delete controls.
+  api: Optional POST endpoint using the CardGrid action protocol.
+  notoolbar: Hide the built-in toolbar.
+  query-action: Query action name; defaults to query.
+  save-action: Save action name; defaults to save.
+  remove-action: Remove action name; defaults to remove.
+  id-field: Stable item key field; defaults to id.
+  title-field: Default card and editor title field; defaults to name.
+  limit: Maximum displayed items, clamped to 1..200 and defaulting to 200.
+
+state:
+  list: Local item array or the current API result window.
+  params: Object merged into every API request.
+  schema: AutoForm schema used by the edit modal.
+  sortoptions: Array of {value,label} options shown by the toolbar.
+  filteroptions: Array of {value,label} quick filters shown beside sorting.
+  sort: Active field name; prefix with - for descending order.
+  filter: Active filter value; it is sent to API queries and matches reviewStatus locally.
+  query: Toolbar search text.
+  selected: Selected item objects.
+  total: Complete API match count.
+  loading: Whether a query is in flight.
+  saving: Whether an editor save is in flight.
+
+selection:
+  behavior: Click replaces selection; Ctrl/Command-click toggles; Shift-click selects the anchor range; dragging empty canvas draws an intersection selection box.
+
+slots:
+  card: Repeated card body with item in scope.
+  toolbar-start: Controls before the selection counter.
+  toolbar-actions: Host bulk actions beside built-in add/delete controls.
+  toolbar-end: Controls after search.
+  empty: Empty-state content.
+
+methods:
+  reload: Reload and replace the bounded result window.
+  getSelectedItems: Return selected objects in display order.
+  clearSelection: Clear selection.
+  selectAll: Select all displayed items.
+  selectItem: Apply file-browser selection semantics to an item and pointer/keyboard modifier object.
+  openEditor: Open the configured AutoForm modal for an item.
+  newItem: Open the editor with an empty object.
+  saveEditor: Validate the save boundary, optionally call the API, and reload.
+  removeItems: Confirm and remove specified items.
+  removeSelected: Remove selected items.
+
+events:
+  beforeedit: "Cancelable; detail is {item,editor}; the host may replace editor before AutoForm opens."
+  load: "detail is {list,total} after a successful local or remote load."
+  selectionchange: "detail is the selected item array."
+  itemclick: "detail is {item, selected}."
+  itemactivate: "detail is {item}; emitted on double-click."
+  save: "Cancelable; detail is {value}."
+  remove: "Cancelable; detail is {items}."
+  loaderror: "detail is the query Error."
+
+api:
+  query: "POST {action, ...params, query, sort, filter, offset:0, limit}; response {ok,list,count} or {ok,data,count}."
+  save: "POST {action, ...params, value}."
+  remove: "POST {action, ...params, ids}."
+
+rules:
+  - CardGrid renders at most 200 cards and does not claim to virtualize variable-height wrapping rows; larger collections are managed through server search, filtering, and sorting.
+  - Sort and quick-filter options are mutually exclusive selections; choosing one closes its menu, and clearing restores the neutral filter icon.
+  - A sparse result does not stretch a single card across the full row.
+  - The host owns business permissions, validation, eligibility, and batch approval rules.
+  - Card content customization uses the card slot; consumers must not inspect component internals.
+
+tests:
+  - CardGrid.test.yaml

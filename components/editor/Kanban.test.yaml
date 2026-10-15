@@ -1,0 +1,106 @@
+timeout: 15000
+testData:
+  board: { columns: [{ id: todo, title: Todo, items: [{ id: c1, title: First, content: Work, untouched: 7 }] }, { id: done, title: Done, items: [] }] }
+  crudBoard: { columns: [{ id: todo, title: Todo, items: [{ id: c1, title: First, content: Work }] }] }
+  slotBoard: { columns: [{ id: todo, title: Todo, items: [{ id: c1, title: First, content: Work }] }, { id: empty, title: Empty, items: [] }] }
+  extras: { card: [{ name: title, label: Task title, type: text }, { name: priority, label: Priority, type: select, options: [low, high] }] }
+cases:
+  - name: rendering schemas editing state and events
+    covers: [methods.schemas, methods.editCard, methods.commitEdit, methods.cancelEdit, state.editing]
+    attributes: { id: subject, "$.state.data": testData.board, "$.state.extraSchemas": testData.extras }
+    slots: {}
+    before:
+      - dom: { selector: '#subject .kanban-column', count: 2 }
+      - dom: { selector: '#subject .kanban-card', count: 1 }
+      - property: { path: subject.state.dirty, equals: false }
+      - property: { path: subject.state.extraSchemas, equals: testData.extras }
+      - script: "return subject.schemas().card.find(f=>f.name==='title').label==='Task title' && subject.schemas().card.some(f=>f.name==='priority')"
+    actions:
+      - script: "subject.editCard(subject.state.data.columns[0].items[0],subject.state.data.columns[0]); subject.state.editing.draft.title='Changed'; subject.commitEdit()"
+      - script: "subject.editCard(subject.state.data.columns[0].items[0],subject.state.data.columns[0]); subject.cancelEdit()"
+    after:
+      - property: { path: "subject.state.data.columns[0].items[0].title", equals: Changed }
+      - property: { path: "subject.state.data.columns[0].items[0].untouched", equals: 7 }
+      - property: { path: subject.state.dirty, equals: true }
+      - property: { path: subject.state.editing, equals: null }
+      - event: { name: change, count: 1 }
+      - event: { name: update, count: 1 }
+  - name: add edit remove column and card lifecycle
+    covers: [methods.addColumn, methods.editColumn, methods.addCard, methods.removeCard, methods.removeColumn, methods.deleteEditing]
+    attributes: { id: subject, "$.state.data": testData.crudBoard }
+    slots: {}
+    before: []
+    actions:
+      - script: "subject.addColumn(); subject.state.editing.draft.title='Later'; subject.commitEdit(); globalThis.addedColumn=subject.state.data.columns.find(c=>c.title==='Later')"
+      - script: "subject.editColumn(addedColumn); subject.state.editing.draft.title='Later edited'; subject.commitEdit()"
+      - script: "subject.addCard(addedColumn); subject.state.editing.draft.title='New card'; subject.commitEdit(); globalThis.addedCard=addedColumn.items[0]"
+      - script: "subject.editCard(addedCard,addedColumn); globalThis.__oldConfirm=Dialog.confirm; Dialog.confirm=async()=>true; await subject.deleteEditing(); Dialog.confirm=__oldConfirm"
+      - script: "await subject.removeColumn(addedColumn,{confirm:false})"
+    after:
+      - property: { path: subject.state.data.columns.length, equals: 1 }
+      - event: { name: change, count: 4 }
+      - event: { name: update, count: 4 }
+  - name: slots toolbar and readonly presentation
+    attributes: { id: subject, toolbar: true, readonly: true, "$.state.data": testData.slotBoard }
+    slots:
+      toolbar: <span class="slot-toolbar">Tools</span>
+      column-header: <span class="slot-column" $text="column.title"></span>
+      card: <span class="slot-card" $text="card.title"></span>
+      empty-column: <span class="slot-empty">No cards</span>
+      editor: <span class="slot-editor">Editor</span>
+    before:
+      - dom: { selector: '#subject .slot-toolbar', count: 1 }
+      - dom: { selector: '#subject .slot-column', count: 2 }
+      - dom: { selector: '#subject .slot-card', count: 1 }
+      - dom: { selector: '#subject .slot-empty', count: 1 }
+      - dom: { selector: '#subject .slot-editor', count: 1 }
+    actions: [{ call: { method: addColumn } }]
+    after: [{ property: { path: subject.state.data.columns.length, equals: 2 } }]
+  - name: card actions slot with default card body
+    attributes: { id: subject, "$.state.data": testData.slotBoard }
+    slots:
+      card-actions: <span class="slot-actions">Actions</span>
+    before: [{ dom: { selector: '#subject .slot-actions', count: 1 } }]
+    actions: []
+    after: []
+  - name: toolbar tools and stateless save
+    covers: [methods.getTools, methods.runTool, events.toolschange]
+    attributes: { id: subject, toolbar: true, "$.state.data": testData.crudBoard }
+    slots: {}
+    before: [{ script: "return subject.getTools().some(tool=>tool.id==='add-column')" }]
+    actions:
+      - call: { method: runTool, args: [add-column] }
+      - call: { method: cancelEdit }
+      - call: { method: save, saveAs: localSave }
+    after:
+      - script: "return localSave.type==='kanban' && localSave.formatVersion===1"
+      - event: { name: save, count: 1 }
+      - property: { path: subject.state.dirty, equals: false }
+  - name: authenticated API load save and version state
+    covers: [methods.load, state.path, state.version, state.loading, state.saving, state.loadedVersion]
+    attributes: { id: subject, api: /admin/ui-check-editor-fixture, path: fixtures/board.kanban, version: 3 }
+    slots: {}
+    before:
+      - wait: 180
+      - dom: { selector: '#subject', containsText: API Todo }
+      - property: { path: subject.state.path, equals: fixtures/board.kanban }
+      - property: { path: subject.state.version, equals: 3 }
+      - property: { path: subject.state.loading, equals: false }
+      - property: { path: subject.state.loadedVersion, equals: 3 }
+    actions:
+      - call: { method: load }
+      - call: { method: save, saveAs: apiSave }
+    after:
+      - property: { path: subject.state.saving, equals: false }
+      - script: "return apiSave.succeeded===1"
+      - event: { name: loaded, count: 2 }
+      - event: { name: saved, count: 1 }
+  - name: authenticated API error state
+    covers: [state.error]
+    attributes: { id: subject, api: /admin/ui-check-editor-fixture, path: fixtures/error.kanban }
+    slots: {}
+    before: [{ wait: 180 }]
+    actions: []
+    after:
+      - script: "return typeof subject.state.error==='string' && subject.state.error.length>0"
+      - event: { name: error, count: 1 }

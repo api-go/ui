@@ -1,12 +1,14 @@
 {
   "name": "@apigo.cc/ui",
-  "version": "1.0.9",
+  "version": "1.0.10",
   "private": false,
   "scripts": {
     "build": "node tools/build.cjs",
     "dev": "node tools/dev.cjs",
     "test": "node tools/test.cjs",
-    "pub": "npm run build && npm publish --access public"
+    "pub": "npm run build && npm publish --access public",
+    "sync:frameworks": "node tools/build.cjs --sync-frameworks",
+    "test:legacy": "node tools/test-legacy.cjs"
   },
   "devDependencies": {
     "@codemirror/autocomplete": "^6.18.0",
@@ -35,7 +37,8 @@
     "markdown-it": "^14.3.0",
     "markdown-it-task-lists": "^2.1.0",
     "rollup": "^4.50.0",
-    "terser": "^5.44.0"
+    "terser": "^5.44.0",
+    "yaml": "^2.9.1"
   },
   "files": [
     "frameworks",
@@ -43,13 +46,23 @@
     "components",
     "utilities",
     "ui.js",
+    "ui.min.js",
     "ui.test.html",
     "llms.txt",
     "lang.txt",
     "README.md",
     "README.zh-CN.md",
     "test",
-    "tools"
+    "tools",
+    "SOP.md",
+    "DocumentPage.md",
+    "AdminWorkspace.md",
+    "InteractiveApp.md",
+    "Templates.md",
+    "Component-Testing.md",
+    "Patterns",
+    "templates",
+    "examples"
   ],
   "dependencies": {
     "@codemirror/lang-cpp": "^6.0.3",

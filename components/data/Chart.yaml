@@ -1,4 +1,7 @@
 name: Chart
+kind: component
+src: /ui/components/data/Chart.js
+dependencies: [/ui/libraries/ChartJS.js, Disposer]
 purpose: Render a native Chart.js configuration without external script references or a second mapping API.
 
 state:
@@ -53,4 +56,4 @@ related:
   - ../../frameworks/State.yaml
 
 tests:
-  - Chart.test.html
+  - Chart.test.yaml

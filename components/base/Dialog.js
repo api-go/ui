@@ -37,7 +37,7 @@ globalThis.Component.register('Dialog', container => {
       </div>
       <div class="modal-footer py-2 px-3 bg-body-tertiary border-0 d-flex justify-content-center gap-3">
         <template $each="this.state?.buttons">
-        <button type="button" $class="'btn btn-sm px-3 btn-'+(index === this.state.buttons.length-1 ? (this.state.type === 'body' ? 'primary' : this.state.type) : 'secondary')" $onclick="this.result=index+1; this.hide()" $text="item"></button>
+        <button type="button" $class="'btn  px-3 btn-'+(index === this.state.buttons.length-1 ? (this.state.type === 'body' ? 'primary' : this.state.type) : 'secondary')" $onclick="this.result=index+1; this.hide()" $text="item"></button>
         </template>
       </div>
     </div>

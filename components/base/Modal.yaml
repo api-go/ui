@@ -1,4 +1,6 @@
 name: Modal
+kind: component
+src: /ui/components/base/Modal.js
 purpose: Present slotted content in a controllable Bootstrap modal.
 
 attributes:
@@ -16,6 +18,7 @@ layout:
   behavior: Long body content scrolls inside the modal; the header and footer remain visible.
 
 accessibility:
+  close: 'The default header dismiss button is named Close dialog, distinct from host-owned footer actions.'
   focus: Hiding releases focus before the modal becomes aria-hidden, makes the hidden modal inert, and restores focus to the element that was active before opening when it remains available.
 
 state:
@@ -24,7 +27,7 @@ state:
 
 methods:
   show: Show the Bootstrap modal.
-  hide: Hide the Bootstrap modal. Pass true for an explicit confirmed or cancel action that may close guarded dirty content.
+  hide: Hide the Bootstrap modal. A call during opening is retained until the opening transition completes, including its force value. Pass true for an explicit confirmed or cancel action that may close guarded dirty content. Edits during opening remain dirty and still block an unforced dismissal.
 
 events:
   change:
@@ -46,4 +49,4 @@ examples:
     <button $onclick="editModal.show()">Edit</button>
 
 tests:
-  - Modal.test.html
+  - Modal.test.yaml

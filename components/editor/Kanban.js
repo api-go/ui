@@ -163,11 +163,11 @@ globalThis.Component.register('Kanban', container => {
   <div $if="this.hasAttribute('toolbar')" slot-id="toolbar" class="kanban-toolbar d-flex align-items-center gap-2 border-bottom bg-body px-3 py-2">
     <strong class="text-truncate" $text="this.state.data.title || '{#Kanban#}'"></strong>
     <div $if="!this.readonly" class="dropdown">
-      <button type="button" class="btn btn-sm btn-link link-secondary p-1" data-bs-toggle="dropdown" aria-expanded="false" title="{#Board menu#}"><i class="bi bi-three-dots"></i></button>
+      <button type="button" class="btn  btn-link link-secondary p-1" data-bs-toggle="dropdown" aria-expanded="false" title="{#Board menu#}"><i class="bi bi-three-dots"></i></button>
       <ul class="dropdown-menu shadow-sm"><li><button type="button" class="dropdown-item" $onclick="this.addColumn()"><i class="bi bi-layout-three-columns me-2"></i>{#Add column#}</button></li></ul>
     </div>
     <div class="flex-grow-1"></div>
-    <button $if="!this.hasAttribute('nosave')" type="button" class="kanban-save" $class="'btn btn-sm '+(this.state.dirty?'btn-primary':'btn-outline-secondary')" $disabled="!this.state.dirty || this.state.saving" $onclick="this.save()"><i class="bi bi-save me-1"></i>{#Save#}</button>
+    <button $if="!this.hasAttribute('nosave')" type="button" class="kanban-save" $class="'btn  '+(this.state.dirty?'btn-primary':'btn-outline-secondary')" $disabled="!this.state.dirty || this.state.saving" $onclick="this.save()"><i class="bi bi-save me-1"></i>{#Save#}</button>
   </div>
   <div class="kanban-columns d-flex gap-3 flex-grow-1 overflow-auto p-3 align-items-stretch">
     <template $each="this.state.data.columns" as="column" index="columnIndex" key="id">
@@ -175,9 +175,9 @@ globalThis.Component.register('Kanban', container => {
         <div slot-id="column-header" class="kanban-column-header d-flex align-items-center gap-2 kanban-column-handle px-2 py-2">
           <i $if="!this.readonly" class="bi bi-grip-vertical text-secondary opacity-50"></i>
           <strong class="text-truncate flex-grow-1 px-1" $text="column.title"></strong><span class="badge rounded-pill text-bg-secondary fw-normal" $text="column.items.length"></span>
-          <button $if="!this.readonly" class="btn btn-sm btn-link link-secondary p-1" type="button" title="{#Add card#}" $onclick="event.stopPropagation();this.addCard(column)"><i class="bi bi-plus-lg"></i></button>
+          <button $if="!this.readonly" class="btn  btn-link link-secondary p-1" type="button" title="{#Add card#}" $onclick="event.stopPropagation();this.addCard(column)"><i class="bi bi-plus-lg"></i></button>
           <div $if="!this.readonly" class="dropdown">
-            <button class="btn btn-sm btn-link link-secondary p-1" type="button" data-bs-toggle="dropdown" aria-expanded="false" title="{#Column menu#}" $onclick="event.stopPropagation()"><i class="bi bi-three-dots"></i></button>
+            <button class="btn  btn-link link-secondary p-1" type="button" data-bs-toggle="dropdown" aria-expanded="false" title="{#Column menu#}" $onclick="event.stopPropagation()"><i class="bi bi-three-dots"></i></button>
             <ul class="dropdown-menu dropdown-menu-end shadow-sm">
               <li><button type="button" class="dropdown-item" $onclick="this.editColumn(column)"><i class="bi bi-pencil me-2"></i>{#Edit column#}</button></li>
               <li><hr class="dropdown-divider"></li>

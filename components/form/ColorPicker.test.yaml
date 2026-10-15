@@ -1,0 +1,21 @@
+testData: { color: '#336699' }
+cases:
+  - name: small sizing uses Bootstrap form controls
+    attributes: { id: subject, sm: true, "$bind": testData.color }
+    slots: {}
+    before:
+      - script: "return subject.sm && [...subject.querySelectorAll('.form-control')].every(node=>node.classList.contains('form-control-sm'))"
+    actions: []
+    after: []
+  - name: binding and color change
+    attributes: { id: subject, "$bind": testData.color }
+    slots: {}
+    before:
+      - property: { path: subject.value, equals: testData.color }
+      - property: { path: subject.state.value, equals: testData.color }
+      - dom: { selector: '#subject input[type="color"]', value: '#336699' }
+    actions:
+      - fill: { selector: '#subject input:not([type="color"])', value: '#ff0000', event: change }
+    after:
+      - data: { path: testData.color, equals: '#ff0000' }
+      - event: { name: change, count: 1, last: '#ff0000' }

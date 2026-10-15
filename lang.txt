@@ -10,6 +10,7 @@ Add node
 Advanced Settings
 Advanced mode
 And...
+Apply
 Are you sure you want to delete field "{field}"?
 Are you sure you want to delete {count} row(s)?
 Between
@@ -19,9 +20,12 @@ Board menu
 Boolean
 Cancel
 Central topic
+Clear
 Clear Filter
 Clear Selection
+Clear filter
 Close
+Close dialog
 Code
 Code tools
 Collapse
@@ -31,6 +35,7 @@ Connection
 Contains
 Content
 Control Attributes must be a JSON object
+Copy protected value
 Create Time
 Creator
 DESC
@@ -46,6 +51,7 @@ Delete card
 Delete column
 Delete node
 Delete selected
+Details
 Direction
 Discard unsaved changes and reload data?
 Display Condition
@@ -62,9 +68,11 @@ Ends with
 Equals
 Expand left
 Expand right
+Field
 Field ID
 Field Name
 Field Type
+Filter
 Fit graph
 Fit map
 Fixed Text (CHAR)
@@ -82,11 +90,14 @@ Label On
 Label:Value per line
 Left
 Length
+Loading
 Long Text
 Memo
+More
 Multi Select
 New card
 New column
+New item
 New node
 New plot point
 New topic
@@ -95,7 +106,10 @@ No
 No columns
 No content
 No icons found
+No items
 No nodes
+No results
+No sort options
 Node
 None
 Number
@@ -109,8 +123,18 @@ Pretty
 Preview
 Preview mode
 Previous
+Protected value copied
+Protected value revealed; clipboard access was denied
+Protection
+Reason
+Reason is required
 Regular expression, e.g. ^[A-Z].+$
+Remove
 Required
+Reset
+Retry
+Reveal
+Reveal protected value
 Right
 Row order
 Row {row}: {field} has an invalid format
@@ -119,12 +143,15 @@ Save
 Search
 Search Mode
 Search icons...
-Secret
 Select All Rows
 Select Icon
+Select a result
+Select all / clear
+Semantics
 Settings
 Shift-click another node to connect
 Single Select
+Sort
 Source
 Split left and right
 Split top and bottom
@@ -140,6 +167,7 @@ Table ID
 Text
 Text (VARCHAR)
 The nearby priority range is exhausted; reorder a wider section before trying again.
+There are unsaved changes. Discard them
 Thousand Sep
 Time
 Tiny Integer
@@ -158,9 +186,11 @@ Wrap lines
 Yes
 child
 e.g. Display Name
+items
+items could not be removed
 new tag name
 please config .api or .request.url to auto submit
 preview
+selected
 sibling
-verify failed
 {field} has an invalid validation pattern

@@ -1,5 +1,11 @@
 name: ColorPicker
+kind: component
+src: /ui/components/form/ColorPicker.js
+dependencies: [AutoForm]
 purpose: Native color input paired with an editable CSS color value.
+
+attributes:
+  sm: boolean; use Bootstrap small form-control sizing
 
 properties:
   value: string; CSS color, normally #rrggbb
@@ -28,4 +34,4 @@ related:
   - ../base/AutoForm.yaml
 
 tests:
-  - ColorPicker.test.html
+  - ColorPicker.test.yaml

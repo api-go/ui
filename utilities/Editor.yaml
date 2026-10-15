@@ -1,3 +1,9 @@
+reference:
+  docdbPath: /_system/AI/Development/Frontend/Editor.yaml
+  kind: utility
+  category: utility
+  source: /ui/utilities/Editor.js
+
 name: Editor
 purpose: Register file editors, resolve document types, merge editing schemas, and provide opt-in per-component document transport.
 
@@ -13,7 +19,7 @@ global:
       mergeSchemas: Merge extra schemas into defaults by entity kind and field name.
       applyDefaults: Apply schema default values only to undefined fields.
       load: POST a get action and normalize response meta plus data into a document envelope.
-      save: POST a set action with the document envelope in data.
+      save: POST a set action with the document envelope in data and optional baseVersion.
       connect: Attach path/version/load/save behavior to a component without inheritance.
       setTools: "setTools(component, tools) publishes editor commands without forcing an internal toolbar."
       clone: Clone JSON document data.
@@ -22,14 +28,17 @@ transport:
   endpoint: Always supplied by the component api attribute; Editor has no global api setting.
   load_request: "{ action:'get', path, version? }"
   load_response: "{ ok:true, meta:{ path?, version?, type? }, data }"
-  save_request: "{ action:'set', path, data }; data is the complete document envelope."
-  save_response: "{ ok, succeeded, failed }; the set response does not need to return a version."
+  save_request: "{ action:'set', path, data, baseVersion? }; data is the complete document envelope; connected editors send their loadedVersion to prevent stale overwrite."
+  save_response: "{ ok, succeeded, failed } or { ok:false, conflict:true, baseVersion, currentVersion, current, diff, diffTruncated }; structured conflict fields are attached to the thrown error as error.result."
 
 schema_merge:
   behavior: Extra fields append; an extra field with the same name overrides built-in properties and merges setting; hidden:true removes the result.
 
 rules:
+  - An explicit load consumes a queued automatic path/version load; its promise waits for the applicable response instead of racing a duplicate request.
   - Server history version changes on save; document formatVersion changes only when the stored JSON shape becomes incompatible.
+  - A connected editor sends its last loaded version on save and updates loadedVersion only after a successful response.
+  - A version conflict preserves the structured server result and never advances loadedVersion; callers must read and merge the current full document before retrying.
   - A missing component api always means stateless behavior and no automatic HTTP request.
   - Editor is a utility facade, not a base class, custom element, or application-wide service locator.
   - Components register their own extension associations only when their source is loaded.
@@ -53,7 +62,11 @@ related:
   - HTTP.yaml
 
 tests:
-  - Editor.test.html
-  - ../components/editor/Kanban.test.html
-  - ../components/editor/Mindmap.test.html
-  - ../components/editor/GraphEditor.test.html
+  - ../components/editor/Kanban.test.yaml
+  - ../components/editor/Mindmap.test.yaml
+  - ../components/editor/GraphEditor.test.yaml
+
+conflicts:
+  response: "{ ok:false, conflict:true, baseVersion, currentVersion, current, diff, diffTruncated }"
+  propagation: Structured fields are attached to the thrown error as error.result.
+  retry: loadedVersion never advances on conflict; read and merge the current full document before retrying.

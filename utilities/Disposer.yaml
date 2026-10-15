@@ -1,0 +1,4 @@
+name: Disposer
+kind: utility
+src: /ui/utilities/Disposer.js
+purpose: Own and release component-scoped resources and event subscriptions.

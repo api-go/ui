@@ -1,4 +1,7 @@
 name: Toast
+kind: component
+src: /ui/components/base/Toast.js
+dependencies: [Disposer]
 purpose: Show transient notifications and lightweight asynchronous confirmations.
 
 methods:
@@ -12,6 +15,7 @@ options:
   container: 'toast-container name; default is default'
 
 behavior:
+  lifetime: 'Toast.show removes its generated element after it closes. Countdown and Bootstrap timers are released when a toast closes or is removed; hovering a hidden toast does not restart its countdown.'
   buttons: 'Button click stores a 1-based result on the returned Toast element before it closes.'
   confirm: 'Confirm resolves true only when the Confirm button is clicked; close resolves false.'
 
@@ -23,4 +27,4 @@ examples: |
   Toast.show('Retry upload?', { type: 'warning', delay: 0, buttons: ['Retry'], container: 'custom' })
 
 tests:
-  - Toast.test.html
+  - Toast.test.yaml

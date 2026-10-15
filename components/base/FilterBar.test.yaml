@@ -1,0 +1,34 @@
+testData:
+  query: {search: Ada, status: enabled}
+cases:
+  - name: host draft apply reset slots and busy guard
+    attributes:
+      id: subject
+      "$.state.query": testData.query
+      "$.state.defaults": "{search:'',status:'all'}"
+      "$.state.busy": "false"
+    slots:
+      fields: <label>Search<input class="form-control" $bind="testData.query.search"></label>
+      end: <span>Filters</span>
+    before:
+      - dom: {selector: '#subject input', value: Ada}
+      - dom: {selector: '#subject', containsText: Filters}
+    actions:
+      - fill: {selector: '#subject input', value: Grace}
+      - call: {method: apply}
+      - call: {method: reset}
+      - script: "subject.state.busy=true;subject.apply();subject.reset()"
+    after:
+      - data: {path: testData.query.search, equals: ''}
+      - data: {path: testData.query.status, equals: all}
+      - event: {name: apply, count: 2, last: {search: '', status: all}}
+      - event: {name: reset, count: 1, last: {search: '', status: all}}
+      - script: "return subject.querySelector('fieldset').disabled"
+  - name: invalid native field prevents apply
+    attributes: {id: subject}
+    slots:
+      fields: <label>Email<input type="email" required class="form-control"></label>
+    actions:
+      - call: {method: apply}
+    after:
+      - event: {name: apply, count: 0}

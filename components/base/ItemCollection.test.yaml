@@ -1,0 +1,182 @@
+testData:
+  render: { objects: [{ name: Alpha }], numbers: [1] }
+  addString: { items: [one, two], added: three }
+  addObject: { items: [{ name: Alpha }], added: Beta }
+  addNumber: { items: [1], added: 7 }
+  addBoolean: { items: [true], added: true }
+  remove: { items: [one, two, three] }
+  reorder: { items: [one, two] }
+  cancelAdd: { items: [one, two], added: blocked }
+  cancelSubmit: { items: [one, two], added: cancelled }
+  missing: { items: [] }
+  visible: { items: [] }
+  density: {items: []}
+
+cases:
+  - name: renders object binding and horizontal layout
+    attributes: { id: subject, type: object, layout: horizontal, "$bind": testData.render.objects }
+    slots:
+      item: '<template><span class="object-value" $text="item.name"></span></template>'
+      creator: '<input class="creator" $bind="this.newItem.name">'
+    before:
+      - property: { path: subject.value, equals: testData.render.objects }
+      - dom: { selector: .object-value, text: Alpha }
+      - property: { path: subject.layout, equals: horizontal }
+    actions: []
+    after: []
+
+  - name: vertical number rendering
+    attributes: { id: subject, type: number, layout: vertical, "$bind": testData.render.numbers }
+    slots:
+      item: '<template><span class="number-value" $text="item"></span></template>'
+      creator: '<input class="creator" type="number" $bind="this.newItem">'
+    before:
+      - dom: { selector: .number-value, text: "1" }
+      - property: { path: subject.layout, equals: vertical }
+    actions: []
+    after: []
+
+  - name: string input and output
+    attributes: { id: subject, type: string, "$bind": testData.addString.items }
+    slots:
+      item: '<template><span class="item-value" $text="item"></span></template>'
+      creator: '<input class="creator" $bind="this.newItem">'
+    before: [{ dom: { selector: .item-value, texts: [one, two] } }]
+    actions:
+      - fill: { selector: .creator, value: testData.addString.added }
+      - click: { selector: '[aria-label="Add"]' }
+    after:
+      - data: { path: testData.addString.items, equals: [one, two, three] }
+      - property: { path: subject.newItem, equals: "" }
+      - event: { name: change, count: 1, last: [one, two, three] }
+
+  - name: object input and output
+    attributes: { id: subject, "$bind": testData.addObject.items }
+    slots:
+      item: '<template><span class="item-value" $text="item.name"></span></template>'
+      creator: '<input class="creator" $bind="this.newItem.name">'
+    before: []
+    actions:
+      - fill: { selector: .creator, value: testData.addObject.added }
+      - click: { selector: '[aria-label="Add"]' }
+    after:
+      - data: { path: testData.addObject.items, equals: [{ name: Alpha }, { name: Beta }] }
+      - dom: { selector: .item-value, texts: [Alpha, Beta] }
+
+  - name: number input and output
+    attributes: { id: subject, type: number, "$bind": testData.addNumber.items }
+    slots:
+      item: '<template><span $text="item"></span></template>'
+      creator: '<input class="creator" type="number" $bind="this.newItem">'
+    before: []
+    actions:
+      - fill: { selector: .creator, value: testData.addNumber.added }
+      - click: { selector: '[aria-label="Add"]' }
+    after: [{ data: { path: testData.addNumber.items, equals: [1, 7] } }]
+
+  - name: boolean input and output
+    attributes: { id: subject, type: boolean, "$bind": testData.addBoolean.items }
+    slots:
+      item: '<template><span class="boolean-value" $text="item"></span></template>'
+      creator: '<input class="creator" type="checkbox" $bind="this.newItem">'
+    before: [{ dom: { selector: .boolean-value, text: "true" } }]
+    actions:
+      - check: { selector: .creator, checked: true }
+      - click: { selector: '[aria-label="Add"]' }
+    after: [{ data: { path: testData.addBoolean.items, equals: [true, true] } }]
+
+  - name: remove writes through binding
+    covers: [methods.remove]
+    attributes: { id: subject, type: string, "$bind": testData.remove.items }
+    slots: { item: '<template><span $text="item"></span></template>' }
+    before: []
+    actions: [{ click: { selector: .item-collection-remove } }]
+    after:
+      - data: { path: testData.remove.items, equals: [two, three] }
+      - event: { name: change, count: 1, last: [two, three] }
+
+  - name: reorder and invalid reorder
+    attributes: { id: subject, type: string, "$bind": testData.reorder.items }
+    slots: { item: '<template><span $text="item"></span></template>' }
+    before: []
+    actions:
+      - call: { method: reorder, args: [1, 0], saveAs: reordered }
+      - call: { method: reorder, args: [-1, 0], saveAs: invalidReorder }
+    after:
+      - data: { path: testData.reorder.items, equals: [two, one] }
+      - property: { path: reordered, equals: true }
+      - property: { path: invalidReorder, equals: false }
+
+  - name: beforeadd cancellation
+    covers: [events.beforeadd, methods.submitCreator]
+    attributes: { id: subject, type: string, "$bind": testData.cancelAdd.items }
+    slots: { creator: '<input class="creator" $bind="this.newItem">' }
+    before: []
+    actions:
+      - prevent: beforeadd
+      - fill: { selector: .creator, value: testData.cancelAdd.added }
+      - click: { selector: '[aria-label="Add"]' }
+    after:
+      - data: { path: testData.cancelAdd.items, equals: [one, two] }
+      - event: { name: beforeadd, count: 1 }
+
+  - name: creatorsubmit cancellation
+    covers: [events.creatorsubmit, methods.submitCreator]
+    attributes: { id: subject, type: string, "$bind": testData.cancelSubmit.items }
+    slots: { creator: '<input class="creator" $bind="this.newItem">' }
+    before: []
+    actions:
+      - prevent: creatorsubmit
+      - fill: { selector: .creator, value: testData.cancelSubmit.added }
+      - click: { selector: '[aria-label="Add"]' }
+    after:
+      - data: { path: testData.cancelSubmit.items, equals: [one, two] }
+      - event: { name: creatorsubmit, count: 1 }
+
+  - name: missing slots and non-array normalization
+    attributes: { id: subject, type: string, "$bind": testData.missing.items }
+    slots: {}
+    before: []
+    actions:
+      - script: subject.value = null
+      - call: { method: add, args: [] }
+    after: [{ script: "return Array.isArray(subject.value) && subject.value.length === 1" }]
+
+  - name: visible creator value and button safety
+    attributes: { id: subject, type: string, "$bind": testData.visible.items }
+    slots:
+      item: '<template><span class="item-value" $text="item"></span></template>'
+      creator: '<input class="creator" $bind="this.newItem">'
+    before: [{ script: "return [...subject.querySelectorAll('button')].every(button => button.type === 'button')" }]
+    actions:
+      - script: subject.querySelector('.creator').value = 'shown-default'
+      - click: { selector: '[aria-label="Add"]' }
+    after:
+      - data: { path: testData.visible.items, equals: [shown-default] }
+      - dom: { selector: .item-value, text: shown-default }
+
+  - name: large to small creator and add glyph retain alignment focus and draft
+    attributes: {id: subject, type: object, "$bind": testData.density.items, style: 'width:min(100%,32rem)'}
+    slots:
+      item: '<template><span class="item-value" $text="item.name"></span></template>'
+      creator: '<template><input aria-label="New item" class="creator form-control" $bind="this.newItem.name"><select class="form-select" $bind="this.newItem.kind"><option value="one">One</option><option value="two">Two</option></select></template>'
+    actions:
+      - fill: {selector: '#subject .creator', value: Retained}
+      - script: |
+          const root=document.documentElement,original=root.className,input=subject.querySelector('.creator');input.focus();
+          const widths=[];
+          for(const mode of ['lg','sm']){
+            root.classList.remove('ui-default','ui-sm','ui-lg');root.classList.add('ui-'+mode);
+            await new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)));
+            const button=subject.querySelector('.item-collection-add').getBoundingClientRect(),icon=subject.querySelector('.item-collection-add i').getBoundingClientRect(),creator=subject.querySelector('.item-collection-creator').getBoundingClientRect();
+            if(Math.abs(button.x+button.width/2-icon.x-icon.width/2)>1 || Math.abs(button.y+button.height/2-icon.y-icon.height/2)>1 || Math.abs(button.y+button.height/2-creator.y-creator.height/2)>1)throw new Error('Collection add alignment drifted');
+            if(Math.abs(button.height-input.getBoundingClientRect().height)>1)throw new Error('Icon button lost the inherited control line height');
+            if(subject.querySelector('.creator')!==input || document.activeElement!==input || input.value!=='Retained')throw new Error('Density remounted or lost the focused draft');
+            widths.push(button.width);
+          }
+          root.className=original;
+          if(widths[0]<=widths[1])throw new Error('Add button did not inherit density');
+      - click: {selector: '#subject .item-collection-add'}
+    after:
+      - script: "return testData.density.items.length===1 && testData.density.items[0].name==='Retained'"
+      - event: {name: change, count: 1}

@@ -11,7 +11,11 @@ const Editor = (() => {
   const assertResponse = response => {
     if (!response || response.ok === false || response.error) throw new Error(response?.error || 'Document request failed')
     const result = response.result
-    if (result && typeof result === 'object' && (result.ok === false || result.error)) throw new Error(result.error || 'Document request failed')
+    if (result && typeof result === 'object' && (result.ok === false || result.error)) {
+      const error = new Error(result.error || (result.conflict ? `Document version conflict: base v${result.baseVersion}, current v${result.currentVersion}` : 'Document request failed'))
+      error.result = result
+      throw error
+    }
     return result
   }
   const contentFrom = (result, type, path) => {
@@ -114,11 +118,11 @@ const Editor = (() => {
       if (version !== undefined && version !== null && version !== '') request.version = version
       return contentFrom(assertResponse(await globalThis.HTTP.post({ url: api, data: request })), type, path)
     },
-    async save({ api, path, data }) {
+    async save({ api, path, data, baseVersion }) {
       if (!api) throw new Error('Document api is required for automatic save')
       if (!path) throw new Error('Document path is required for automatic save')
       if (data === undefined) throw new Error('Document data is required for automatic save')
-      return assertResponse(await globalThis.HTTP.post({ url: api, data: { action: 'set', path, data } }))
+      return assertResponse(await globalThis.HTTP.post({ url: api, data: { action: 'set', path, data, ...(baseVersion !== undefined && baseVersion !== null && baseVersion !== '' ? { baseVersion } : {}) } }))
     },
     connect(container, { type, defaultData, normalize = value => value } = {}) {
       if (!type) throw new Error('Editor.connect requires a document type')
@@ -163,7 +167,7 @@ const Editor = (() => {
         state.saving = true
         state.error = null
         try {
-          const result = await Editor.save({ api, path, data: document })
+          const result = await Editor.save({ api, path, data: document, baseVersion: state.loadedVersion })
           const meta = result?.meta && typeof result.meta === 'object' ? result.meta : null
           const version = meta?.version ?? result?.version
           if (version !== undefined && version !== null) state.loadedVersion = version
@@ -180,7 +184,12 @@ const Editor = (() => {
       const queueLoad = () => {
         if (queued || !(container.api || container.getAttribute('api')) || !state.path) return
         queued = true
-        Promise.resolve().then(() => { queued = false; container.load().catch(() => {}) })
+        const sequence = loadSequence
+        Promise.resolve().then(() => {
+          queued = false
+          // An explicit load already consumed the pending path/version change.
+          if (sequence === loadSequence) container.load().catch(() => {})
+        })
       }
       state.__watch('path', queueLoad)
       state.__watch('version', queueLoad)

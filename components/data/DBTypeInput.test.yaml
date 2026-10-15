@@ -1,0 +1,26 @@
+testData: {value: v100}
+cases:
+  - name: bind family length native edits and encoded output
+    covers: [state.options]
+    attributes: {id: subject, "$bind": testData.value}
+    before:
+      - property: {path: subject.value, equals: v100}
+      - property: {path: subject.state.family, equals: v}
+      - property: {path: subject.state.length, equals: '100'}
+      - script: "return subject.state.options.some(option=>option.value==='c') && subject.querySelectorAll('select option').length===subject.state.options.length"
+    actions:
+      - select: {selector: '#subject select', value: c}
+      - wait: 30
+      - fill: {selector: '#subject input', value: '32'}
+      - wait: 30
+    after:
+      - data: {path: testData.value, equals: c32}
+      - event: {name: change, count: 2}
+  - name: non-length families remove the length control
+    attributes: {id: subject, "$.value": "'v128'"}
+    actions:
+      - select: {selector: '#subject select', value: i}
+      - wait: 30
+    after:
+      - property: {path: subject.value, equals: i}
+      - dom: {selector: '#subject input', count: 0}

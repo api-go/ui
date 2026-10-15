@@ -5,6 +5,7 @@ const BOOTSTRAP_ICONS = ['alarm', 'archive', 'arrow-left', 'arrow-right', 'bag',
 
 globalThis.Component.register('IconPicker', container => {
         container.state = globalThis.NewState({ value: '', search: '', open: false, filteredIcons: BOOTSTRAP_ICONS })
+        container.sm = container.hasAttribute('sm') || container.closest('AutoForm')?.sm || false
         container.addEventListener('bind', e => {
                 container.state.value = e.detail || ''
         })
@@ -44,18 +45,18 @@ globalThis.Component.register('IconPicker', container => {
     window.addEventListener('click', onGlobalClick)
     container.addEventListener('remove', () => window.removeEventListener('click', onGlobalClick))
 }, globalThis.Util.makeDom(/*html*/`
-<div class="dropdown w-100 h-100">
-  <button class="btn btn-outline-secondary dropdown-toggle w-100 h-100 d-flex align-items-center justify-content-between px-2" type="button" $onclick="this._toggle()">
+<div class="dropdown w-100">
+  <button $class="btn btn-outline-secondary dropdown-toggle w-100 d-flex align-items-center justify-content-between px-2 \${this.sm ? 'btn-sm' : ''}" type="button" $onclick="this._toggle()">
     <span class="d-flex align-items-center overflow-hidden">
         <i $if="this.state.value" $class="bi bi-\${this.state.value} me-2"></i>
         <span class="text-truncate" $text="this.state.value || '{#Select Icon#}'"></span>
     </span>
   </button>
-  <div $class="dropdown-menu p-2 shadow \${this.state.open ? 'd-flex show' : 'd-none'}" style="width: 300px; max-height: 350px; overflow-y: hidden; flex-direction: column; z-index: 1050">
-    <input type="text" class="form-control form-control-sm mb-2" placeholder="{#Search icons...#}" $bind="this.state.search" $onclick="event.stopPropagation()">
+  <div $class="dropdown-menu p-2 shadow \${this.state.open ? 'd-flex show' : 'd-none'}" style="width:min(20rem,calc(100vw - 2rem)); max-height:min(24rem,70dvh); overflow-y: hidden; flex-direction: column; z-index: 1050">
+    <input type="text" $class="form-control mb-2 \${this.sm ? 'form-control-sm' : ''}" placeholder="{#Search icons...#}" $bind="this.state.search" $onclick="event.stopPropagation()">
     <div class="d-flex flex-wrap gap-1 overflow-auto p-1" style="flex: 1" $onclick="event.stopPropagation()">
         <template $each="this.state.filteredIcons" as="icon">
-            <button type="button" class="btn btn-sm btn-outline-light text-dark p-2 d-flex align-items-center justify-content-center" $onclick="this._selectIcon(icon)" $title="icon" style="width: 40px; height: 40px">
+            <button type="button" class="btn btn-outline-secondary d-flex align-items-center justify-content-center" $onclick="this._selectIcon(icon)" $title="icon" >
                 <i $class="bi bi-\${icon}"></i>
             </button>
         </template>
@@ -64,7 +65,7 @@ globalThis.Component.register('IconPicker', container => {
   </div>
 </div>
 `), globalThis.Util.makeDom(/*html*/`<style>
-    IconPicker { display: block; height: 100%; }
+    IconPicker { display: block; }
     IconPicker .dropdown-menu { left: 0; }
     IconPicker .btn-outline-light:hover { background-color: var(--bs-primary-bg-subtle); border-color: var(--bs-primary); }
 </style>`))

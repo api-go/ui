@@ -1,0 +1,20 @@
+name: PageHeader
+kind: component
+src: /ui/components/base/PageHeader.js
+purpose: Consistent page title, description and wrapping actions without owning business commands.
+attributes:
+  heading: 'Initial title when state.title is absent.'
+state:
+  title: 'Reactive page title; defaults to heading or empty.'
+  description: 'Reactive supporting text; defaults to empty and is omitted when empty.'
+slots:
+  actions: 'Host-owned action controls. Use template to contribute buttons directly; keep one primary action.'
+rules:
+  - Uses an h1. Use once per page; use ordinary section headings inside panels.
+  - Actions wrap on narrow screens; long titles break without horizontal page overflow.
+examples:
+  basic: |
+    <PageHeader heading="Records" $.state.description="records_state.description">
+      <template slot="actions"><button class="btn btn-primary">Create record</button></template>
+    </PageHeader>
+tests: [PageHeader.test.yaml]

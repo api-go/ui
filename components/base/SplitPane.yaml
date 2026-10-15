@@ -1,0 +1,37 @@
+name: SplitPane
+kind: component
+src: /ui/components/base/SplitPane.js
+dependencies: [Resizer, Disposer]
+purpose: Resizable sidebar/main composition with bounded scrolling regions and a retained single-pane narrow mode.
+attributes:
+  min: 'Minimum desktop sidebar width in pixels; default 160.'
+  max: 'Maximum desktop sidebar width in pixels; default 560; never below min.'
+  main-min: 'Reserved main width in pixels; default 240.'
+binding:
+  behavior: 'A positive finite number sets preferred desktop sidebar width. Bind to a stable LocalStorage field to persist preference. User resize emits change; narrow mode and container shrink do not overwrite the preference.'
+state:
+  width: 'Preferred desktop sidebar width, default 280. Rendered width is clamped to min, max and available width.'
+  pane: 'sidebar (default) or main. Controls the visible pane only in narrow mode. Host may derive it from route selection.'
+  narrow: 'Read-only boolean. True when container width is below max(768,min+main-min+9).'
+methods:
+  show: 'show("sidebar" or "main") changes the narrow pane and emits panechange. Other values throw without changing selection.'
+events:
+  change: 'Final desktop sidebar width in pixels, for two-way binding.'
+  panechange: 'sidebar or main after a narrow switch control or show() call.'
+slots:
+  sidebar: 'Master/list region. A sole child fills its region.'
+  main: 'Detail/editor region. A sole child fills its region.'
+rules:
+  - Includes Resizer automatically. Never put a second Resizer beside the sidebar.
+  - Desktop width is clamped to preserve main-min. When both panes cannot fit, switch to narrow mode.
+  - Narrow mode hides one region and the resizer, retains both DOM trees, and offers Browse/Detail controls.
+  - Host owns navigation guards. Use route binding for state.pane if switching resources must restore a particular pane.
+  - Each region should contain Pane or another bounded component. It does not scroll the document.
+  - Missing or invalid positive numeric attributes fall back to defaults.
+examples:
+  master_detail: |
+    <SplitPane $bind="LocalStorage.ordersSidebarWidth" $.state.pane="Hash.order ? 'main' : 'sidebar'">
+      <Pane slot="sidebar" scroll="none"><List slot="content" auto-select $bind="Hash.order" $.state.list="orders"></List></Pane>
+      <Pane slot="main"><div slot="content" class="p-3">Order details</div></Pane>
+    </SplitPane>
+tests: [SplitPane.test.yaml]

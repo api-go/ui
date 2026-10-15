@@ -1,0 +1,32 @@
+testData: { single: '2026-08-28', range: '2026-08-01' }
+cases:
+  - name: small sizing uses Bootstrap form controls
+    attributes: { id: subject, sm: true, range: true, "$bind": testData.single }
+    slots: {}
+    before:
+      - script: "return subject.sm && [...subject.querySelectorAll('.form-control')].every(node=>node.classList.contains('form-control-sm'))"
+    actions: []
+    after: []
+  - name: single date binding and change
+    attributes: { id: subject, "$bind": testData.single }
+    slots: {}
+    before:
+      - property: { path: subject.value, equals: testData.single }
+      - property: { path: subject.state.start, equals: testData.single }
+    actions:
+      - fill: { selector: '#subject input[type="date"]', value: '2026-08-29', event: change }
+    after:
+      - data: { path: testData.single, equals: '2026-08-29' }
+      - event: { name: change, count: 1, last: '2026-08-29' }
+  - name: standalone range rendering
+    attributes: { id: subject, range: true, rangeend: end, "$bind": testData.range }
+    slots: {}
+    before:
+      - property: { path: subject.isRange, equals: true }
+      - property: { path: subject.state.end, equals: "" }
+      - dom: { selector: '#subject input[type="date"]', count: 2 }
+    actions:
+      - script: "const input=subject.querySelectorAll('input[type=date]')[1]; input.value='2026-08-31'; input.dispatchEvent(new Event('change',{bubbles:true}))"
+    after:
+      - property: { path: subject.state.end, equals: '2026-08-31' }
+      - event: { name: change, count: 1, last: '2026-08-31' }

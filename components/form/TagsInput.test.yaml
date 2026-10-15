@@ -1,0 +1,41 @@
+testData: { tags: [alpha, beta], candidateValue: [alpha, beta], candidateTags: [alpha, gamma, { value: delta, label: Delta }] }
+cases:
+  - name: small sizing uses Bootstrap form control
+    attributes: { id: subject, sm: true, "$bind": testData.tags }
+    slots: {}
+    before:
+      - script: "return subject.sm && subject.classList.contains('form-control') && subject.classList.contains('form-control-sm')"
+    actions: []
+    after: []
+  - name: binding add deduplicate and remove
+    attributes: { id: subject, placeholder: Add, "$bind": testData.tags }
+    slots: {}
+    before:
+      - property: { path: subject.value, equals: testData.tags }
+      - dom: { selector: '#subject', containsText: alpha }
+    actions:
+      - fill: { selector: '#subject input', value: gamma }
+      - script: "subject.querySelector('input').dispatchEvent(new KeyboardEvent('keydown',{key:'Enter',bubbles:true}))"
+      - fill: { selector: '#subject input', value: gamma }
+      - script: "subject.querySelector('input').dispatchEvent(new KeyboardEvent('keydown',{key:'Enter',bubbles:true}))"
+    after:
+      - data: { path: testData.tags, equals: [alpha, beta, gamma] }
+      - event: { name: change, count: 1, last: [alpha, beta, gamma] }
+  - name: candidate options exclude selected values and add by pointer
+    attributes: { id: subject, "$.options": testData.candidateTags, "$bind": testData.candidateValue }
+    slots: {}
+    before:
+      - property: { path: subject.options, equals: testData.candidateTags }
+    actions:
+      - script: "subject.querySelector('input').focus(); await new Promise(resolve=>setTimeout(resolve,20))"
+      - click: '#subject .dropdown-item'
+    after:
+      - data: { path: testData.candidateValue, equals: [alpha, beta, gamma] }
+      - event: { name: change, count: 1, last: [alpha, beta, gamma] }
+  - name: candidate menu disappears when no options remain
+    attributes: { id: subject, "$.options": testData.candidateValue, "$bind": testData.candidateValue }
+    slots: {}
+    before:
+      - dom: { selector: '#subject .tags-input-options', count: 0 }
+    actions: []
+    after: []

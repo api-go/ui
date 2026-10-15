@@ -1,0 +1,98 @@
+timeout: 15000
+testData:
+  map: { nodes: [{ id: root, title: Root, content: Full root, untouched: 7 }, { id: child, title: Child }], edges: [{ id: e1, from: root, to: child }], view: { x: 0, y: 0, scale: 1 }, settings: { direction: right } }
+  crudMap: { nodes: [{ id: root, title: Root }, { id: child, title: Child }], edges: [{ id: e1, from: root, to: child }], view: {}, settings: { direction: right } }
+  slotMap: { nodes: [{ id: root, title: Root }], edges: [], view: {}, settings: { direction: right } }
+  extras: { node: [{ name: title, label: Topic, type: text }, { name: priority, label: Priority, type: number }] }
+cases:
+  - name: layout direction selection collapse preview and fit
+    covers: [methods.selectNode, methods.toggleNode, methods.togglePreview, methods.fit]
+    attributes: { id: subject, direction: right, node-width: 210, node-height: 90, h-gap: 100, v-gap: 30, toolbar: true, "$.state.data": testData.map }
+    slots: {}
+    before:
+      - dom: { selector: '#subject', containsText: Root }
+      - dom: { selector: '#subject', containsText: Child }
+      - script: "return subject.state.layoutNodes.length===2"
+    actions:
+      - script: "globalThis.rootNode=subject.state.data.nodes.find(n=>n.id==='root'); subject.selectNode(rootNode); subject.togglePreview(); subject.toggleNode(rootNode); subject.fit()"
+      - call: { method: setDirection, args: [left] }
+    after:
+      - property: { path: subject.state.selectedNodeId, equals: root }
+      - property: { path: subject.state.previewNode.id, equals: root }
+      - property: { path: subject.state.data.settings.direction, equals: left }
+      - property: { path: subject.state.dirty, equals: true }
+      - event: { name: select, count: 1 }
+      - event: { name: change, count: 2 }
+      - event: { name: update, count: 2 }
+  - name: merged schema edit commit cancel and unknown fields
+    covers: [methods.schemas, methods.editNode, methods.commitEdit, methods.cancelEdit, state.editing]
+    attributes: { id: subject, "$.state.data": testData.map, "$.state.extraSchemas": testData.extras }
+    slots: {}
+    before:
+      - property: { path: subject.state.extraSchemas, equals: testData.extras }
+      - script: "return subject.schemas().node.find(f=>f.name==='title').label==='Topic' && subject.schemas().node.some(f=>f.name==='priority')"
+    actions:
+      - script: "const node=subject.state.data.nodes[0]; subject.editNode(node); subject.state.editing.draft.title='Edited'; subject.commitEdit(); subject.editNode(node); subject.cancelEdit()"
+    after:
+      - property: { path: "subject.state.data.nodes[0].title", equals: Edited }
+      - property: { path: "subject.state.data.nodes[0].untouched", equals: 7 }
+      - property: { path: subject.state.editing, equals: null }
+  - name: add child sibling remove and root protection
+    covers: [methods.addChild, methods.addSibling, methods.removeNode]
+    attributes: { id: subject, "$.state.data": testData.crudMap }
+    slots: {}
+    before: []
+    actions:
+      - script: "const root=subject.state.data.nodes.find(n=>n.id==='root'); subject.addChild(root); subject.state.editing.draft.title='Added child'; subject.commitEdit(); globalThis.added=subject.state.data.nodes.find(n=>n.title==='Added child')"
+      - script: "subject.addSibling(added); subject.state.editing.draft.title='Sibling'; subject.commitEdit(); globalThis.sibling=subject.state.data.nodes.find(n=>n.title==='Sibling')"
+      - script: "await subject.removeNode(sibling,{confirm:false}); await subject.removeNode(subject.state.data.nodes.find(n=>n.id==='root'),{confirm:false})"
+    after:
+      - script: "return subject.state.data.nodes.some(n=>n.id==='root') && subject.state.data.nodes.some(n=>n.title==='Added child') && !subject.state.data.nodes.some(n=>n.title==='Sibling')"
+  - name: all slots readonly and toolbar tools
+    covers: [methods.getTools, methods.runTool, events.toolschange]
+    attributes: { id: subject, readonly: true, toolbar: true, "$.state.data": testData.slotMap }
+    slots:
+      toolbar: <span class="slot-toolbar">Tools</span>
+      node: <span class="slot-node" $text="node.title"></span>
+      node-actions: <span class="slot-actions">Actions</span>
+      empty: <span class="slot-empty">Empty</span>
+      editor: <span class="slot-editor">Editor</span>
+    before:
+      - dom: { selector: '#subject .slot-toolbar', count: 1 }
+      - dom: { selector: '#subject .slot-node', count: 1 }
+      - dom: { selector: '#subject .slot-actions', count: 1 }
+      - dom: { selector: '#subject .slot-editor', count: 1 }
+      - script: "return subject.getTools().length>=3"
+    actions:
+      - call: { method: runTool, args: [add-child] }
+    after:
+      - property: { path: subject.state.data.nodes.length, equals: 1 }
+  - name: stateless save and authenticated API lifecycle
+    covers: [methods.load, state.path, state.version, state.loading, state.saving, state.loadedVersion]
+    attributes: { id: subject, api: /admin/ui-check-editor-fixture, path: fixtures/map.mindmap, version: 3 }
+    slots: {}
+    before:
+      - wait: 180
+      - dom: { selector: '#subject', containsText: API Root }
+      - property: { path: subject.state.path, equals: fixtures/map.mindmap }
+      - property: { path: subject.state.version, equals: 3 }
+      - property: { path: subject.state.loading, equals: false }
+      - property: { path: subject.state.loadedVersion, equals: 3 }
+    actions:
+      - call: { method: load }
+      - call: { method: save, saveAs: apiSave }
+    after:
+      - property: { path: subject.state.saving, equals: false }
+      - script: "return apiSave.succeeded===1"
+      - event: { name: loaded, count: 2 }
+      - event: { name: save, count: 1 }
+      - event: { name: saved, count: 1 }
+  - name: authenticated API error state
+    covers: [state.error]
+    attributes: { id: subject, api: /admin/ui-check-editor-fixture, path: fixtures/error.mindmap }
+    slots: {}
+    before: [{ wait: 180 }]
+    actions: []
+    after:
+      - script: "return !!subject.state.error"
+      - event: { name: error, count: 1 }

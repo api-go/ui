@@ -1,0 +1,20 @@
+name: RequestState
+kind: component
+src: /ui/components/base/RequestState.js
+purpose: Present read loading/error/empty states while retaining mounted content and drafts.
+state:
+  loading: Request pending; takes presentation precedence over error and empty.
+  error: Safe user-facing error string; never a raw credential or server dump.
+  empty: Successful read has no matching records.
+  hasdata: Retain visible stale content during refreshing or a failed refresh.
+methods:
+  retry: Emit retry unless loading.
+events:
+  retry: Host retries the request; component never fetches or owns data.
+slots:
+  content: Content always remains mounted; hidden when no data and loading/error/empty.
+  empty: Optional no-results explanation or reset action.
+rules:
+  - Set empty only after a successful read; loading and errors are not empty results.
+  - Content retains focus/drafts across state transitions; host still decides whether stale data is valid.
+tests: [RequestState.test.yaml]

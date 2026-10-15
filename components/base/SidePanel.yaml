@@ -1,0 +1,54 @@
+name: SidePanel
+kind: component
+src: /ui/components/base/SidePanel.js
+dependencies: [UUID, Disposer]
+purpose: Show a non-modal tabbed workspace at the right on desktop and at the bottom on narrow screens, retaining slotted editors and drafts while switching or closing tabs.
+
+binding:
+  behavior: 'Bind a boolean with $bind to show or hide the panel. Interaction change events write the open state back to the host.'
+
+attributes:
+  docked: 'Desktop participates in the host flex row, shrinking the main content instead of covering it. Below 768px uses a bottom panel. Configure width through --side-panel-width.'
+  single: 'Hide tabbar and show the active resource title. Close removes the active resource through closeTab. Host supplies a single-element tabs array when replacing resources.'
+
+state:
+  open: 'Boolean panel visibility. Defaults to false. Supply initial/bound values through $.state.open.'
+  tabs: 'Array of currently open tabs with unique non-empty string id, optional label and Bootstrap icon suffix. Defaults to []. Replace the array when changing it; nested metadata is shallow reactive.'
+  active: 'Active tab id. Defaults to the first open tab when the supplied id is unavailable, or empty when there are no tabs.'
+
+methods:
+  openTab: 'openTab({id,label,icon?}) adds or activates a tab and opens the panel. openTab(id) activates an existing open tab; an unknown string id throws. Reopen a closed tab by passing its metadata object again.'
+  closeTab: 'closeTab(id=state.active, {force=false}={}) emits cancelable beforeclose before removing the tab from the open list, retaining its slotted DOM. A host may preventDefault, confirm asynchronously, then call closeTab(id,{force:true}). The first remaining tab becomes active if necessary; closing the last tab hides the panel.'
+  toggle: 'toggle(open=!state.open) shows or hides the panel without removing tabs or resetting their content. An empty panel cannot open.'
+
+events:
+  change: 'Public methods and user controls emit the boolean open state for $bind. Direct host state assignments update the interface without emitting an interaction event.'
+  statechange: 'Public methods and user controls emit {open,active,tabs} after the interaction.'
+  beforeclose: 'Cancelable {id} emitted before closing a tab. preventDefault preserves tabs, active selection and all DOM; after host confirmation call closeTab(id,{force:true}).'
+  tabclose: 'Emits {id} after a tab is actually closed. The host may then release its resource and remove the corresponding slotted content.'
+
+slots:
+  content: 'One host-owned root containing sections with stable data-panel-tab="id" matching tab ids. Keyed $each content may bind this attribute from each resource id. Sections and their editors remain mounted when inactive, closed, or the whole panel is hidden. Hidden sections become hidden and inert; never use $if to model tab visibility.'
+
+rules:
+  - SidePanel is non-modal and does not trap focus or block the rest of the page. The host owns dirty-change confirmation, resource loading, authorization and route state.
+  - Native tab buttons support ArrowLeft/ArrowRight, Home/End and Delete. Escape hides the panel. Closing the panel restores the opener when available.
+  - Tab ids must be unique and stable. One content section belongs to each id; do not place nested panel content under the same id.
+  - The component assigns stable DOM ids and tabpanel roles to marked sections for tab accessibility; host resource identity stays in data-panel-tab.
+  - Desktop uses fixed right placement; below 768px the panel is fixed at the bottom. Configure --side-panel-width, --side-panel-top and --side-panel-height on the component rather than replacing its positioning rules.
+  - Content may keep loading or retaining drafts while hidden; the host owns that lifecycle. Closing a tab does not imply discarding or saving its data.
+
+examples:
+  editor: |
+    <SidePanel id="workspacePanel">
+      <div slot="content" class="d-flex flex-column flex-fill" style="min-height:0">
+        <section data-panel-tab="document" class="d-flex flex-column flex-fill" style="min-height:0">
+          <DocEditor name="PanelDocument" nohash layout="editor" $.state.path="page_state.documentPath"></DocEditor>
+        </section>
+        <section data-panel-tab="settings">Settings content</section>
+      </div>
+    </SidePanel>
+    <button $onclick="workspacePanel.openTab({id:'document',label:'Document',icon:'file-earmark-text'})">Open document</button>
+
+tests:
+  - SidePanel.test.yaml

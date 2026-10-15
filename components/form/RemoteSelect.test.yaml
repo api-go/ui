@@ -1,0 +1,42 @@
+component: RemoteSelect
+source: /ui/components/form/RemoteSelect.js
+testData: {value: ''}
+cases:
+  - name: choose and clear a bounded option
+    covers: [methods.choose, properties.value]
+    attributes:
+      id: subject
+      "$bind": testData.value
+    actions:
+      - call: {method: choose, args: [{id: node-1, name: 函数}]}
+    after:
+      - data: {path: testData.value, equals: node-1}
+      - property: {path: subject.state.query, equals: 函数}
+      - event: {name: change, count: 1, last: node-1}
+  - name: clear selected value
+    covers: [methods.clear]
+    attributes:
+      id: subject
+      "$bind": testData.value
+    actions:
+      - script: "subject.value='node-1'; return true"
+      - call: {method: clear, args: []}
+    after:
+      - data: {path: testData.value, equals: ''}
+      - property: {path: subject.state.value, equals: ''}
+      - event: {name: change, count: 1, last: ''}
+  - name: bounded remote search configuration
+    covers: [attributes.api, attributes.action, properties.params, properties.placeholder, methods.search]
+    attributes:
+      id: subject
+      api: /admin/ui-check-fixture-missing
+      action: searchNodes
+      placeholder: Find a node
+    before:
+      - property: {path: subject.placeholder, equals: Find a node}
+    actions:
+      - script: "subject.params={scope:'graph'}; return true"
+      - call: {method: search, args: [algebra]}
+    after:
+      - property: {path: subject.params.scope, equals: graph}
+      - property: {path: subject.state.loading, equals: false}

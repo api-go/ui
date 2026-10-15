@@ -4,6 +4,7 @@ const { extname, normalize, resolve } = require('node:path');
 
 const root = resolve(__dirname, '../..');
 const port = Number(process.env.PORT || 5173);
+const {render}=require('./contract-page.cjs');
 const types = {
   '.css': 'text/css',
   '.html': 'text/html',
@@ -18,8 +19,10 @@ const documentStore = new Map([
 ]);
 const documentVersions = new Map([['boards/api.kanban', 3], ['maps/api.mindmap', 1], ['graphs/api.graph', 1]]);
 
-createServer((request, response) => {
+createServer(async (request, response) => {
   const pathname = decodeURIComponent(new URL(request.url, `http://${request.headers.host}`).pathname);
+  if(await require('./component-fixtures.cjs')(pathname,request,response))return;
+  if(pathname==='/ui/tools/check'){try{response.writeHead(200,{'Content-Type':'text/html; charset=utf-8','Cache-Control':'no-store'}).end(render(new URL(request.url,'http://localhost').searchParams))}catch(e){response.writeHead(422,{'Content-Type':'text/plain'}).end(e.message)}return}
   if (pathname.startsWith('/__http__/')) {
     const send = (status, headers, body) => response.writeHead(status, headers).end(body);
     if (pathname === '/__http__/json') return send(200, { 'Content-Type': 'application/json' }, JSON.stringify({ ok: true, method: request.method, items: [{ id: 'api-item', label: 'API item' }] }));

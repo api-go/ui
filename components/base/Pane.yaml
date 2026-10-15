@@ -1,0 +1,23 @@
+name: Pane
+kind: component
+src: /ui/components/base/Pane.js
+purpose: Bounded flex region with optional header, toolbar, content and footer. Content owns scrolling by default.
+attributes:
+  scroll: [auto, none]
+slots:
+  header: 'Optional fixed header; use PageHeader for page hierarchy.'
+  toolbar: 'Optional fixed filters or tools.'
+  content: 'Body. A sole element fills available space; template contributes children without a wrapper.'
+  footer: 'Optional fixed actions or pagination.'
+rules:
+  - Parent must provide bounded height. Pane fills remaining space and permits both axes to shrink.
+  - auto means this content receiver scrolls. none delegates scrolling to List, DataGrid, an editor or a nested layout.
+  - Use scroll=none around a self-scrolling child. Do not create competing scroll containers.
+  - Slots contain only replaceable host content; empty header, toolbar and footer consume no space.
+examples:
+  list: |
+    <Pane scroll="none">
+      <PageHeader slot="header" heading="Records"></PageHeader>
+      <List slot="content" $.state.list="records"></List>
+    </Pane>
+tests: [Pane.test.yaml]

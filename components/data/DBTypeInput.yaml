@@ -1,0 +1,17 @@
+name: DBTypeInput
+kind: component
+src: /ui/components/data/DataGrid.js
+dependencies: [DataGrid]
+purpose: Internal DataGrid database-type family and optional length input.
+properties:
+  value: Encoded database type, such as v100, c32, i or dt.
+state:
+  family: Selected database type family.
+  length: Length for v/c families.
+  options: Available family descriptors.
+events:
+  change: Standard change event after composing the selected family and length.
+rules:
+  - Host binds one encoded type string; the component does not write field metadata itself.
+  - Inherits global density; the length field has a maximum width, not a fixed button box.
+tests: [DBTypeInput.test.yaml]

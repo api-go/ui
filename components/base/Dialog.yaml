@@ -1,4 +1,7 @@
 name: Dialog
+kind: component
+src: /ui/components/base/Dialog.js
+dependencies: [Modal]
 
 purpose: Modal-based alert and confirmation dialog with keyboard controls.
 
@@ -23,4 +26,4 @@ examples:
   destructive: "Dialog.confirm('Delete this record?', { type: 'danger' }).then(ok => { if (ok) remove() })"
 
 tests:
-  - Dialog.test.html
+  - Dialog.test.yaml

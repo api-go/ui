@@ -1,7 +1,11 @@
 name: DatePicker
+kind: component
+src: /ui/components/form/DatePicker.js
+dependencies: [AutoForm]
 purpose: Native date input. In AutoForm, rangeEnd edits a second field as one date range.
 
 attributes:
+  sm: boolean; use Bootstrap small form-control sizing
   range: boolean; show a standalone end-date input
   rangeend: string; second AutoForm data field; schema setting.rangeEnd takes precedence
 
@@ -38,4 +42,4 @@ related:
   - ../base/AutoForm.yaml
 
 tests:
-  - DatePicker.test.html
+  - DatePicker.test.yaml

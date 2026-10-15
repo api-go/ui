@@ -1,0 +1,23 @@
+name: FilterBar
+kind: component
+src: /ui/components/base/FilterBar.js
+purpose: Explicit apply/reset boundary around one host-owned JSON query draft.
+state:
+  query: 'Host-owned reactive query object. Slotted controls bind to this same draft.'
+  defaults: 'Reset values; absent keys reset to an empty string. Use scalar or JSON query values.'
+  busy: Disable generated actions and the fields fieldset.
+methods:
+  apply: Validate rendered native controls and emit apply with a JSON snapshot.
+  reset: Reset query keys in place, emit reset, then validate and apply.
+events:
+  apply: 'detail is a JSON query snapshot. Host updates Hash and starts/cancels requests.'
+  reset: 'detail is the reset query snapshot; followed by apply when valid.'
+slots:
+  fields: Labeled native controls bound directly to the host query; template slots avoid an extra wrapper.
+  end: Optional additional controls.
+rules:
+  - Query editing is a deliberate draft distinct from applied Hash query. The host owns initialization and route updates.
+  - Do not nest forms. Apply on Enter uses native form validation.
+  - Filter controls are not persisted business edits; mark the host data-no-changebind.
+  - Inherits ui-sm/ui-lg and wraps inside its available width.
+tests: [FilterBar.test.yaml]

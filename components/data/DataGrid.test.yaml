@@ -1,0 +1,205 @@
+testData:
+  fields:
+    - { id: f-name, name: name, type: v100, tableID: users, settings: { type: text } }
+    - { id: f-age, name: age, type: i, tableID: users, settings: { type: number } }
+  rows: [{ id: r1, name: Ada, age: 36 }, { id: r2, name: Grace, age: 40 }]
+  rowsToolbar: [{ id: r1, name: Ada, age: 36 }]
+  rowsFilter: [{ id: r1, name: Ada, age: 36 }, { id: r2, name: Grace, age: 40 }]
+  rowsDelete: [{ id: r1, name: Ada, age: 36 }, { id: r2, name: Grace, age: 40 }]
+  rowsSave: [{ id: r1, name: Ada, age: 36 }]
+  rowsEdit: [{ id: r1, name: Ada, age: 36 }, { id: r2, name: Grace, age: 40 }]
+  rowsFields: [{ id: r1, name: Ada, age: 36 }]
+  authFields: []
+  authRows: []
+  legacyProtectedFields:
+    - { id: f-legacy-secret, name: apiKey, type: v100, tableID: integrations, isSecret: true, settings: { type: text } }
+  legacyProtectedRows: [{ id: r1, apiKey: '****' }]
+  revealFields:
+    - { id: f-phone, name: phone, type: v32, tableID: customers, protection: Sensitive, isSecret: true, settings: { type: text } }
+  revealRows: [{ id: customer01, phone: '138****8000' }]
+  filters: {}
+  sort: { fieldId: null, direction: null }
+  virtual: []
+init:
+  - |
+      for (const name of ['fieldsToolbar','fieldsFilter','fieldsDelete','fieldsSave','fieldsVirtual','fieldsEdit','fieldsDialog']) testData[name]=clone(testData.fields)
+      Object.assign(testData.fieldsDialog[0], { index: 'Unique' })
+  - |
+      for(let i=1;i<=1000;i++) testData.virtual.push({id:`r${i}`,name:`User ${i}`,age:i})
+cases:
+  - name: header content area owns menu click and field drag
+    attributes: { id: subject, editable: true, "$.state.fields": testData.fields, "$.state.list": testData.rows }
+    slots: {}
+    before:
+      - script: "const hit=subject.querySelector('.header-cell > div'); const label=hit?.querySelector('span'); return hit?.draggable===true && hit?.classList.contains('cursor-grab') && label?.draggable===false"
+    actions:
+      - click: '#subject .header-cell > div'
+    after:
+      - script: "return subject.state.activeFieldId==='f-name' && subject.querySelector('.dt-column-menu').style.display!=='none'"
+  - name: local rows fields selection and mutation methods
+    attributes: { id: subject, editable: true, "$.state.fields": testData.fields, "$.state.list": testData.rows }
+    slots: {}
+    before:
+      - dom: { selector: '#subject', containsText: Ada }
+      - dom: { selector: '#subject', containsText: Grace }
+      - property: { path: subject.state.isDirty, equals: false }
+    actions:
+      - call: { method: addRow }
+      - call: { method: selectAllRows }
+    after:
+      - property: { path: subject.state.selectedRowCount, equals: 3 }
+      - script: "return subject.getSelectedRows().length === 3 && subject.state.list.length === 3"
+      - property: { path: subject.state.isDirty, equals: true }
+  - name: toolbar variants and all slots
+    attributes: { id: subject, editable: true, no-advanced: true, "$.state.fields": testData.fieldsToolbar, "$.state.list": testData.rowsToolbar }
+    slots:
+      toolbar-start: <span class="slot-toolbar-start">Start</span>
+      toolbar-end: <span class="slot-toolbar-end">End</span>
+      footer-start: <span class="slot-footer-start">Footer start</span>
+      footer-end: <span class="slot-footer-end">Footer end</span>
+      cell: <template><span class="slot-cell" $text="item[f.name]"></span></template>
+    before:
+      - dom: { selector: '#subject .slot-toolbar-start', count: 1 }
+      - dom: { selector: '#subject .slot-toolbar-end', count: 1 }
+      - dom: { selector: '#subject .slot-footer-start', count: 1 }
+      - dom: { selector: '#subject .slot-footer-end', count: 1 }
+    actions: []
+    after: []
+  - name: toolbar can be completely hidden
+    attributes: { id: subject, editable: true, notoolbar: true, "$.state.fields": testData.fieldsToolbar, "$.state.list": testData.rowsToolbar }
+    slots: {}
+    before:
+      - dom: { selector: '#subject .dt-toolbar', count: 0 }
+    actions: []
+    after: []
+  - name: local filter sort and query
+    covers: [methods.applySortFilter]
+    attributes: { id: subject, "$.state.fields": testData.fieldsFilter, "$.state.list": testData.rowsFilter, "$.state.filterConfig": testData.filters, "$.state.sortConfig": testData.sort }
+    slots: {}
+    before:
+      - property: { path: subject.state.filterConfig, equals: testData.filters }
+      - property: { path: subject.state.sortConfig, equals: testData.sort }
+    actions:
+      - script: "subject.state.activeFieldId='f-name'; subject.applySortFilter({filters:{'f-name':{mode:'contains',value:'Ada'}},sort:'asc'})"
+      - call: { method: getQuery, saveAs: gridQuery }
+    after:
+      - dom: { selector: '#subject .dt-body-row', count: 1 }
+      - script: "return gridQuery.filter[0].field==='name' && gridQuery.sort[0]==='name ASC'"
+  - name: selection clear delete and remove event
+    covers: [methods.deleteSelectedRow]
+    attributes: { id: subject, editable: true, "$.state.fields": testData.fieldsDelete, "$.state.list": testData.rowsDelete }
+    slots: {}
+    before: []
+    actions:
+      - call: { method: selectAllRows }
+      - call: { method: getSelectedRows, saveAs: selectedRows }
+      - call: { method: clearSelection }
+      - call: { method: selectAllRows }
+      - script: "globalThis.__originalGridConfirm=Dialog.confirm; Dialog.confirm=async()=>true; await subject.deleteSelectedRow(); Dialog.confirm=__originalGridConfirm"
+    after:
+      - script: "return selectedRows.length===2 && subject.state.list.length===0"
+      - event: { name: remove, count: 1 }
+  - name: save local changes
+    attributes: { id: subject, editable: true, "$.state.fields": testData.fieldsSave, "$.state.list": testData.rowsSave }
+    slots: {}
+    before: []
+    actions:
+      - call: { method: addRow }
+      - call: { method: saveChanges, saveAs: saved }
+    after:
+      - property: { path: saved, equals: true }
+      - event: { name: save, count: 1 }
+  - name: virtual scrolling and onScroll
+    covers: [methods.onScroll]
+    attributes: { id: subject, style: "display:block;height:300px", "$.state.fields": testData.fieldsVirtual, "$.state.list": testData.virtual }
+    slots: {}
+    before:
+      - script: "return subject.state.list.length===1000 && subject.querySelectorAll('.dt-body-row').length<1000"
+    actions:
+      - script: "const main=subject.querySelector('.dt-main'); main.scrollTop=main.scrollHeight; subject.onScroll(); await new Promise(resolve=>setTimeout(resolve,100))"
+    after:
+      - script: "return subject.querySelector('.dt-main').scrollTop>0"
+  - name: cell editor and detail dialog APIs
+    covers: [methods.editCell, methods.showCellDetail]
+    attributes: { id: subject, editable: true, "$.state.fields": testData.fieldsEdit, "$.state.list": testData.rowsEdit }
+    slots: {}
+    before: []
+    actions:
+      - script: "const cell=subject.querySelector('.dt-body-row .dt-cell'); subject.editCell(testData.rowsEdit[0],testData.fieldsEdit[0],cell); const detail=subject.querySelector('.datagrid-cell-detail-modal'); const shown=new Promise(resolve=>detail.addEventListener('shown.bs.modal',resolve,{once:true})); subject.showCellDetail('Long value',testData.fieldsEdit[0]); await shown; globalThis.cellDetailShown=true; const hidden=new Promise(resolve=>detail.addEventListener('hidden.bs.modal',resolve,{once:true})); detail.hide(); await hidden"
+    after:
+      - script: "return subject.querySelector('.dt-editor-overlay').style.display==='flex'"
+      - script: "return cellDetailShown"
+  - name: row form API
+    covers: [methods.openRowForm]
+    attributes: { id: subject, editable: true, "$.state.fields": testData.fieldsEdit, "$.state.list": testData.rowsEdit }
+    slots: {}
+    before: []
+    actions:
+      - script: "const modal=subject.querySelector('.datagrid-row-modal'); const shown=new Promise(resolve=>modal.addEventListener('shown.bs.modal',resolve,{once:true})); subject.openRowForm(0); await shown; globalThis.rowFormShown=true; const hidden=new Promise(resolve=>modal.addEventListener('hidden.bs.modal',resolve,{once:true})); modal.hide(); await hidden"
+    after:
+      - script: "return rowFormShown"
+      - property: { path: subject.state.rowFormIndex, equals: 0 }
+  - name: field add edit and delete dialogs
+    covers: [methods.addField, methods.editField, methods.deleteField]
+    attributes: { id: subject, editable: true, "$.state.fields": testData.fieldsDialog, "$.state.list": testData.rowsFields }
+    slots: {}
+    before: []
+    actions:
+      - script: "const task=subject.addField(); await new Promise(resolve=>setTimeout(resolve,50)); subject.finishFieldDialog(1); await task"
+      - script: "subject.state.activeField=subject.state.fields[0]; const task=subject.editField(); await new Promise(resolve=>setTimeout(resolve,50)); const modal=subject.querySelector(`Modal[id='${subject.id}_field_modal']`), form=modal.querySelector('AutoForm'); globalThis.fieldIndexLoaded=form.state.data.index==='Unique' && !('indexGroup' in form.state.data); subject.finishFieldDialog(1); await task"
+      - script: "globalThis.__originalGridConfirm=Dialog.confirm; Dialog.confirm=async()=>true; subject.state.activeField=subject.state.fields[1]; await subject.deleteField(); Dialog.confirm=__originalGridConfirm"
+    after:
+      - property: { path: subject.state.fields.length, equals: 1 }
+      - script: "return fieldIndexLoaded && subject.state.fields[0].index==='Unique'"
+      - event: { name: savefields, count: 1 }
+  - name: authentication semantics apply field constraints
+    attributes: { id: subject, editable: true, "$.state.fields": testData.authFields, "$.state.list": testData.authRows }
+    slots: {}
+    before: []
+    actions:
+      - script: "const task=subject.addField(); await new Promise(resolve=>setTimeout(resolve,50)); const modal=subject.querySelector(`Modal[id='${subject.id}_field_modal']`), form=modal.querySelector('AutoForm'); subject.state.fieldAdvanced=true; await new Promise(resolve=>setTimeout(resolve,30)); globalThis.semanticOptions=form.state.schema.find(field=>field.name==='semantics')?.options; globalThis.protectionOptions=form.state.schema.find(field=>field.name==='protection')?.options?.map(option=>option.value); Object.assign(form.state.data,{name:'Credential',db_type:'vN',protection:'Sensitive',semantics:['Username','Password']}); subject.finishFieldDialog(2); await task"
+    after:
+      - script: "return JSON.stringify(semanticOptions)===JSON.stringify(['Username','Password','Phone','TOTP'])"
+      - script: "return JSON.stringify(protectionOptions)===JSON.stringify(['','Sensitive','Secret','Verifier'])"
+      - script: "return subject.state.fields.length===1 && subject.state.fields[0].type==='v100' && subject.state.fields[0].index==='Unique' && subject.state.fields[0].protection==='Verifier' && subject.state.fields[0].isSecret===true && subject.state.fields[0].settings.type==='password' && JSON.stringify(subject.state.fields[0].settings.semantics)===JSON.stringify(['Username','Password'])"
+      - event: { name: savefields, count: 1 }
+  - name: legacy secret field loads as Secret protection
+    attributes: { id: subject, editable: true, "$.state.fields": testData.legacyProtectedFields, "$.state.list": testData.legacyProtectedRows }
+    slots: {}
+    before: []
+    actions:
+      - script: "subject.state.activeField=subject.state.fields[0]; const task=subject.editField(); await new Promise(resolve=>setTimeout(resolve,50)); const modal=subject.querySelector(`Modal[id='${subject.id}_field_modal']`), form=modal.querySelector('AutoForm'); globalThis.legacyProtection=form.state.data.protection; subject.finishFieldDialog(1); await task"
+    after:
+      - script: "return legacyProtection==='Secret'"
+  - name: protected value reveal requires reason and stays outside row data
+    covers: [methods.toggleProtectedValue, methods.submitProtectedReveal, methods.copyProtectedValue]
+    attributes: { id: subject, editable: true, "$.state.fields": testData.revealFields, "$.state.list": testData.revealRows, "$.state.table": "'customers'" }
+    slots: {}
+    before:
+      - dom: { selector: '#subject', containsText: '****' }
+    actions:
+      - script: "globalThis.__originalRevealRequest=HTTP.request; globalThis.__originalClipboard=navigator.clipboard; Object.defineProperty(navigator,'clipboard',{configurable:true,value:{writeText:async value=>{globalThis.copiedProtectedValue=value}}}); HTTP.request=async options=>{ globalThis.revealRequest=options.data; return {ok:true,result:{ok:true,secret:'13800138000'}} }; subject.apiUrl='/admin/table'; subject.state.list=[...subject.state.list]; await new Promise(resolve=>setTimeout(resolve,30))"
+      - click: '#subject button[title="Reveal protected value"]'
+      - fill: { selector: '#subject .datagrid-reveal-modal textarea', value: 'Contact customer' }
+      - click: '#subject .datagrid-reveal-modal .btn-primary'
+      - wait: 30
+      - click: '#subject button[title="Copy protected value"]'
+      - wait: 30
+      - script: "globalThis.wasRevealed=subject.textContent.includes('13800138000'); globalThis.revealControlsExclusive=!subject.querySelector('button[title=\"Reveal protected value\"]') && !!subject.querySelector('button[title=\"Copy protected value\"]'); const cell=[...subject.querySelectorAll('.dt-body-row .dt-cell')].find(node=>node.textContent.includes('13800138000')); cell?.dispatchEvent(new MouseEvent('dblclick',{bubbles:true})); globalThis.protectedEditorStayedClosed=subject.querySelector('.dt-editor-overlay').style.display==='none'; subject.state._revealedValues={}; HTTP.request=__originalRevealRequest; Object.defineProperty(navigator,'clipboard',{configurable:true,value:__originalClipboard})"
+    after:
+      - script: "return wasRevealed && revealControlsExclusive && copiedProtectedValue==='13800138000' && protectedEditorStayedClosed && testData.revealRows[0].phone==='138****8000' && revealRequest.action==='reveal' && revealRequest.id==='customer01' && revealRequest.field==='phone' && revealRequest.reason==='Contact customer'"
+      - dom: { selector: '#subject', containsText: '****' }
+  - name: API table cache reuses unchanged rows
+    attributes: { id: subject, editable: true, cache: true, api: /admin/ui-check-datagrid-fixture, "$.state.table": "'users'" }
+    slots: {}
+    before:
+      - wait: 200
+      - property: { path: subject.state.table, equals: users }
+      - dom: { selector: '#subject', containsText: API Ada }
+      - dom: { selector: '#subject', containsText: Legacy Lin }
+    actions:
+      - script: "subject.applySortFilter(); await new Promise(resolve=>setTimeout(resolve,100))"
+    after:
+      - dom: { selector: '#subject', containsText: API Ada }
+      - dom: { selector: '#subject', containsText: Legacy Lin }
+      - script: "return subject.state.list[0].name==='API Ada' && subject.state.list[0].updateTime===1000 && subject.state.list[1].name==='Legacy Lin'"

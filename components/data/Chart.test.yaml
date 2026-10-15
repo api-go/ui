@@ -1,0 +1,34 @@
+testData:
+  config: { type: bar, data: { labels: [A, B], datasets: [{ label: Values, data: [1, 2] }] }, options: { animation: false } }
+cases:
+  - name: native configuration lifecycle
+    attributes: { id: subject, "$.state.config": testData.config }
+    slots: {}
+    before:
+      - script: "return subject.instance && subject.instance.config.type === 'bar'"
+      - dom: { selector: '#subject canvas', count: 1 }
+    actions:
+      - call: { method: update }
+      - call: { method: resize }
+    after: [{ script: "return !!subject.instance" }]
+  - name: replace configuration and interaction events
+    attributes: { id: subject, "$.state.config": testData.config }
+    slots: {}
+    before:
+      - property: { path: subject.instance.config.type, equals: bar }
+    actions:
+      - script: "subject.update({type:'line',data:{labels:['C'],datasets:[{data:[3]}]},options:{animation:false}})"
+      - script: "subject.instance.options.onClick({type:'click'},[],subject.instance); subject.instance.options.onHover({type:'mousemove'},[],subject.instance)"
+    after:
+      - property: { path: subject.instance.config.type, equals: line }
+      - event: { name: chartclick, count: 1 }
+      - event: { name: charthover, count: 1 }
+  - name: destroy releases chart instance
+    attributes: { id: subject, "$.state.config": testData.config }
+    slots: {}
+    before:
+      - script: "return subject.instance instanceof Chart"
+    actions:
+      - call: { method: destroy }
+    after:
+      - property: { path: subject.instance, equals: null }

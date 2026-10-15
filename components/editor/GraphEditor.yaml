@@ -1,11 +1,14 @@
 name: GraphEditor
+kind: component
+src: /ui/components/editor/GraphEditor.js
+dependencies: [/ui/utilities/MouseMover.js, Editor, GraphDocument, GraphCanvas, Disposer, AutoForm, Modal, Dialog]
 purpose: Create free-position node-and-edge documents for story plots, flows, and arbitrary relationships.
 
 attributes:
   api: Optional endpoint for automatic document load and save.
   path: Static path; state.path is the reactive form.
   version: Optional load-only history version.
-  readonly: Disable graph mutations and node dragging.
+  readonly: Disable content mutations while retaining viewport controls, selection, and temporary node layout dragging.
   node-width: Initial node width before custom slot measurement.
   node-height: Initial node height before custom slot measurement.
   toolbar: Opt in to the built-in toolbar; tools remain available through getTools/runTool without it.
@@ -65,6 +68,8 @@ events:
     detail: Transport Error.
   toolschange:
     detail: Resolved toolbar descriptors.
+  layoutchange:
+    detail: "{node,data}; emitted after a node is repositioned in readonly mode without marking the document dirty."
 
 api:
   load_request: "{ action:'get', path, version? }"
@@ -82,6 +87,7 @@ slots:
 
 interaction:
   - Drag nodes to place plot points freely; connected paths reroute during movement rather than waiting for drop.
+  - Readonly mode permits temporary layout dragging but does not persist positions or emit change/update.
   - Select one node, then Shift-click another to create a directed edge.
   - The Shift-click connection hint appears only while a node is selected.
   - Double-click a node, edge path, or edge label to edit it. Double-click blank canvas to create and edit a free node.
@@ -91,6 +97,7 @@ interaction:
   - Delete/Backspace opens a danger-styled confirmation; hold Ctrl/Command to bypass confirmation.
   - Space opens a translucent info-colored tooltip preview of the selected node or relationship. While it is open, selecting another node or edge updates it; edge preview includes its content or endpoint summary.
   - Reciprocal directed edges are routed on opposite curves rather than overlapping.
+  - Parallel and reciprocal edges are routed on separate lanes, and long edge labels wrap within a bounded width.
   - In the built-in editor, Enter commits a single-line field and Escape cancels, including before any field is clicked. Enter inside a textarea keeps its normal newline behavior.
   - Default node text is line-clamped while the editor and preview retain full content.
 
@@ -122,4 +129,4 @@ related:
   - ../base/AutoForm.yaml
 
 tests:
-  - GraphEditor.test.html
+  - GraphEditor.test.yaml

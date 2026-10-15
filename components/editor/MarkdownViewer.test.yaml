@@ -1,0 +1,46 @@
+testData:
+  markdown: |
+    # Title
+
+    Hello **world**
+cases:
+  - name: binding render sanitization and API
+    covers: [methods.render, methods.getHTML]
+    attributes: { id: subject, "$bind": testData.markdown, linktarget: _blank }
+    slots: {}
+    before:
+      - property: { path: subject.value, equals: testData.markdown }
+      - dom: { selector: '#subject h1', text: Title }
+      - dom: { selector: '#subject strong', text: world }
+    actions:
+      - script: "subject.value='<script>alert(1)<\\/script>safe'; subject.render()"
+    after:
+      - script: "return !subject.getHTML().includes('<script') && subject.getHTML().includes('safe')"
+  - name: value attribute GFM rendering
+    attributes: { id: subject, value: "# GFM\n\n| A |\n|---|\n| one |\n\n~~gone~~\n\n- [x] done" }
+    slots: {}
+    before:
+      - dom: { selector: '#subject table td', count: 1 }
+      - dom: { selector: '#subject s', text: gone }
+      - dom: { selector: '#subject input[type=checkbox]', checked: true }
+    actions: []
+    after: []
+  - name: line breaks
+    attributes: { id: subject, breaks: true, value: "one\ntwo" }
+    slots: {}
+    before:
+      - dom: { selector: '#subject br', count: 1 }
+    actions: []
+    after: []
+  - name: sanitized raw HTML and render event
+    attributes: { id: subject, allowhtml: true, value: "<mark onclick='globalThis.unsafe=true'>safe</mark><script>globalThis.unsafe=true</script>" }
+    slots: {}
+    before:
+      - dom: { selector: '#subject mark', text: safe }
+      - dom: { selector: '#subject [onclick]', count: 0 }
+      - dom: { selector: '#subject script', count: 0 }
+    actions:
+      - script: "subject.value='event'; subject.render()"
+    after:
+      - event: { name: render, count: 3 }
+      - script: "return !globalThis.unsafe && subject.getHTML().includes('event')"

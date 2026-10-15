@@ -1,16 +1,20 @@
 name: Resizer
+kind: component
+src: /ui/components/base/Resizer.js
+dependencies: [/ui/utilities/MouseMover.js]
 purpose: Resize a sibling or assigned target element by dragging a horizontal or vertical handle.
 
 attributes:
   vertical: Resize height instead of width.
   min: Minimum size in pixels. Default is 10.
   max: Maximum size in pixels. Default is 1000.
+  silent: Suppress the final change event while retaining resizing and resize events.
 
 properties:
   target: Target element. Defaults to the previous sibling.
 
 binding:
-  behavior: '$bind or a bind event sets the target size in pixels.'
+  behavior: '$bind or a bind event sets the target size in pixels, clamped to current min/max. Non-finite values are ignored. A binding update does not emit change.'
 
 events:
   resizing:
@@ -22,14 +26,17 @@ events:
 
 rules:
   - MouseMover is an internal dependency and is loaded automatically.
+  - The pointer hit target is wider than its visual divider and suppresses native drag propagation so resizing beside draggable content does not begin an item drag.
+  - Keyboard ArrowLeft/Right (width) or ArrowUp/Down (height) changes size by 10px; Shift uses 40px. Home/End selects the current minimum/maximum. The separator has a focusable role and reports its size through ARIA after sizing.
+  - min/max are read on each interaction, allowing SplitPane to constrain resizing to its current container. Mouse drag remains supported; touch/pen use pointer capture. Pointer cancellation restores the starting size without emitting a committed change.
 
 examples:
   horizontal_and_vertical: |
     <div id="sidebar" style="width:240px"></div>
-    <Resizer min="160" max="480" $bind="State.sidebarWidth" $onchange="State.sidebarWidth = event.detail"></Resizer>
+    <Resizer min="160" max="480" $bind="LocalStorage.exampleSidebarWidth"></Resizer>
 
     <div id="bottomPanel" style="height:240px"></div>
     <Resizer vertical min="120" max="480" $.target="bottomPanel"></Resizer>
 
 tests:
-  - Resizer.test.html
+  - Resizer.test.yaml

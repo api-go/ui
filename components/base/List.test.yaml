@@ -1,0 +1,414 @@
+timeout: 10000
+testData:
+  selected: null
+  keyboardSelected: null
+  multipleSelected: []
+  selectedGroup: null
+  normal: []
+  groups: [{ id: ops, label: Operations, summary: "20 members" }, { id: design, label: Design, summary: "20 members" }, { id: qa, label: QA, summary: "20 members" }]
+  grouped: []
+  roleGroups: [{ id: admin, label: Admin, roleIcon: person-badge-fill, roleClass: text-purple }]
+  roleAgents: [{ id: agent, group: admin, label: Disabled Agent, agentIcon: robot, agentClass: text-body-secondary, disabled: true }]
+  tree: []
+  custom: [{ key: ada, title: Ada Lovelace, desc: Programmer, icon: person }, { key: lin, title: Lin, desc: Editor, icon: pencil }]
+  searchable: [{ id: 1, label: Gamma, summary: East, rank: 2 }, { id: 2, label: Beta, summary: West, rank: 3 }, { id: 3, label: Alpha, summary: West, rank: 1 }]
+  virtual: []
+init:
+  - |
+      for (let i=1; i<=60; i++) testData.normal.push({id:i,label:`User ${i}`,summary:i%2?'Editor':'Admin'})
+      for (const group of testData.groups) for (let i=1; i<=20; i++) testData.grouped.push({id:`${group.id}-${i}`,label:`${group.label} ${i}`,summary:'Member',group:group.id})
+      testData.tree.push({id:'root',label:'Root',summary:'Parent node'})
+      for (let i=1; i<=20; i++) testData.tree.push({id:`child-${i}`,label:`Child ${i}`,summary:'Tree child',parent:'root'})
+      for (let i=1; i<=1000; i++) testData.virtual.push({id:i,label:`Virtual user ${i}`,summary:`Row ${i}`})
+cases:
+  - name: grouped row icons and disabled labels reflect item fields
+    attributes: { id: subject, mode: group, groupiconfield: roleIcon, groupiconclassfield: roleClass, iconfield: agentIcon, iconclassfield: agentClass, disabledfield: disabled, groupidfield: id, grouplabelfield: label, groupfield: group, "$.state.groups": testData.roleGroups, "$.state.list": testData.roleAgents }
+    before:
+      - script: "return !!subject.querySelector('.bi-person-badge-fill.text-purple') && !!subject.querySelector('.bi-robot.text-body-secondary') && !!subject.querySelector('.list-primary-text.opacity-50')"
+    actions: []
+    after: []
+  - name: remote source supports reactive declarative HTML binding
+    covers: [properties.loadrange]
+    attributes: { id: subject, fast: true, remote: true, style: 'height:256px;display:block', '$.loadrange': testData.rangeSource }
+    before: []
+    actions:
+      - script: "testData.rangeSource=async()=>({list:[{id:'bound',label:'Bound source'}],total:1,offset:0})"
+      - wait: 50
+    after:
+      - dom: { selector: '#subject', containsText: Bound source }
+      - property: { path: subject.state.total, equals: 1 }
+  - name: remote windows load on scroll and preserve absolute selection
+    covers: [properties.loadrange, methods.reload, methods.reveal, state.total, state.loading, state.error]
+    attributes: { id: subject, mode: normal, fast: true, remote: true, row-height: 32, auto-select: true, style: 'height:256px;display:block' }
+    before: []
+    actions:
+      - script: |
+          testData.rangeRequests=[]
+          subject.loadrange=async ({offset,limit,focus})=>{
+            if(focus)offset=Math.floor((Number(focus)-1)/limit)*limit
+            testData.rangeRequests.push(offset)
+            return {list:testData.virtual.slice(offset,offset+limit),total:testData.virtual.length,offset}
+          }
+          await subject.reload({focus:701})
+          await new Promise(resolve=>setTimeout(resolve,30))
+          if(subject.scrollTop<20000)throw new Error('focus did not position remote window')
+          await subject.reveal(999)
+          await new Promise(resolve=>setTimeout(resolve,30))
+          if(!subject.textContent.includes('Virtual user 1000'))throw new Error('last row was not loaded')
+          subject.state.selectedItem=1000
+          subject.focus()
+          subject.dispatchEvent(new KeyboardEvent('keydown',{key:'ArrowUp',bubbles:true,cancelable:true}))
+      - wait: 60
+    after:
+      - property: { path: subject.state.total, equals: 1000 }
+      - property: { path: subject.state.loading, equals: false }
+      - property: { path: subject.state.error, equals: '' }
+      - property: { path: subject.state.selectedItem, equals: 999 }
+      - script: "return subject.querySelectorAll('.list-group-item').length<100 && testData.rangeRequests.length<15"
+
+  - name: remote errors can be retried and old responses cannot replace new source
+    covers: [events.loaderror, properties.loadrange]
+    attributes: { id: subject, mode: normal, fast: true, remote: true, style: 'height:256px;display:block' }
+    before: []
+    actions:
+      - script: "subject.loadrange=async()=>{throw new Error('fixture failure')}"
+      - wait: 30
+      - script: |
+          if(subject.state.error!=='fixture failure')throw new Error('load error missing')
+          let release
+          subject.loadrange=()=>new Promise(resolve=>{release=resolve})
+          await Promise.resolve();await Promise.resolve()
+          subject.loadrange=async()=>({list:[{id:'new',label:'New source'}],total:1,offset:0})
+          await new Promise(resolve=>setTimeout(resolve,20))
+          release({list:[{id:'old',label:'Old source'}],total:1,offset:0})
+      - wait: 30
+    after:
+      - dom: { selector: '#subject', containsText: New source }
+      - script: "return !subject.textContent.includes('Old source') && subject.state.error===''"
+      - event: { name: loaderror, count: 1 }
+  - name: tree without auto-select has no selection UI or keyboard control
+    attributes: { id: subject, mode: tree, collapsible: true, "$.state.list": testData.tree }
+    before:
+      - property: { path: subject.tabIndex, equals: -1 }
+      - script: "subject.state.selectedItem='root';return true"
+    actions:
+      - script: "subject.focus();subject.dispatchEvent(new KeyboardEvent('keydown',{key:'ArrowLeft',bubbles:true,cancelable:true}))"
+      - script: "if(subject.querySelectorAll('.list-group-item').length!==21) throw new Error('tree keyboard must not collapse')"
+      - script: "subject.dispatchEvent(new KeyboardEvent('keydown',{key:'ArrowRight',bubbles:true,cancelable:true}));subject.dispatchEvent(new KeyboardEvent('keydown',{key:'ArrowDown',bubbles:true,cancelable:true}))"
+      - wait: 20
+    after:
+      - property: { path: subject.state.selectedItem, equals: root }
+      - dom: { selector: '#subject .list-group-item-action', count: 0 }
+      - dom: { selector: '#subject .text-primary', count: 0 }
+      - event: { name: change, count: 0 }
+      - event: { name: itemclick, count: 0 }
+
+  - name: empty summary remains a spacer before item actions
+    attributes: { id: subject, style: 'width:400px', "$.state.list": "[{id:1,label:'Short',summary:''}]" }
+    slots:
+      item-actions: <button class="summary-action btn btn-sm">Edit</button>
+    before:
+      - dom: { selector: '#subject .list-summary-text', count: 1 }
+      - script: "const summary=subject.querySelector('.list-summary-text');return summary.textContent==='' && getComputedStyle(summary).display!=='none' && summary.getBoundingClientRect().width>100"
+    actions: []
+    after: []
+
+  - name: keyboard prevents native scroll and reveals selection
+    attributes: { id: subject, auto-select: true, style: 'height:140px;overflow:auto', "$.state.list": testData.normal }
+    before: []
+    actions:
+      - script: |
+          subject.focus()
+          const key = name => {
+            const event = new KeyboardEvent('keydown', {key:name,bubbles:true,cancelable:true})
+            subject.dispatchEvent(event)
+            if (!event.defaultPrevented) throw new Error('native arrow scrolling was not prevented')
+          }
+          key('ArrowDown')
+          key('ArrowUp')
+          await new Promise(resolve=>setTimeout(resolve,20))
+          if(subject.scrollTop!==0) throw new Error('visible selection scrolled the list')
+          for(let i=0;i<15;i++) { key('ArrowDown'); await new Promise(resolve=>setTimeout(resolve,5)) }
+    after:
+      - property: { path: subject.state.selectedItem, equals: 16 }
+      - script: |
+          const row=subject.querySelector('.list-group-item.text-primary').getBoundingClientRect(), bounds=subject.getBoundingClientRect()
+          return subject.scrollTop>0 && row.top>=bounds.top-1 && row.bottom<=bounds.bottom+1
+
+  - name: normal rendering selection and bind writeback
+    attributes: { id: subject, mode: normal, activemode: background, itemicon: file, auto-select: true, "$.state.list": testData.normal, "$bind": testData.selected }
+    slots: {}
+    before:
+      - dom: { selector: '#subject .list-group-item', count: 60 }
+      - dom: { selector: '#subject', containsText: User 60 }
+      - script: "return subject.state.selectedItem==null"
+    actions:
+      - script: "subject.querySelectorAll('.list-group-item')[1].click()"
+    after:
+      - data: { path: testData.selected, equals: 2 }
+      - property: { path: subject.state.selectedItem, equals: 2 }
+      - event: { name: change, count: 1, last: 2 }
+      - event: { name: itemclick, count: 1 }
+      - script: "return subject.querySelectorAll('.list-group-item')[1].classList.contains('text-primary')"
+
+  - name: repeated row and list whitespace clear selection
+    covers: [methods.clearSelection, events.selectionclear]
+    attributes: { id: subject, mode: normal, auto-select: true, "$.state.list": "[{id:'a',label:'A'},{id:'b',label:'B'}]" }
+    actions:
+      - script: "subject.querySelectorAll('.list-group-item')[0].click();subject.querySelectorAll('.list-group-item')[0].click()"
+      - script: "if(subject.state.selectedItem!==null)throw new Error('repeated click did not clear selection')"
+      - script: "subject.querySelector('.list-group-item').click();subject.querySelector('.vs-pad-bottom').click()"
+      - wait: 10
+    after:
+      - property: { path: subject.state.selectedItem, equals: null }
+      - event: { name: itemclick, count: 3 }
+      - event: { name: selectionclear, count: 1 }
+
+  - name: multiple selection toggles ranges and drags the selection
+    covers: [attributes.multiple, attributes.draggable-items, attributes.drop-target-field, state.selectedItems, events.selectionchange, events.itemdrop]
+    attributes: { id: subject, mode: tree, multiple: true, draggable-items: true, drop-target-field: folder, "$bind": testData.multipleSelected, "$.state.list": "[{id:'folder',label:'Folder',folder:true},{id:'a',label:'A'},{id:'b',label:'B'}]" }
+    actions:
+      - script: |
+          const rows=subject.querySelectorAll('.list-group-item');
+          rows[1].click();
+          rows[2].dispatchEvent(new MouseEvent('click',{bubbles:true,ctrlKey:true}));
+          const transfer=new DataTransfer();
+          rows[1].dispatchEvent(new DragEvent('dragstart',{bubbles:true,dataTransfer:transfer}));
+          rows[0].dispatchEvent(new DragEvent('dragover',{bubbles:true,cancelable:true,dataTransfer:transfer}));
+          testData.dropTargetHighlighted=rows[0].classList.contains('list-drop-target');
+          rows[0].dispatchEvent(new DragEvent('drop',{bubbles:true,cancelable:true,dataTransfer:transfer}));
+    after:
+      - property: { path: subject.state.selectedItems, equals: [a, b] }
+      - data: { path: testData.multipleSelected, equals: [a, b] }
+      - event: { name: selectionchange, count: 2 }
+      - event: { name: itemdrop, count: 1 }
+      - data: { path: testData.dropTargetHighlighted, equals: true }
+
+  - name: item actions slot preserves layout and stops selection
+    attributes: { id: subject, activemode: rounded, auto-select: true, "$.state.list": testData.normal }
+    slots:
+      item-actions: <button class="test-action btn btn-sm text-nowrap" $onclick="event.stopPropagation()">Edit</button>
+    before:
+      - dom: { selector: '#subject .test-action', count: 60 }
+      - script: "return getComputedStyle(subject.querySelector('.test-action')).whiteSpace==='nowrap'"
+    actions:
+      - click: '#subject .test-action'
+    after:
+      - script: "return subject.state.selectedItem==null"
+      - event: { name: itemclick, count: 0 }
+
+  - name: auto-select keyboard navigation
+    attributes: { id: subject, auto-select: true, "$bind": testData.keyboardSelected, "$.state.list": testData.custom, idfield: key, labelfield: title }
+    slots: {}
+    before:
+      - property: { path: subject.tabIndex, equals: 0 }
+      - property: { path: subject.state.selectedItem, equals: null }
+    actions:
+      - script: "subject.focus();subject.dispatchEvent(new KeyboardEvent('keydown',{key:'ArrowDown',bubbles:true}))"
+      - wait: 10
+      - script: "subject.dispatchEvent(new KeyboardEvent('keydown',{key:'ArrowDown',bubbles:true}))"
+      - wait: 10
+      - script: "subject.dispatchEvent(new KeyboardEvent('keydown',{key:'ArrowUp',bubbles:true}))"
+      - wait: 10
+    after:
+      - data: { path: testData.keyboardSelected, equals: ada }
+      - property: { path: subject.state.selectedItem, equals: ada }
+      - event: { name: change, count: 3, last: ada }
+      - event: { name: itemclick, count: 3 }
+
+  - name: group rendering selection and group slot
+    attributes: { id: subject, mode: group, activemode: rounded, groupidfield: id, grouplabelfield: label, groupsummaryfield: summary, groupfield: group, groupicon: folder, auto-select: true, auto-select-group: true, "$.state.groups": testData.groups, "$.state.list": testData.grouped }
+    slots:
+      group-actions: <span class="group-action badge text-bg-secondary" $text="item.id"></span>
+    before:
+      - dom: { selector: '#subject .group-action', count: 3 }
+      - dom: { selector: '#subject .list-group-item', count: 63 }
+    actions:
+      - script: "subject.querySelectorAll('.list-group-item')[1].click()"
+      - script: "if(subject.state.selectedItem==null||subject.state.selectedGroup!=null)throw new Error('item selection must clear its group')"
+      - script: "subject.querySelectorAll('.list-group-item')[1].click()"
+      - script: "if(subject.state.selectedItem!=null||subject.state.selectedGroup!=null)throw new Error('deselecting an item must clear its group')"
+      - script: "subject.querySelectorAll('.list-group-item')[1].click()"
+      - script: "subject.querySelector('.list-group-item').click()"
+      - script: "subject.querySelector('.list-group-item').click()"
+    after:
+      - property: { path: subject.state.selectedGroup, equals: null }
+      - property: { path: subject.state.selectedItem, equals: null }
+      - event: { name: groupclick, count: 2 }
+
+  - name: tree hierarchy collapse expand and indentation
+    covers: [methods.isAllCollapsed]
+    attributes: { id: subject, mode: tree, collapsible: true, parentfield: parent, "$.state.list": testData.tree }
+    slots: {}
+    before:
+      - dom: { selector: '#subject .list-group-item', count: 21 }
+      - property: { path: subject.treeIndent, equals: 12 }
+      - script: "return !!subject.querySelector('.bi-caret-down-fill')"
+    actions:
+      - call: { method: collapseAll }
+      - script: "if(!subject.isAllCollapsed() || subject.querySelectorAll('.list-group-item').length!==1) throw new Error('collapseAll failed')"
+      - call: { method: toggleAll }
+      - script: "if(subject.isAllCollapsed() || subject.querySelectorAll('.list-group-item').length!==21) throw new Error('toggleAll expand failed')"
+      - script: "subject.querySelector('.bi-caret-down-fill').click()"
+    after:
+      - dom: { selector: '#subject .list-group-item', count: 1 }
+
+  - name: auto-select tree supports pointer selection but no arrow navigation
+    attributes: { id: subject, mode: tree, collapsible: true, auto-select: true, parentfield: parent, "$.state.list": testData.tree }
+    slots: {}
+    before:
+      - script: "subject.state.selectedItem='root';return subject.querySelectorAll('.list-group-item').length===21"
+    actions:
+      - script: "subject.focus();subject.dispatchEvent(new KeyboardEvent('keydown',{key:'ArrowLeft',bubbles:true}))"
+      - script: "if(subject.querySelectorAll('.list-group-item').length!==21) throw new Error('tree arrow must not collapse')"
+      - script: "subject.dispatchEvent(new KeyboardEvent('keydown',{key:'ArrowRight',bubbles:true}))"
+      - script: "if(subject.querySelectorAll('.list-group-item').length!==21) throw new Error('ArrowRight did not expand the selected parent')"
+      - script: "subject.dispatchEvent(new KeyboardEvent('keydown',{key:'ArrowDown',bubbles:true}))"
+      - wait: 10
+    after:
+      - property: { path: subject.state.selectedItem, equals: root }
+      - event: { name: itemclick, count: 0 }
+
+  - name: lazy children expansion and item activation
+    covers: [methods.expandItem, events.beforeexpand, events.itemactivate]
+    attributes: { id: subject, mode: tree, collapsible: true, default-collapsed: true, haschildrenfield: count, auto-select: true, "$.state.list": "[{id:'parent',label:'Parent',count:1}]" }
+    before:
+      - dom: { selector: '#subject .bi-caret-right-fill', count: 1 }
+    actions:
+      - prevent: beforeexpand
+      - click: '#subject .bi-caret-right-fill'
+      - script: "if(subject.collapsed.parent!==true)throw new Error('cancelled expansion changed state');subject.state.list=[...subject.state.list,{id:'child',label:'Loaded child',parent:'parent'}]"
+      - call: { method: expandItem, args: [parent] }
+      - script: "subject.querySelectorAll('.list-group-item')[1].dispatchEvent(new MouseEvent('dblclick',{bubbles:true}))"
+    after:
+      - dom: { selector: '#subject .list-group-item', count: 2 }
+      - event: { name: beforeexpand, count: 1 }
+      - event: { name: itemactivate, count: 1 }
+
+  - name: custom tree indentation
+    attributes: { id: subject, mode: tree, collapsible: true, indent: 8, "$.state.list": testData.tree }
+    slots: {}
+    before:
+      - property: { path: subject.treeIndent, equals: 8 }
+      - script: "return subject.state.flatList.find(item=>item.id==='child-1')._level===1"
+      - script: "return subject.querySelectorAll('.list-group-item')[1].querySelector('.text-end').style.width==='24px'"
+    actions: []
+    after: []
+
+  - name: large child groups default collapsed and stay user controlled
+    attributes: { id: subject, mode: tree, collapsible: true, collapse-threshold: 10, "$.state.list": testData.tree }
+    slots: {}
+    before:
+      - dom: { selector: '#subject .list-group-item', count: 1 }
+      - script: "return subject.collapsed.root===true"
+    actions:
+      - script: "subject.querySelector('.bi-caret-right-fill').click()"
+    after:
+      - dom: { selector: '#subject .list-group-item', count: 21 }
+      - script: "return subject.collapsed.root===false"
+
+  - name: virtual scrolling window and absolute index
+    attributes: { id: subject, fast: true, auto-select: true, style: "display:block;height:280px", "$.state.list": testData.virtual }
+    slots: {}
+    before:
+      - script: "return subject.state.flatList.length===1000 && subject.querySelectorAll('.list-group-item').length>0 && subject.querySelectorAll('.list-group-item').length<1000"
+      - property: { path: subject.state.listStartIndex, equals: 0 }
+    actions:
+      - script: |
+          subject.style.height='260px'
+          subject.scrollTop=subject.scrollHeight
+          subject.dispatchEvent(new Event('scroll'))
+          await new Promise(resolve=>setTimeout(resolve,150))
+          if(subject.state.listStartIndex<=0) throw new Error('virtual window did not move')
+          subject.querySelector('.list-group-item').click()
+    after:
+      - script: "return subject.state.renderedList.length<1000 && subject.querySelector('.vs-pad-top').style.height!=='0px'"
+      - event: { name: itemclick, count: 1 }
+      - script: "return __componentTestEvents.itemclick[0].index===subject.state.listStartIndex"
+
+  - name: string and object filtering
+    attributes: { id: subject, "$.state.list": testData.searchable, "$.state.filter": "'West'" }
+    slots: {}
+    before:
+      - dom: { selector: '#subject .list-group-item', count: 2 }
+    actions:
+      - script: "subject.state.filter={label:'Alpha',summary:'West'}"
+    after:
+      - dom: { selector: '#subject .list-group-item', count: 1 }
+      - dom: { selector: '#subject', containsText: Alpha }
+
+  - name: declarative and function sorting
+    covers: [properties.orderFunc]
+    attributes: { id: subject, "$.state.list": testData.searchable, "$.state.order": "'-label'" }
+    slots: {}
+    before:
+      - script: "return subject.querySelector('.list-group-item').textContent.includes('Gamma')"
+    actions:
+      - script: "subject.orderFunc=(a,b)=>a.rank-b.rank"
+    after:
+      - script: "return subject.querySelector('.list-group-item').textContent.includes('Alpha')"
+
+  - name: predicate filter
+    covers: [properties.filterFunc]
+    attributes: { id: subject, "$.state.list": testData.searchable }
+    slots: {}
+    before: []
+    actions:
+      - script: "subject.filterFunc=item=>item.rank>=2"
+    after:
+      - dom: { selector: '#subject .list-group-item', count: 2 }
+
+  - name: custom fields icons and active mode
+    attributes: { id: subject, idfield: key, labelfield: title, summaryfield: desc, iconfield: icon, activemode: text, auto-select: true, "$.state.list": testData.custom }
+    slots: {}
+    before:
+      - dom: { selector: '#subject .bi-person', count: 1 }
+      - dom: { selector: '#subject .bi-pencil', count: 1 }
+      - property: { path: subject.activeMode, equals: text }
+    actions:
+      - script: "subject.querySelector('.list-group-item').click()"
+    after:
+      - property: { path: subject.state.selectedItem, equals: ada }
+      - script: "return subject.querySelector('.list-group-item').classList.contains('list-active-text')"
+
+  - name: complete item slot
+    attributes: { id: subject, "$.state.list": testData.normal }
+    slots:
+      item: <template><div class="custom-row list-group-item" $text="item.label"></div></template>
+    before:
+      - dom: { selector: '#subject .custom-row', count: 60 }
+    actions: []
+    after: []
+
+  - name: invalid list and no-op tree methods
+    attributes: { id: subject, "$.state.list": testData.missing }
+    slots: {}
+    before:
+      - dom: { selector: '#subject .list-group-item', count: 0 }
+    actions:
+      - call: { method: collapseAll }
+      - call: { method: expandAll }
+      - call: { method: toggleAll }
+    after:
+      - property: { path: subject.isAllCollapsed(), equals: false }
+
+  - name: change-bound selection stays unchanged when discard is rejected
+    covers: [attributes.changebind]
+    attributes: { id: subject, auto-select: true, ".changebind": ListTest, idfield: id, labelfield: label, "$.state.list": "[{id:'a',label:'A'},{id:'b',label:'B'}]" }
+    before:
+      - script: "subject.state.selectedItem='a';State.changes.ListTest=true;globalThis.Dialog.confirm=async()=>false;return true"
+    actions:
+      - script: "subject.querySelectorAll('.list-group-item')[1].click()"
+      - wait: 20
+    after:
+      - property: { path: subject.state.selectedItem, equals: a }
+      - property: { path: State.changes.ListTest, equals: true }
+
+  - name: silent selection updates without change event
+    attributes: { id: subject, silent: true, auto-select: true, idfield: id, labelfield: label, "$.state.list": "[{id:'a',label:'A'}]" }
+    actions:
+      - click: '#subject .list-group-item'
+    after:
+      - property: { path: subject.state.selectedItem, equals: a }
+      - event: { name: itemclick, count: 1 }
+      - event: { name: change, count: 0 }

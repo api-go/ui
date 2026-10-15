@@ -1,0 +1,20 @@
+testData: { icon: house }
+cases:
+  - name: small sizing uses Bootstrap button
+    attributes: { id: subject, sm: true, "$bind": testData.icon }
+    slots: {}
+    before:
+      - script: "return subject.sm && subject.querySelector('.dropdown>button').classList.contains('btn-sm')"
+    actions: []
+    after: []
+  - name: binding search and selection
+    attributes: { id: subject, "$bind": testData.icon }
+    slots: {}
+    before: [{ property: { path: subject.value, equals: house } }]
+    actions:
+      - script: subject._toggle()
+      - fill: { selector: '#subject input', value: alarm }
+      - script: "subject._selectIcon('alarm')"
+    after:
+      - data: { path: testData.icon, equals: alarm }
+      - event: { name: change, count: 1, last: alarm }

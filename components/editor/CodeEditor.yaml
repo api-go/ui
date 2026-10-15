@@ -1,12 +1,16 @@
 name: CodeEditor
+kind: component
+src: /ui/components/editor/CodeEditor.js
+dependencies: [/ui/libraries/CodeMirror.js, Editor, Disposer, AutoForm]
 purpose: Edit source text with syntax highlighting, diagnostics, reindentation, and optional Markdown or sandboxed HTML preview.
 
 attributes:
-  lang: "javascript|js|json|yaml|yml|python|py|html|css|markdown|md; overrides path extension detection."
+  lang: "javascript|js|json|yaml|yml|python|py|html|css|go|java|shell|sh|markdown|md; overrides path extension detection."
   path: File path used for language detection and optional Editor document transport.
   api: Optional Editor document endpoint; requires path for automatic loading and saving.
   version: Optional document history version passed to Editor transport.
   value: Initial source string.
+  placeholder: Placeholder guidance shown while the source is empty.
   theme: "auto|light|dark; defaults to auto and follows the page data-bs-theme."
   wrap: boolean; wrap long source lines inside this editor instance.
   readonly: boolean
@@ -53,6 +57,9 @@ events:
   error: "detail=Error from language, preview, or Editor transport loading."
   toolschange: "detail=resolved toolbar descriptors after capabilities, preview availability, or active state change."
 
+slots:
+  toolbar-start: Content rendered beside the Code label at the left side of the optional built-in toolbar.
+
 languages:
   javascript: ".js|.mjs|.cjs; aliases js and javascript."
   json: .json
@@ -62,6 +69,9 @@ languages:
   css: .css
   sql: ".sql; aliases sql, mysql, pgsql, and postgres."
   markdown: ".md|.markdown; aliases md and markdown."
+  go: .go
+  java: .java
+  shell: ".sh|.bash; aliases sh, bash, and shell."
 
 preview:
   markdown: Sanitized Markdown rendered in the preview pane; its parser library loads only when first needed.
@@ -110,4 +120,4 @@ related:
   - ../base/AutoForm.yaml
 
 tests:
-  - CodeEditor.test.html
+  - CodeEditor.test.yaml

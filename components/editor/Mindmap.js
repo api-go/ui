@@ -198,14 +198,14 @@ globalThis.Component.register('Mindmap', container => {
 }, globalThis.Util.makeDom(/*html*/`
 <div class="mindmap-root d-flex flex-column h-100 border rounded overflow-hidden bg-body" tabindex="0" $onkeydown="this.onKeydown(event)">
   <div $if="this.hasAttribute('toolbar')" slot-id="toolbar" class="d-flex align-items-center gap-2 border-bottom px-2 py-2 bg-body">
-    <div class="btn-group btn-group-sm" role="group" aria-label="{#Direction#}">
+    <div class="btn-group " role="group" aria-label="{#Direction#}">
       <button type="button" class="mindmap-direction mindmap-direction-left" $class="'btn '+(this.state.data.settings?.direction==='left'?'btn-secondary':'btn-outline-secondary')" $onclick="this.setDirection('left')" title="{#Expand left#}"><i class="bi bi-diagram-3"></i></button>
       <button type="button" class="mindmap-direction mindmap-direction-right" $class="'btn '+(this.state.data.settings?.direction==='right'?'btn-secondary':'btn-outline-secondary')" $onclick="this.setDirection('right')" title="{#Expand right#}"><i class="bi bi-diagram-3"></i></button>
     </div>
-    <button type="button" class="mindmap-fit btn btn-sm btn-outline-secondary" $onclick="this.fit()" title="{#Fit map#}"><i class="bi bi-bounding-box"></i></button>
+    <button type="button" class="mindmap-fit btn  btn-outline-secondary" $onclick="this.fit()" title="{#Fit map#}"><i class="bi bi-bounding-box"></i></button>
     <div class="flex-grow-1"></div>
     <span $if="this.state.selectedNodeId" class="small text-muted d-none d-lg-inline">Tab {#child#} · Enter {#sibling#} · Space {#preview#}</span>
-    <button $if="!this.hasAttribute('nosave')" type="button" class="mindmap-save" $class="'btn btn-sm '+(this.state.dirty?'btn-primary':'btn-outline-secondary')" $disabled="!this.state.dirty || this.state.saving" $onclick="this.save()"><i class="bi bi-save me-1"></i>{#Save#}</button>
+    <button $if="!this.hasAttribute('nosave')" type="button" class="mindmap-save" $class="'btn  '+(this.state.dirty?'btn-primary':'btn-outline-secondary')" $disabled="!this.state.dirty || this.state.saving" $onclick="this.save()"><i class="bi bi-save me-1"></i>{#Save#}</button>
   </div>
   <div class="graph-viewport flex-grow-1 position-relative overflow-hidden bg-body-tertiary" $onclick="this.onCanvasClick(event)">
     <div class="graph-scene position-absolute">
@@ -217,7 +217,7 @@ globalThis.Component.register('Mindmap', container => {
               <div class="flex-grow-1 min-w-0"><div class="mindmap-node-title fw-semibold" $text="node.title"></div><div $if="node.content" class="mindmap-node-content small text-muted" $text="node.content"></div></div>
             </div>
             <div slot-id="node-actions" class="mindmap-node-actions position-absolute d-flex gap-1">
-              <button $if="GraphDocument.children(this.state.data,node.id).length" type="button" class="btn btn-sm btn-outline-secondary rounded-circle p-0" title="{#Collapse#}" $onclick="event.stopPropagation();this.toggleNode(node)"><i $class="'bi '+(node.collapsed?'bi-chevron-right':'bi-chevron-down')"></i></button>
+              <button $if="GraphDocument.children(this.state.data,node.id).length" type="button" class="btn  btn-outline-secondary rounded-circle p-0" title="{#Collapse#}" $onclick="event.stopPropagation();this.toggleNode(node)"><i $class="'bi '+(node.collapsed?'bi-chevron-right':'bi-chevron-down')"></i></button>
             </div>
           </article>
         </template>
@@ -242,8 +242,8 @@ globalThis.Component.register('Mindmap', container => {
   Mindmap .mindmap-node { cursor:pointer; }
   Mindmap .mindmap-node-title { display:-webkit-box; -webkit-box-orient:vertical; -webkit-line-clamp:2; overflow:hidden; }
   Mindmap .mindmap-node-content { display:-webkit-box; -webkit-box-orient:vertical; -webkit-line-clamp:3; overflow:hidden; margin-top:.25rem; }
-  Mindmap .mindmap-node-actions { right:-13px; top:50%; transform:translateY(-50%); z-index:2; }
-  Mindmap .mindmap-node-actions .btn { width:26px; height:26px; line-height:24px; }
+  Mindmap .mindmap-node-actions { right:0; top:50%; transform:translate(50%,-50%); z-index:2; }
+  Mindmap .mindmap-node-actions .btn { display:inline-flex;align-items:center;justify-content:center; }
   Mindmap .min-w-0 { min-width:0; }
   Mindmap .mindmap-direction i { display:inline-block; }
   Mindmap .mindmap-direction-left i { transform:rotate(90deg); }

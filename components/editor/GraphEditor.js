@@ -36,6 +36,12 @@ globalThis.Component.register('GraphEditor', container => {
 
   const routeEdges = (data, nodes) => {
     const positions = new Map(nodes.map(node => [node.id, node]))
+    const groups = new Map()
+    for (const edge of data.edges) {
+      const key = [edge.from, edge.to].sort().join('\u0000')
+      if (!groups.has(key)) groups.set(key, [])
+      groups.get(key).push(edge.id)
+    }
     const boundary = (node, toward) => {
       const center = { x: node.x + node.width / 2, y: node.y + node.height / 2 }
       const dx = toward.x - center.x, dy = toward.y - center.y
@@ -48,10 +54,11 @@ globalThis.Component.register('GraphEditor', container => {
       if (!from || !to) return null
       const fromCenter = { x: from.x + from.width / 2, y: from.y + from.height / 2 }, toCenter = { x: to.x + to.width / 2, y: to.y + to.height / 2 }
       const start = boundary(from, toCenter), end = boundary(to, fromCenter)
-      const reciprocal = data.edges.some(other => other.id !== edge.id && other.from === edge.to && other.to === edge.from)
-      if (reciprocal) {
-        const dx = end.x - start.x, dy = end.y - start.y, length = Math.max(1, Math.hypot(dx, dy))
-        const control = { x: (start.x + end.x) / 2 - dy / length * 42, y: (start.y + end.y) / 2 + dx / length * 42 }
+      const key = [edge.from, edge.to].sort().join('\u0000'), siblings = groups.get(key), lane = siblings.indexOf(edge.id) - (siblings.length - 1) / 2
+      if (siblings.length > 1) {
+        const canonical = edge.from <= edge.to ? { from: start, to: end } : { from: end, to: start }
+        const dx = canonical.to.x - canonical.from.x, dy = canonical.to.y - canonical.from.y, length = Math.max(1, Math.hypot(dx, dy))
+        const control = { x: (start.x + end.x) / 2 - dy / length * lane * 56, y: (start.y + end.y) / 2 + dx / length * lane * 56 }
         return { ...edge, x: (start.x + 2 * control.x + end.x) / 4, y: (start.y + 2 * control.y + end.y) / 4, path: `M ${start.x} ${start.y} Q ${control.x} ${control.y}, ${end.x} ${end.y}` }
       }
       const curve = Math.max(48, Math.abs(end.x - start.x) / 2), direction = end.x >= start.x ? 1 : -1
@@ -97,7 +104,7 @@ globalThis.Component.register('GraphEditor', container => {
   state.__watch('extraSchemas', () => { if (state.editing) state.editing.schema = schemas()[state.editing.kind] })
 
   container.selectNode = (node, event) => {
-    if (event?.shiftKey && state.selectedNodeId && state.selectedNodeId !== node.id) return container.connect(state.selectedNodeId, node.id)
+    if (!container.readonly && event?.shiftKey && state.selectedNodeId && state.selectedNodeId !== node.id) return container.connect(state.selectedNodeId, node.id)
     const previewing = !!state.previewItem
     state.selectedNodeId = node?.id || null; state.selectedEdgeId = null
     if (!node) { state.previewItem = null; state.previewNode = null }
@@ -172,7 +179,7 @@ globalThis.Component.register('GraphEditor', container => {
     return true
   }
   container.startNodeDrag = (node, event, element) => {
-    if (container.readonly || event.button !== 0 || event.target.closest('button,input,textarea,select,a')) return
+    if (event.button !== 0 || event.target.closest('button,input,textarea,select,a')) return
     event.stopPropagation(); dragCleanup?.(); if (!event.shiftKey) container.selectNode(node)
     const startX = event.clientX, startY = event.clientY, originX = node.x, originY = node.y, scale = canvas.view.scale
     const move = moveEvent => {
@@ -185,7 +192,11 @@ globalThis.Component.register('GraphEditor', container => {
       const dx = endEvent.clientX - startX, dy = endEvent.clientY - startY
       if (Math.abs(dx) <= 2 && Math.abs(dy) <= 2) { dragCleanup?.(); return }
       const data = normalize(state.data), target = data.nodes.find(item => item.id === node.id)
-      if (target) { target.x = Math.round(originX + dx / scale); target.y = Math.round(originY + dy / scale); changed(data, 'move-node', { node: target }) }
+      if (target) {
+        target.x = Math.round(originX + dx / scale); target.y = Math.round(originY + dy / scale)
+        if (container.readonly) { state.data = data; render(false); container.dispatchEvent(new CustomEvent('layoutchange', {detail:{node:target,data},bubbles:false})) }
+        else changed(data, 'move-node', { node: target })
+      }
       dragCleanup?.()
     }
     dragCleanup = () => { window.removeEventListener('pointermove', move); window.removeEventListener('pointerup', end); dragCleanup = null }
@@ -244,11 +255,11 @@ globalThis.Component.register('GraphEditor', container => {
 }, globalThis.Util.makeDom(/*html*/`
 <div class="graph-editor-root d-flex flex-column h-100 border rounded overflow-hidden bg-body" tabindex="0" $onkeydown="this.onKeydown(event)">
   <div $if="this.hasAttribute('toolbar')" slot-id="toolbar" class="d-flex align-items-center gap-2 border-bottom px-2 py-2 bg-body">
-    <button type="button" class="graph-fit btn btn-sm btn-outline-secondary" $onclick="this.fit()" title="{#Fit graph#}"><i class="bi bi-bounding-box"></i></button>
-    <span $if="this.state.selectedNodeId" class="graph-connect-hint small text-muted"><i class="bi bi-link-45deg me-1"></i>{#Shift-click another node to connect#}</span>
-    <div class="flex-grow-1"></div><button $if="!this.hasAttribute('nosave')" type="button" class="graph-save" $class="'btn btn-sm '+(this.state.dirty?'btn-primary':'btn-outline-secondary')" $disabled="!this.state.dirty || this.state.saving" $onclick="this.save()"><i class="bi bi-save me-1"></i>{#Save#}</button>
+    <button type="button" class="graph-fit btn  btn-outline-secondary" $onclick="this.fit()" title="{#Fit graph#}"><i class="bi bi-bounding-box"></i></button>
+    <div class="flex-grow-1"></div><button $if="!this.hasAttribute('nosave')" type="button" class="graph-save" $class="'btn  '+(this.state.dirty?'btn-primary':'btn-outline-secondary')" $disabled="!this.state.dirty || this.state.saving" $onclick="this.save()"><i class="bi bi-save me-1"></i>{#Save#}</button>
   </div>
   <div class="graph-viewport flex-grow-1 position-relative overflow-hidden bg-body-tertiary" $onclick="this.onCanvasClick(event)" $ondblclick="this.onCanvasDoubleClick(event)">
+    <span $if="!this.readonly && this.state.selectedNodeId" class="graph-connect-hint position-absolute top-0 start-0 m-2 px-2 py-1 rounded small text-body-secondary bg-body border"><i class="bi bi-link-45deg me-1"></i>{#Shift-click another node to connect#}</span>
     <div class="graph-scene position-absolute">
       <svg class="graph-edges position-absolute overflow-visible" width="1" height="1"></svg>
       <div class="graph-nodes position-absolute">
@@ -259,7 +270,7 @@ globalThis.Component.register('GraphEditor', container => {
           </article>
         </template>
         <template $each="this.state.edgeLayouts || []" as="edge" index="edgeIndex" key="id">
-          <button type="button" class="graph-edge-label btn btn-sm btn-outline-secondary position-absolute" $class="this.state.selectedEdgeId===edge.id?'border-primary':''" $style="'left:'+edge.x+'px;top:'+edge.y+'px'" $onclick="event.stopPropagation();this.selectEdge(edge)" $ondblclick="event.stopPropagation();this.editEdge(edge)"><span slot-id="edge-label" $text="edge.label || '↗'"></span></button>
+          <button type="button" class="graph-edge-label btn  btn-outline-secondary position-absolute" $class="this.state.selectedEdgeId===edge.id?'border-primary':''" $style="'left:'+edge.x+'px;top:'+edge.y+'px'" $onclick="event.stopPropagation();this.selectEdge(edge)" $ondblclick="event.stopPropagation();this.editEdge(edge)"><span slot-id="edge-label" $text="edge.label || '↗'"></span></button>
         </template>
       </div>
       <div slot-id="empty" $if="!this.state.data.nodes.length" class="position-absolute text-muted">{#No nodes#}</div>
@@ -280,9 +291,9 @@ globalThis.Component.register('GraphEditor', container => {
   GraphEditor .graph-editor-node { cursor:move; }
   GraphEditor .graph-node-title { display:-webkit-box; -webkit-box-orient:vertical; -webkit-line-clamp:2; overflow:hidden; }
   GraphEditor .graph-node-content { display:-webkit-box; -webkit-box-orient:vertical; -webkit-line-clamp:4; overflow:hidden; }
-  GraphEditor .graph-node-actions { right:-12px; top:-12px; }
-  GraphEditor .graph-node-actions .btn { width:25px; height:25px; line-height:23px; }
-  GraphEditor .graph-edge-label { transform:translate(-50%,-50%); z-index:3; min-width:30px; }
+  GraphEditor .graph-node-actions { right:0; top:0; transform:translate(50%,-50%); }
+  GraphEditor .graph-node-actions .btn { display:inline-flex;align-items:center;justify-content:center; }
+  GraphEditor .graph-edge-label { transform:translate(-50%,-50%); z-index:3; min-width:30px; width:max-content; max-width:140px; white-space:normal; overflow-wrap:anywhere; line-height:1.15; }
   GraphEditor .graph-preview { width:min(400px, calc(100% - 2rem)); max-height:45%; overflow:auto; z-index:10; pointer-events:none; background:rgba(var(--bs-info-rgb),.88); border:1px solid rgba(var(--bs-info-rgb),1); backdrop-filter:blur(4px); font-size:.875rem; }
   GraphEditor .graph-preview-arrow { position:absolute; left:50%; bottom:-6px; width:12px; height:12px; background:inherit; transform:translateX(-50%) rotate(45deg); }
   GraphEditor:focus { outline:none; }

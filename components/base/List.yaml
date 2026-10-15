@@ -1,18 +1,33 @@
 name: List
+kind: component
+src: /ui/components/base/List.js
+dependencies: [VirtualScroll, Dialog, Disposer]
 purpose: Render flat, grouped, tree, or virtualized item lists with declarative selection and slots.
 
 appearance:
-  default: Compact borderless rows with a transparent background and small text.
-  selected: Theme-primary text emphasis without a filled active background.
+  default: Borderless rows with transparent background; inherited ui-sm/ui-lg control density. Explicit row-height still wins for remote virtualization.
+  selected: Background and rounded modes use neutral Bootstrap secondary surfaces and body text; text mode uses primary text only.
   summary: Uses opacity-75 so it stays visually secondary while inheriting the selected row color.
   tree: Uses compact pt-1/pb-0 spacing; expandable parent nodes use the caret without a second folder icon.
 
 attributes:
   mode: [normal, group, tree]
   fast: "boolean — virtual scrolling"
+  remote: "boolean — remote fixed-height windows; requires fast and mode=normal."
+  row-height: "Remote row height in pixels; defaults to inherited density (32 compact, 40 default, 48 spacious), minimum 20. Explicit value wins. Custom remote rows must use this exact height."
   collapsible: "boolean — collapsible tree nodes"
-  auto-select: "boolean — clicked item id -> selectedItem"
-  auto-select-group: "boolean — clicked group id -> selectedGroup"
+  default-collapsed: "boolean — unseen tree parents start collapsed, including lazy parents."
+  haschildrenfield: "Optional field indicating children that have not been loaded yet."
+  activemode: [background, rounded, text]
+  indent: "Tree indentation in pixels; defaults to 12."
+  collapse-threshold: "Non-negative child count. In tree mode, a parent with more direct children than this defaults to collapsed; 0 disables the policy. User expansion remains authoritative afterward."
+  changebind: 'Use `.changebind="SourceKey"`. Selecting a different item checks `State.changes[SourceKey]`, confirms discard, and clears it before selection changes.'
+  auto-select: "boolean — clicked item id -> selectedItem; also enables ArrowUp/ArrowDown keyboard selection."
+  multiple: "boolean — standard multi-selection: click selects one, Ctrl/Command-click toggles, and Shift-click extends a range; writes selectedItems."
+  draggable-items: "boolean — make item rows draggable and emit itemdrop when dropped on another row; supported in tree mode for moving selections into folders."
+  drop-target-field: "Optional boolean item field that restricts valid drop rows; valid rows receive a visible drop-target highlight during dragover."
+  silent: "boolean — preserve selection and itemclick behavior without emitting change."
+  auto-select-group: "boolean — clicked group toggles selectedGroup and clears selectedItem; selecting or deselecting an item clears selectedGroup, so only one row is active."
   idfield: id
   labelfield: label
   summaryfield: summary
@@ -22,32 +37,59 @@ attributes:
   groupfield: group
   parentfield: parent
   iconfield: "Optional item field containing a Bootstrap Icons suffix; falls back to itemicon when empty."
+  iconclassfield: "Optional item field containing classes for the item icon; defaults to text-body."
+  disabledfield: "Optional boolean item field that dims the item label without disabling selection."
+  groupicon: "Bootstrap Icons suffix for group rows; defaults to folder. Empty disables it."
+  groupiconfield: "Optional group field containing a Bootstrap Icons suffix; falls back to groupicon."
+  groupiconclassfield: "Optional group field containing classes for the group icon; defaults to text-body."
+  itemicon: "Fallback Bootstrap Icons suffix for item rows; defaults to file."
 
 state:
+  total: "Remote source's current total row count; read-only to hosts."
+  loading: "Whether remote requests are pending; read-only to hosts."
+  error: "Last remote loading error message; cleared by reload."
   list: 'Array of item objects. Declarative form: `$.state.list="users"`.'
   groups: 'Array of group objects when mode=group. Declarative form: `$.state.groups="groups"`.'
   filter: String or object filter.
   order: Field name, `-name`, or `name desc`.
   selectedItem: Selected item id (written by auto-select).
+  selectedItems: Array of selected item ids when multiple is enabled.
   selectedGroup: Selected group id (written by auto-select-group).
 
 properties:
+  loadrange: "Async ({offset,limit,focus}) => {list,total,offset}; windows use limit=100 and aligned offsets. Focus may choose another aligned window. Reassigning the source resets its cache. Remote mode does not use state.list, filter or order; the source owns sorting/filtering."
   filterFunc: Custom item predicate.
   orderFunc: Custom sorting comparator.
 
 methods:
+  clearSelection: "clearSelection(): clear selected item/group after honoring changebind; emits selectionclear when a selection existed."
+  reload: "reload({focus?}): discard remote windows and reload, optionally around a stable item ID. Returns a Promise."
+  reveal: "reveal(index): load and scroll a remote absolute row index into view without changing selection. Returns a Promise."
+  expandItem: "expandItem(id): expand one tree node after its children have been added to state.list."
   collapseAll: "Collapse every parent node when mode=tree and collapsible is enabled."
   expandAll: "Expand every parent node when mode=tree and collapsible is enabled."
   isAllCollapsed: "Return whether every expandable tree node is collapsed."
   toggleAll: "Expand a fully collapsed tree, otherwise collapse all expandable nodes."
 
 events:
+  selectionclear:
+    detail: "{ previousItem, previousGroup, discarded }; emitted when blank-space clearing removes a selection."
+  loaderror:
+    detail: "Error raised by the remote source; failed windows retry only after reload."
+  beforeexpand:
+    detail: "{ item }; cancelable. Prevent expansion while loading children, then update state.list and call expandItem(id)."
+  itemactivate:
+    detail: "{ item, index }; double-click on a row, or Enter on the selected normal/group row; index is absolute."
   change:
     detail: selectedItem
   itemclick:
-    detail: "{ item, index }"
+    detail: "{ item, selected, selectedItems, index, discarded }; selectedItems is present in multiple mode."
+  selectionchange:
+    detail: "Array of selected ids emitted after a multiple selection changes."
+  itemdrop:
+    detail: "{ items, target }; items contains the dragged selected records and target is the drop row."
   groupclick:
-    detail: "{ item, index }"
+    detail: "{ item, selected, index }; selected is the click result captured before reactive bindings can write back."
 
 slots:
   item: Replace the complete item row.
@@ -55,11 +97,21 @@ slots:
   group-actions: Render at the right side of every group row.
 
 rules:
+  - The List host owns overflow-auto scrolling. Place it in a bounded region, such as Pane scroll=none, so the host receives available height. List never owns sidebar resizing; use SplitPane for that composition.
+  - Tree mode uses pointer selection and expansion only; arrow navigation is intentionally unsupported. Without auto-select, item rows have no selectable hover or selected styling.
+  - An empty summary retains its DOM and flexible spacer so trailing actions remain right-aligned.
   - With fast, a custom item row must retain list-group-item and $onupdate.
   - Use event.stopPropagation() for action controls that must not select the row.
   - 'Non-default field mapping is declarative: `idfield="key" labelfield="title" summaryfield="desc"`.'
   - 'Per-item icons are opt-in: set `iconfield="icon"`; values such as `person` render the `bi-person` class and empty values fall back to itemicon.'
   - 'Tree toolbars may call `collapseAll()`, `expandAll()`, or `toggleAll()`; these methods are no-ops outside a collapsible tree.'
+  - 'collapse-threshold applies only to the first unseen state of each parent. It must not collapse a parent again after the user expands it.'
+  - 'A changebind check happens before selection and Hash write-back. Cancellation leaves both unchanged and emits no itemclick.'
+  - 'With auto-select, clicking the selected row again clears it; clicking list whitespace also clears the current item/group selection.'
+  - 'With multiple, an unmodified click replaces the selection, Ctrl/Command-click toggles one row, Shift-click extends from the anchor, and whitespace clears all selected items.'
+  - 'draggable-items emits intent only; the host validates the target and owns persistence and refresh.'
+  - 'With auto-select, the List is keyboard-focusable. ArrowUp and ArrowDown select the previous or next visible item without clearing the current selection.'
+  - 'In group mode with auto-select and auto-select-group, group and item selection are mutually exclusive. Selecting either clears the other; clicking the active row again clears all selection.'
   - Default label and summary areas truncate to one line. The primary label keeps its natural width up to 75%; the fill summary receives at least 25% and uses the remaining width. An empty summary leaves the full row to the label. Slotted item-actions and group-actions preserve application-provided layout classes, including wrapping behavior.
 
 examples: |
@@ -96,4 +148,4 @@ data_shape:
   tree_item: "{ id, label, summary, parent }"
 
 tests:
-  - List.test.html
+  - List.test.yaml

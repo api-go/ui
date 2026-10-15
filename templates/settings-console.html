@@ -1,0 +1,84 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<title>设置中心 · UI 模板</title>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<script src="../frameworks/State.js"></script>
+<script src="../frameworks/Bootstrap.js"></script>
+<script src="../utilities/Disposer.js"></script>
+<script src="../utilities/UUID.js"></script>
+<script src="../components/base/Modal.js"></script>
+<script src="../components/base/Dialog.js"></script>
+<script src="../components/base/Nav.js"></script>
+<script src="../components/base/Toast.js"></script>
+<script src="../components/base/AutoForm.js"></script>
+<script src="../components/base/PageHeader.js"></script>
+<script src="../components/base/Pane.js"></script>
+<script src="../components/base/AppShell.js"></script>
+<script>
+Bootstrap.config({bindDarkMode:[LocalStorage,'templateDark']})
+const settingsSections=[{type:'button',name:'profile',label:'基本资料',icon:'person'},{type:'button',name:'delivery',label:'寄送信息',icon:'geo-alt'},{type:'button',name:'preferences',label:'使用偏好',icon:'sliders'}]
+const settingsDefaults={name:'林悦',email:'lin@example.test',company:'星河科技',role:'产品经理',city:'上海',district:'徐汇区',address:'',postal:'200000',language:'简体中文',density:'舒适',timezone:'Asia/Shanghai',digest:true,note:''}
+const settingsSchema=[
+ {type:'group',label:'个人资料',columns:2,if:"Hash.settingsSection==='profile'",items:[
+  {name:'name',label:'姓名',type:'text',setting:{required:true}},
+  {name:'email',label:'工作邮箱',type:'email',setting:{required:true}},
+  {name:'company',label:'公司',type:'text'},
+  {name:'role',label:'职位',type:'text'},
+  {name:'note',label:'个人简介',type:'textarea',colspan:'full',setting:{rows:3}}
+ ]},
+ {type:'group',label:'寄送地址',columns:2,if:"Hash.settingsSection==='delivery'",items:[
+  {name:'city',label:'城市',type:'text'},
+  {name:'district',label:'区县',type:'text'},
+  {name:'address',label:'详细地址',type:'textarea',colspan:'full',setting:{rows:3}},
+  {name:'postal',label:'邮政编码',type:'text'}
+ ]},
+ {type:'group',label:'界面与通知',columns:3,if:"Hash.settingsSection==='preferences'",items:[
+  {name:'language',label:'语言',type:'select',options:['简体中文','English']},
+  {name:'density',label:'信息密度',type:'select',options:['舒适','紧凑']},
+  {name:'timezone',label:'时区',type:'select',options:['Asia/Shanghai','UTC']},
+  {name:'digest',label:'接收每周摘要',type:'switch',colspan:'full'}
+ ]}
+]
+const settings_state=NewState({draft:NewState({...settingsDefaults,...LocalStorage.templateSettings}),error:'',notice:''})
+State.changes.TemplateSettings=false
+if(!Hash.settingsSection)Hash.go({settingsSection:'profile'})
+function saveSettings(event){
+ event.preventDefault();settings_state.error='';settings_state.notice=''
+ // Domain checks include required data in hidden sections; DOM validation
+ // alone checks only the currently rendered controls.
+ if(!settings_state.draft.name.trim()||!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(settings_state.draft.email)){
+  settings_state.error='请填写姓名和有效的工作邮箱。';Hash.go({settingsSection:'profile'});return
+ }
+ try{LocalStorage.templateSettings={...event.detail};State.changes.TemplateSettings=false;settings_state.notice='设置已保存到当前浏览器。'}
+ catch(error){settings_state.error='保存失败，编辑内容已保留，请重试。'}
+}
+async function resetSettings(){
+ if(State.changes.TemplateSettings&&!await Dialog.confirm('放弃尚未保存的修改？'))return
+ settings_state.draft=NewState({...settingsDefaults,...LocalStorage.templateSettings})
+ State.changes.TemplateSettings=false;settings_state.error='';settings_state.notice=''
+}
+</script>
+</head>
+<body class="m-0">
+<AppShell viewport>
+ <div slot="header" class="d-flex align-items-center gap-2 flex-fill"><i class="bi bi-sliders2 text-primary" aria-hidden="true"></i><span class="fw-semibold">设置中心</span><a class="btn  btn-link ms-auto" href="index.html">模板目录</a><button class="btn  btn-outline-secondary" aria-label="切换主题" $aria-pressed="LocalStorage.templateDark?'true':'false'" $onclick="LocalStorage.templateDark=!LocalStorage.templateDark"><i class="bi bi-circle-half" aria-hidden="true"></i></button></div>
+ <Nav slot="navigation" vertical $.state.list="settingsSections" $bind="Hash.settingsSection"></Nav>
+ <Pane slot="content">
+  <PageHeader slot="header" $.state.title="settingsSections.find(section=>section.name===Hash.settingsSection)?.label||'设置'" $.state.description="'维护资料、寄送信息和使用偏好。所有页面共享一份草稿。'"></PageHeader>
+  <div slot="toolbar" class="d-md-none"><Nav $.state.list="settingsSections.map(section=>({...section,icon:''}))" $bind="Hash.settingsSection"></Nav></div>
+  <div slot="content" class="p-4" data-changebind-scope .changebind="TemplateSettings" $oninput="settings_state.notice='';settings_state.error=''" $onchange="settings_state.notice='';settings_state.error=''">
+   <p class="alert alert-danger" role="alert" $if="settings_state.error" $text="settings_state.error"></p>
+   <p class="alert alert-success" role="status" $if="settings_state.notice" $text="settings_state.notice"></p>
+   <div $if="!settingsSections.some(section=>section.name===Hash.settingsSection)" class="alert alert-warning" role="alert">未知设置页面。<button class="btn  btn-link" $onclick="Hash.go({settingsSection:'profile'})">返回基本资料</button></div>
+   <AutoForm id="settingsForm" columns="2" nobutton $.state.data="settings_state.draft" $.state.schema="settingsSchema" $onsubmit="saveSettings(event)"></AutoForm>
+   <p class="small text-body-secondary mt-4">设置仅保存在当前浏览器，不会同步到其他设备。</p>
+  </div>
+  <div slot="footer" class="d-flex flex-wrap align-items-center justify-content-between gap-2">
+   <span class="small text-body-secondary" $text="State.changes.TemplateSettings?'有尚未保存的修改':'没有未保存的修改'"></span>
+   <div class="d-flex gap-2"><button class="btn btn-outline-secondary" $disabled="!State.changes.TemplateSettings" $onclick="resetSettings()">撤销修改</button><button class="btn btn-primary" $disabled="!State.changes.TemplateSettings" $onclick="settingsForm.submit()">保存设置</button></div>
+  </div>
+ </Pane>
+</AppShell>
+</body></html>

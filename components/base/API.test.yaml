@@ -1,0 +1,43 @@
+testData:
+  request: { url: /admin/ui-check-fixture, method: GET }
+cases:
+  - name: request defaults manual response and events
+    attributes: { id: subject, "$.request": testData.request }
+    slots: {}
+    before:
+      - property: { path: subject.request.method, equals: GET }
+      - property: { path: subject.request.timeout, equals: 10000 }
+    actions:
+      - call: { method: do, args: [], saveAs: apiResponse }
+    after:
+      - property: { path: apiResponse.ok, equals: true }
+      - property: { path: subject.result.method, equals: GET }
+      - event: { name: response, count: 1 }
+  - name: request data defaults method to POST
+    attributes: { id: subject }
+    slots: {}
+    before: []
+    actions:
+      - script: "await subject.do({url:'/admin/ui-check-fixture-post',data:{action:'test'}})"
+    after: [{ property: { path: subject.result.method, equals: POST } }]
+  - name: auto request lifecycle
+    attributes: { id: subject, auto: true }
+    slots: {}
+    before:
+      - property: { path: subject.response.loading, equals: false }
+    actions:
+      - script: "Object.assign(subject.request,{url:'/admin/ui-check-fixture',method:'GET'})"
+      - wait: 100
+    after:
+      - property: { path: subject.response.ok, equals: true }
+      - property: { path: subject.response.status, equals: 200 }
+      - event: { name: response, count: 1 }
+  - name: failed request response and error event
+    attributes: { id: subject }
+    slots: {}
+    before: []
+    actions:
+      - script: "try{await subject.do({url:'/admin/ui-check-fixture-missing',noui:true})}catch(error){globalThis.apiError=error}"
+    after:
+      - script: "return apiError instanceof Error && subject.response.ok===false"
+      - event: { name: error, count: 1 }

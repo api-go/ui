@@ -2,7 +2,9 @@
  * DatePicker Component
  */
 globalThis.Component.register('DatePicker', container => {
+        container.addEventListener('change', event => { if (event.target !== container && event.detail === undefined) event.stopImmediatePropagation() })
         container.state = globalThis.NewState({ start: '', end: '' })
+        container.sm = container.hasAttribute('sm') || container.closest('AutoForm')?.sm || false
 
         const rangeEnd = () => {
                 const form = container.closest('AutoForm')
@@ -47,10 +49,10 @@ globalThis.Component.register('DatePicker', container => {
         }
 }, globalThis.Util.makeDom(/*html*/`
 <div class="d-flex align-items-center gap-1 w-100">
-  <input type="date" class="form-control h-100" $bind="this.state.start" $onchange="this.updateStart(thisNode.value)">
+  <input type="date" $class="form-control \${this.sm ? 'form-control-sm' : ''}" $bind="this.state.start" $onchange="this.updateStart(thisNode.value)">
   <template $if="this.isRange">
     <span class="text-muted mx-1">-</span>
-    <input type="date" class="form-control h-100" $bind="this.state.end" $onchange="this.updateEnd(thisNode.value)">
+    <input type="date" $class="form-control \${this.sm ? 'form-control-sm' : ''}" $bind="this.state.end" $onchange="this.updateEnd(thisNode.value)">
   </template>
 </div>
 `))

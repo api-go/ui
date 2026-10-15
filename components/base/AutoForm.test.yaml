@@ -1,0 +1,341 @@
+timeout: 10000
+dependencies: [API, DatePicker, ColorPicker, IconPicker, TagsInput]
+testData:
+  profile: { name: Ada, password: secret, email: ada@example.test, age: 36, birthday: 1815-12-10, appointment: "1843-07-01T09:00", role: admin, alerts: true, plan: pro, active: true, bio: First programmer., periodStart: 1843-07-01, periodEnd: 1843-07-31, periodZone: UTC, periodPrecision: 15, color: "#0d6efd", icon: star, tags: [math] }
+  allSchema:
+    - { name: name, label: Name, type: text, setting: { required: true }, placeholder: Name }
+    - { name: conditionalReadonly, label: Conditional, type: text, setting: { readonly: "this.data.role === 'admin'" } }
+    - { name: password, label: Password, type: password }
+    - { name: email, label: Email, type: email }
+    - { name: age, label: Age, type: number }
+    - { name: birthday, label: Birthday, type: date }
+    - { name: appointment, label: Appointment, type: datetime }
+    - { name: avatar, label: Avatar, type: file }
+    - { name: role, label: Role, type: select, options: [{ value: admin, label: Admin }, { value: user, label: User }] }
+    - { name: alerts, label: Alerts, type: checkbox, text: Receive alerts }
+    - { name: plan, label: Plan, type: radio, options: [free, pro] }
+    - { name: active, label: Active, type: switch }
+    - { name: bio, label: Bio, type: textarea, placeholder: Biography }
+    - { name: periodStart, label: Period, type: DatePicker }
+    - { name: color, label: Color, type: ColorPicker }
+    - { name: icon, label: Icon, type: IconPicker }
+    - { name: tags, label: Tags, type: TagsInput, placeholder: Add tag }
+    - { name: hidden, label: Hidden, type: text, if: "this.data.role === 'user'" }
+  periodSchema:
+    - { name: periodStart, label: Period, type: DatePicker, setting: { rangeEnd: periodEnd } }
+    - { name: periodZone, type: select, options: [UTC, Asia/Shanghai], appendTo: periodStart }
+    - { name: periodPrecision, type: number, appendTo: periodStart }
+  compactSchema: [{ name: name, label: Name, type: text }]
+  dependent: { type: fruit, item: banana }
+  categoryOptions:
+    fruit: [{ value: apple, label: Apple }, { value: banana, label: Banana }]
+    vegetable: [{ value: carrot, label: Carrot }, { value: pea, label: Pea }]
+  dependentSchema:
+    - { name: type, label: Type, type: select, options: [{ value: fruit, label: Fruit }, { value: vegetable, label: Vegetable }] }
+    - { name: item, label: Item, type: select, options: "testData.categoryOptions[this.data.type] || []" }
+  databaseSchema:
+    - { id: f-name, tableID: users, name: name, type: v100, settings: { type: text, attrs: { required: true } } }
+    - { id: f-role, tableID: users, name: role, type: v30, settings: { type: select, options: [admin, user] } }
+  labelData: { defaultValue: Default, customValue: Explicit, show: true, conditionalValue: Conditional }
+  labelSchema:
+    - { name: defaultValue, label: Default label, type: text, if: this.data.show }
+    - { name: customValue, label: Explicit label, type: text, setting: { id: autoform-explicit-label-fixture } }
+    - { name: conditionalValue, label: Conditional label, type: textarea, if: this.data.show, setting: { id: autoform-conditional-label-fixture } }
+cases:
+  - name: labels target default and explicit control ids after conditional remounts
+    attributes: { id: subject, "$.state.data": testData.labelData, "$.state.schema": testData.labelSchema }
+    actions:
+      - script: |
+          const label=name=>subject.querySelector('label[name="'+name+'"]'), input=name=>subject.querySelector('[name="'+name+'"]:not(label)');
+          testData.defaultControlID=input('defaultValue').id;
+          for(const name of ['defaultValue','customValue','conditionalValue']){label(name).click();if(document.activeElement!==input(name)||label(name).htmlFor!==input(name).id)throw new Error('Label did not focus '+name)}
+          subject.data.show=false;
+          await new Promise(resolve=>setTimeout(resolve,30));
+          if(input('conditionalValue'))throw new Error('Conditional control remained mounted');
+          subject.data.show=true;
+          await new Promise(resolve=>setTimeout(resolve,30));
+          label('conditionalValue').click();
+          if(document.activeElement!==input('conditionalValue')||input('conditionalValue').id!=='autoform-conditional-label-fixture'||input('defaultValue').id!==testData.defaultControlID)throw new Error('Conditional remount lost label identity');
+    after:
+      - dom: { selector: '#subject input#autoform-explicit-label-fixture', value: Explicit }
+      - dom: { selector: '#subject textarea#autoform-conditional-label-fixture', value: Conditional }
+  - name: small sizing uses Bootstrap classes throughout
+    attributes: { id: subject, sm: true, "$.state.data": testData.profile, "$.state.schema": testData.allSchema }
+    slots: {}
+    before:
+      - script: "return subject.sm && subject.querySelector('label').classList.contains('col-form-label-sm')"
+      - script: "return [...subject.querySelectorAll('input.form-control,textarea.form-control')].every(node=>node.classList.contains('form-control-sm'))"
+      - script: "return subject.querySelector('select').classList.contains('form-select-sm') && subject.querySelector('button.btn-primary').classList.contains('btn-sm') && subject.querySelector('button.btn-primary').type==='submit'"
+      - script: "return subject.querySelector('TagsInput.form-control').classList.contains('form-control-sm') && subject.querySelector('DatePicker .form-control').classList.contains('form-control-sm') && subject.querySelector('ColorPicker .form-control').classList.contains('form-control-sm') && subject.querySelector('IconPicker.dropdown>button').classList.contains('btn-sm')"
+    actions: []
+    after: []
+  - name: every standard and custom control
+    attributes: { id: subject, "$.state.data": testData.profile, "$.state.schema": testData.allSchema }
+    slots: {}
+    before:
+      - dom: { selector: '#subject [control-wrapper]', count: 17 }
+      - script: "return ['text','password','email','number','date','datetime-local','file','select','checkbox','radio','switch'].every(type=>subject.querySelector('[type='+type+'],select[type='+type+']')||type==='select'||type==='switch')"
+      - dom: { selector: '#subject DatePicker', count: 1 }
+      - dom: { selector: '#subject ColorPicker', count: 1 }
+      - dom: { selector: '#subject IconPicker', count: 1 }
+      - dom: { selector: '#subject TagsInput', count: 1 }
+      - property: { path: subject.data.name, equals: Ada }
+    actions: []
+    after: []
+  - name: settings placeholders options and expressions
+    attributes: { id: subject, "$.state.data": testData.profile, "$.state.schema": testData.allSchema }
+    slots: {}
+    before:
+      - script: "return subject.querySelector('[name=name]').required && subject.querySelector('[name=name]').placeholder==='Name' && subject.querySelector('[name=bio]').placeholder==='Biography'"
+      - dom: { selector: '#subject select[name=role] option', count: 2 }
+      - script: "return subject.querySelector('[name=conditionalReadonly]').readOnly"
+    actions:
+      - script: "subject.data.role='user'; await new Promise(resolve=>setTimeout(resolve,30))"
+    after:
+      - dom: { selector: '#subject input[name=hidden]', count: 1 }
+      - script: "return !subject.querySelector('[name=conditionalReadonly]').readOnly"
+  - name: appendTo rangeEnd and independent bindings
+    attributes: { id: subject, "$.state.data": testData.profile, "$.state.schema": testData.periodSchema }
+    slots: {}
+    before:
+      - dom: { selector: '#subject [control-wrapper]', count: 1 }
+      - dom: { selector: '#subject DatePicker input[type=date]', count: 2 }
+      - dom: { selector: '#subject select[name=periodZone]', value: UTC }
+      - dom: { selector: '#subject input[name=periodPrecision]', value: "15" }
+    actions:
+      - script: "const input=subject.querySelectorAll('DatePicker input[type=date]')[1]; input.value='1843-08-01'; input.dispatchEvent(new Event('change',{bubbles:true}))"
+    after:
+      - script: "return String(subject.data.periodEnd).startsWith('1843-08-01')"
+  - name: dependent options react to data
+    attributes: { id: subject, "$.state.data": testData.dependent, "$.state.schema": testData.dependentSchema }
+    slots: {}
+    before:
+      - dom: { selector: '#subject select[name=item] option', count: 2 }
+      - dom: { selector: '#subject select[name=item]', value: banana }
+    actions:
+      - select: { selector: '#subject select[name=type]', value: vegetable }
+      - wait: 120
+    after:
+      - dom: { selector: '#subject select[name=item] option', texts: [Carrot, Pea] }
+      - script: "return subject.data.item===subject.querySelector('select[name=item]').value"
+  - name: database field schema normalization
+    attributes: { id: subject, nobutton: true, "$.state.data": testData.profile, "$.state.schema": testData.databaseSchema }
+    slots: {}
+    before:
+      - script: "return subject.querySelector('input[name=name]').required"
+      - dom: { selector: '#subject select[name=role] option', count: 2 }
+    actions: []
+    after: []
+  - name: vertical layout custom actions and no button
+    attributes: { id: subject, vertical: true, nobutton: true, "$.state.data": testData.profile, "$.state.schema": testData.compactSchema }
+    slots:
+      actions: <button type="button" class="custom-save">Save</button>
+    before:
+      - script: "return subject.form.classList.contains('flex-column')"
+      - dom: { selector: '#subject button.btn-primary', count: 0 }
+      - dom: { selector: '#subject .custom-save', count: 1 }
+    actions: []
+    after: []
+  - name: horizontal layout and submit label
+    attributes: { id: subject, horizontal: true, submitlabel: Update, "$.state.data": testData.profile, "$.state.schema": testData.compactSchema }
+    slots: {}
+    before:
+      - script: "return subject.form.classList.contains('forced-horizontal')"
+      - dom: { selector: '#subject button.btn-primary', text: Update }
+      - script: "const label=subject.querySelector('.col-form-label').getBoundingClientRect(),control=subject.querySelector('.form-control').getBoundingClientRect(); return subject.clientWidth<576 ? label.bottom<=control.top+1 : Math.abs((label.top+label.height/2)-(control.top+control.height/2))<1"
+    actions: []
+    after: []
+  - name: inline layout
+    attributes: { id: subject, inline: true, "$.state.data": testData.profile, "$.state.schema": testData.compactSchema }
+    slots: {}
+    before:
+      - script: "return subject.form.classList.contains('flex-wrap')"
+    actions: []
+    after: []
+  - name: API submit response and result
+    covers: [properties.api, properties.request, properties.response, properties.result]
+    attributes: { id: subject, nobutton: true, "$.state.data": testData.profile, "$.state.schema": testData.compactSchema }
+    slots: {}
+    before: []
+    actions:
+      - script: |
+          const api=document.createElement('API'); document.body.appendChild(api)
+          await new Promise(resolve=>setTimeout(resolve,30))
+          api.request.url='/admin/ui-check-fixture-post'; api.request.method='POST'
+          subject.api=api;
+          await new Promise((resolve,reject)=>{
+            const timer=setTimeout(()=>reject(new Error('AutoForm response timed out')),5000);
+            subject.addEventListener('response',()=>{clearTimeout(timer);resolve()},{once:true});
+            subject.addEventListener('error',event=>{clearTimeout(timer);reject(event.detail)},{once:true});
+            subject.submit();
+          })
+    after:
+      - property: { path: subject.result.method, equals: POST }
+      - property: { path: subject.response.ok, equals: true }
+      - event: { name: submit, count: 1 }
+      - event: { name: response, count: 1 }
+  - name: cancelable submit prevents transport
+    attributes: { id: subject, nobutton: true, "$.state.data": testData.profile, "$.state.schema": testData.compactSchema }
+    slots: {}
+    before: []
+    actions:
+      - prevent: submit
+      - call: { method: submit }
+      - wait: 50
+    after:
+      - event: { name: submit, count: 1 }
+      - script: "return subject.result===null"
+  - name: submit error event
+    attributes: { id: subject, nobutton: true, "$.state.data": testData.profile, "$.state.schema": testData.compactSchema }
+    slots: {}
+    before: []
+    actions:
+      - script: "subject.request={url:'/admin/ui-check-fixture-error',method:'POST'}; subject.submit(); await new Promise(resolve=>setTimeout(resolve,300))"
+    after:
+      - event: { name: submit, count: 1 }
+      - event: { name: error, count: 1 }
+
+  - name: null success emits response without error
+    attributes: { id: subject, nobutton: true, "$.state.data": testData.profile, "$.state.schema": testData.compactSchema }
+    actions:
+      - script: |
+          subject.api={do:()=>Promise.resolve({ok:true,result:null})};
+          subject.submit();
+          await new Promise(resolve=>setTimeout(resolve,0));
+    after:
+      - property: { path: subject.response.ok, equals: true }
+      - property: { path: subject.result, equals: null }
+      - event: { name: response, count: 1, last: { ok: true, result: null } }
+      - event: { name: error, count: 0 }
+  - name: primitive success values remain unchanged
+    attributes: { id: subject, nobutton: true, "$.state.data": testData.profile, "$.state.schema": testData.compactSchema }
+    actions:
+      - script: |
+          for(const value of [false,0,'',true,42,'Saved']) {
+            subject.api={do:()=>Promise.resolve({ok:true,result:value})};
+            subject.submit();
+            await new Promise(resolve=>setTimeout(resolve,0));
+            if(subject.result!==value || subject.response.result!==value) throw new Error('Primitive result changed');
+          }
+    after:
+      - property: { path: subject.result, equals: Saved }
+      - event: { name: response, count: 6 }
+      - event: { name: error, count: 0 }
+  - name: datetime uses a native local control and preserves local strings
+    attributes: { id: subject, "$.state.data": "{appointment:'2026-10-08T09:30'}", "$.state.schema": "[{name:'appointment',label:'Appointment',type:'datetime'}]" }
+    before:
+      - dom: { selector: '#subject input[name=appointment]', value: '2026-10-08T09:30' }
+      - script: "return subject.querySelector('input').type==='datetime-local'"
+    actions:
+      - fill: { selector: '#subject input[name=appointment]', value: '2026-10-09T14:45' }
+      - dispatch: { target: '#subject input[name=appointment]', event: change }
+    after:
+      - property: { path: subject.data.appointment, equals: '2026-10-09T14:45' }
+  - name: invalid fields focus without covering fixed save actions and allow retry
+    attributes: { id: subject, nobutton: true, "$.state.data": "{name:''}", "$.state.schema": "[{name:'name',label:'Required name',type:'text',setting:{required:true}}]" }
+    before:
+      - script: "testData.validationToastCount=document.querySelectorAll('Toast').length; return true"
+    actions:
+      - call: { method: submit }
+    after:
+      - event: { name: submit, count: 0 }
+      - script: "return document.activeElement===subject.querySelector('input') && subject.querySelector('input').validity.valueMissing && document.querySelectorAll('Toast').length===testData.validationToastCount && subject.result===null"
+  - name: corrected validation submits once through the host adapter
+    attributes: { id: subject, nobutton: true, "$.state.data": "{name:''}", "$.state.schema": "[{name:'name',label:'Required name',type:'text',setting:{required:true}}]" }
+    actions:
+      - call: { method: submit }
+      - fill: { selector: '#subject input', value: Corrected }
+      - prevent: submit
+      - call: { method: submit }
+    after:
+      - event: { name: submit, count: 1 }
+      - property: { path: subject.data.name, equals: Corrected }
+      - property: { path: subject.result, equals: null }
+  - name: two columns span full and reactive layout retain the edited input
+    attributes: { id: subject, columns: 2, "$.state.columns": '2', "$.state.data": "{name:'Ada',email:'ada@example.test',city:'London',notes:'Memo'}", "$.state.schema": "[{name:'name',label:'Name',type:'text'},{name:'email',label:'Email',type:'email'},{name:'city',label:'City',type:'text'},{name:'notes',label:'Notes',type:'textarea',colspan:'full'}]", style: 'width:1200px' }
+    before:
+      - property: { path: subject.state.columns, equals: 2 }
+      - script: "const fields=[...subject.querySelectorAll('[data-form-field]')]; const a=fields[0].getBoundingClientRect(),b=fields[1].getBoundingClientRect(); return Math.abs(a.top-b.top)<1 && b.left>a.right && fields[3].getBoundingClientRect().width>2*a.width"
+    actions:
+      - fill: { selector: '#subject input[name=name]', value: Edited }
+      - script: "globalThis.columnInput=subject.querySelector('input[name=name]'); columnInput.focus(); subject.state.columns=3"
+    after:
+      - property: { path: subject.data.name, equals: Edited }
+      - property: { path: subject.state.columns, equals: 3 }
+      - script: "const fields=[...subject.querySelectorAll('[data-form-field]')]; return subject.querySelector('input[name=name]')===columnInput && document.activeElement===columnInput && Math.abs(fields[0].getBoundingClientRect().top-fields[2].getBoundingClientRect().top)<1"
+  - name: local two and three column groups retain flat data and conditional visibility
+    attributes: { id: subject, columns: 1, "$.state.data": "{name:'Ada',showAddress:true,city:'London',postal:'N1',country:'UK',region:'North',unit:'A'}", "$.state.schema": "[{name:'name',label:'Name',type:'text'},{type:'group',label:'Address',columns:2,if:'this.data.showAddress',items:[{name:'city',label:'City',type:'text'},{name:'postal',label:'Postal',type:'text'},{name:'country',label:'Country',type:'text',colspan:'full'}]},{type:'group',label:'Area',columns:3,items:[{name:'region',label:'Region',type:'text'},{name:'unit',label:'Unit',type:'text'}]}]", style: 'width:1400px' }
+    before:
+      - script: "const sections=subject.querySelectorAll('[data-form-section]');return getComputedStyle(sections[0]).gridTemplateColumns.split(' ').length===1 && getComputedStyle(sections[1]).gridTemplateColumns.split(' ').length===2 && getComputedStyle(sections[2]).gridTemplateColumns.split(' ').length===3"
+      - script: "return subject.querySelector('input[name=city]').getBoundingClientRect().width>200 && subject.querySelector('input[name=region]').getBoundingClientRect().width>200"
+    actions:
+      - fill: { selector: '#subject input[name=city]', value: Paris }
+      - script: "subject.data.showAddress=false"
+      - wait: 30
+      - script: "if(subject.querySelector('input[name=city]'))throw new Error('Group condition did not hide its controls');subject.data.showAddress=true"
+      - wait: 30
+    after:
+      - property: { path: subject.data.city, equals: Paris }
+      - dom: { selector: '#subject input[name=city]', value: Paris }
+      - script: "return !('Address' in subject.data) && subject.querySelectorAll('form').length===1"
+  - name: four column form collapses in a narrow host without remounting or losing focus
+    attributes: { id: subject, columns: 4, "$.state.data": "{a:'A',b:'B',c:'C',d:'D'}", "$.state.schema": "['a','b','c','d'].map(name=>({name,label:name,type:'text'}))", style: 'width:1400px' }
+    before:
+      - script: "return getComputedStyle(subject.querySelector('[data-form-section]')).gridTemplateColumns.split(' ').length===4"
+    actions:
+      - fill: { selector: '#subject input[name=a]', value: Changed }
+      - script: "globalThis.narrowColumnInput=subject.querySelector('input[name=a]');narrowColumnInput.focus();subject.style.width='300px'"
+      - wait: 100
+    after:
+      - script: "return getComputedStyle(subject.querySelector('[data-form-section]')).gridTemplateColumns.split(' ').length===1 && subject.querySelector('input[name=a]')===narrowColumnInput && document.activeElement===narrowColumnInput && subject.scrollWidth<=subject.clientWidth"
+      - property: { path: subject.data.a, equals: Changed }
+  - name: appended native and custom controls share the root span and form submit
+    attributes: { id: subject, columns: 2, horizontal: true, "$.state.data": "{start:'2026-10-01',zone:'UTC',name:'Ada'}", "$.state.schema": "[{type:'group',label:'Period',columns:2,items:[{name:'start',label:'Start',type:'DatePicker',colspan:'full'},{name:'zone',type:'select',options:['UTC','Asia/Shanghai'],appendTo:'start',colspan:1},{name:'name',label:'Name',type:'text'}]}]", style: 'width:1000px' }
+    before:
+      - script: "return subject.querySelectorAll('[data-form-field]').length===2 && getComputedStyle(subject.querySelector('[data-form-field]')).gridColumnStart==='span 2' && subject.querySelector('DatePicker') && subject.querySelector('.auto-form-field-horizontal')"
+    actions:
+      - select: { selector: '#subject select[name=zone]', value: Asia/Shanghai }
+      - prevent: submit
+      - call: { method: submit }
+    after:
+      - property: { path: subject.data.zone, equals: Asia/Shanghai }
+      - event: { name: submit, count: 1 }
+  - name: invalid count falls back and oversized spans clamp to the local grid
+    attributes: { id: subject, columns: invalid, "$.state.data": "{name:'Ada',email:''}", "$.state.schema": "[{name:'name',label:'Name',type:'text',colspan:99},{name:'email',label:'Email',type:'email',colspan:0}]", style: 'width:1000px' }
+    before:
+      - property: { path: subject.state.columns, equals: 1 }
+      - script: "return [...subject.querySelectorAll('[data-form-field]')].every(field=>getComputedStyle(field).gridColumnStart==='span 1')"
+  - name: invalid group structures and inline column combinations fail descriptively
+    attributes: { id: subject, "$.state.data": "{name:'Ada'}", "$.state.schema": "[{name:'name',label:'Name',type:'text'}]" }
+    actions:
+      - script: |
+          for(const [schema,message] of [[[{type:'group',items:null}],'items array'],[[{type:'group',items:[{type:'group',items:[]}]}],'cannot be nested']]){
+            try{subject.state.schema=schema;throw new Error('Invalid schema accepted')}
+            catch(error){if(!error.message.includes(message))throw error}
+          }
+          subject.state.schema=[{name:'name',label:'Name',type:'text'}]
+          subject.setAttribute('inline','')
+          try{subject.state.columns=2;throw new Error('Invalid inline combination accepted')}
+          catch(error){if(!error.message.includes('inline cannot'))throw error}
+          subject.removeAttribute('inline');subject.state.columns=2
+    after:
+      - property: { path: subject.data.name, equals: Ada }
+      - dom: { selector: '#subject input[name=name]', count: 1 }
+  - name: inherited three columns support partial spans dividers and long labels
+    attributes: { id: subject, columns: 3, vertical: true, "$.state.data": "{a:'A',b:'B',memo:''}", "$.state.schema": "[{type:'group',label:'Plan',items:[{name:'a',label:'A',type:'text',colspan:2},{name:'b',label:'B',type:'text'},{name:'section',type:'divider',label:'Memo'},{name:'memo',label:'x'.repeat(180),type:'textarea',colspan:'full'}]}]", style: 'width:1100px' }
+    before:
+      - script: "const a=subject.querySelector('input[name=a]').getBoundingClientRect(),b=subject.querySelector('input[name=b]').getBoundingClientRect();return a.width>1.9*b.width && Math.abs(a.top-b.top)<1 && subject.scrollWidth<=subject.clientWidth"
+      - dom: { selector: '#subject [data-form-field]', count: 3 }
+  - name: empty column layouts retain their data and one explicit submit boundary
+    attributes: { id: subject, columns: 3, "$.state.data": "{kept:'value'}", "$.state.schema": '[]', style: 'width:1000px' }
+    before:
+      - dom: { selector: '#subject [data-form-field]', count: 0 }
+    actions:
+      - script: "subject.state.schema=[{type:'group',label:'Empty group',columns:2,items:[]}]"
+      - wait: 30
+      - prevent: submit
+      - call: { method: submit }
+    after:
+      - dom: { selector: '#subject legend', text: Empty group }
+      - event: { name: submit, count: 1 }
+      - property: { path: subject.data.kept, equals: value }

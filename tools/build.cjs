@@ -56,7 +56,7 @@ const translationTexts = source => {
   await validateDocs();
 
   await Promise.all([buildCodeMirror(), buildMarkdown()]);
-  await Promise.all(Object.entries(frameworks).map(([name, source]) => copyFile(source, join(root, 'frameworks', `${name}.js`))));
+  if (process.argv.includes('--sync-frameworks')) await Promise.all(Object.entries(frameworks).map(([name, source]) => copyFile(source, join(root, 'frameworks', `${name}.js`))));
   const sources = (await Promise.all(publicDirs.map(dir => filesBelow(join(root, dir))))).flat();
   // libraries contains generated third-party bundles whose encoded data can
   // accidentally contain marker-shaped byte sequences.

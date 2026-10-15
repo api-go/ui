@@ -15,6 +15,7 @@ globalThis.Component.register('CodeEditor', container => {
   const toolButtons = [...container.querySelectorAll('[data-tool]')]
   const state = container.state
   let view = null
+  let fallbackInput = null
   let value = container.getAttribute('value') || ''
   let mode = 'source'
   let languageSequence = 0
@@ -134,6 +135,7 @@ globalThis.Component.register('CodeEditor', container => {
   const updateValue = next => {
     next = String(next ?? '')
     value = next
+    if (fallbackInput && fallbackInput.value !== next) fallbackInput.value = next
     if (view && view.state.doc.toString() !== next) {
       suppressChange = true
       try { view.dispatch({ changes: { from: 0, to: view.state.doc.length, insert: next } }) }
@@ -159,7 +161,7 @@ globalThis.Component.register('CodeEditor', container => {
 
   Object.defineProperty(container, 'value', {
     configurable: true,
-    get: () => view ? view.state.doc.toString() : value,
+    get: () => view ? view.state.doc.toString() : fallbackInput?.value ?? value,
     set: updateValue
   })
   Object.defineProperty(container, 'view', { configurable: true, get: () => view })
@@ -216,7 +218,7 @@ globalThis.Component.register('CodeEditor', container => {
 	,{ id: 'wrap', group: 'view', label: '{#Wrap lines#}', icon: 'text-wrap', active: () => container.hasAttribute('wrap'), run: () => container.setWrap(!container.hasAttribute('wrap')) },
 	{ id: 'fullscreen', group: 'view', label: '{#Fullscreen#}', icon: 'arrows-fullscreen', run: () => container.toggleFullscreen() }
   ])
-  container.focus = () => view?.focus()
+  container.focus = () => view?.focus() || fallbackInput?.focus()
   container.addEventListener('bind', event => {
     // A module switch may briefly unbind the control with an undefined value.
     // Do not erase the live editor document during that transient state.
@@ -252,23 +254,42 @@ globalThis.Component.register('CodeEditor', container => {
 
   // Never block the editable surface on a dynamically loaded language package.
   // Syntax highlighting is an enhancement and is installed asynchronously below.
-  view = new cm.EditorView({
-    state: cm.EditorState.create({
-      doc: value,
-      extensions: [
-        cm.setup,
-        cm.keymap.of([cm.indentWithTab]),
-        languageCompartment.of([]),
-        themeCompartment.of(themeExtension()),
-        readonlyCompartment.of(readonlyExtensions()),
-		wrapCompartment.of(wrapExtension()),
-        syntaxLinter,
-        cm.lintGutter(),
-        cm.EditorView.updateListener.of(update => { if (update.docChanged && !suppressChange) emitChange() })
-      ]
-    }),
-    parent: host
-  })
+  const editorExtensions = [
+    cm.setup,
+    cm.keymap.of([cm.indentWithTab]),
+    languageCompartment.of([]),
+    themeCompartment.of(themeExtension()),
+    readonlyCompartment.of(readonlyExtensions()),
+	wrapCompartment.of(wrapExtension()),
+    cm.placeholder(container.getAttribute('placeholder') || ''),
+    syntaxLinter,
+    cm.lintGutter(),
+    cm.EditorView.updateListener.of(update => { if (update.docChanged && !suppressChange) emitChange() })
+  ].filter(Boolean)
+  try {
+    view = new cm.EditorView({
+      state: cm.EditorState.create({
+        doc: value,
+        extensions: editorExtensions
+      }),
+      parent: host
+    })
+  } catch (error) {
+    fallbackInput = document.createElement('textarea')
+    fallbackInput.className = 'form-control h-100 rounded-0 border-0 font-monospace'
+    fallbackInput.placeholder = container.getAttribute('placeholder') || ''
+    fallbackInput.value = value
+    fallbackInput.readOnly = container.hasAttribute('readonly')
+    fallbackInput.addEventListener('input', () => {
+      value = fallbackInput.value
+      if (container.documentMode && state.data !== value) state.data = value
+      container.dispatchEvent(new CustomEvent('change', { detail: value, bubbles: false }))
+      container.dispatchEvent(new Event('input', { bubbles: true }))
+      schedulePreview()
+    })
+    host.appendChild(fallbackInput)
+    emitError(error)
+  }
   updatePreviewAvailability()
   container.ready = installLanguage(container.language).then(() => container).catch(error => { emitError(error); return container })
   container.ready.then(() => container.dispatchEvent(new CustomEvent('ready', { detail: container, bubbles: false })))
@@ -282,6 +303,8 @@ globalThis.Component.register('CodeEditor', container => {
         view.dispatch({ effects: themeCompartment.reconfigure(themeExtension()) })
       } else if (mutation.attributeName === 'readonly' && view) {
         view.dispatch({ effects: readonlyCompartment.reconfigure(readonlyExtensions()) })
+	  } else if (mutation.attributeName === 'readonly' && fallbackInput) {
+		fallbackInput.readOnly = container.hasAttribute('readonly')
 	  } else if (mutation.attributeName === 'wrap' && view) {
 		view.dispatch({ effects: wrapCompartment.reconfigure(wrapExtension()) })
 		container.dispatchEvent(new CustomEvent('toolschange', { detail: container.getTools?.() || [], bubbles: false }))
@@ -312,18 +335,19 @@ globalThis.Component.register('CodeEditor', container => {
   })
 }, globalThis.Util.makeDom(/*html*/`
 <div class="code-editor-root">
-  <div class="code-editor-toolbar btn-toolbar border-bottom p-1 gap-1" hidden>
-    <div class="btn-group btn-group-sm code-editor-preview-tools" role="group" aria-label="{#Preview mode#}">
-      <button type="button" class="btn btn-sm" data-tool="source" data-view-tool="source" title="{#Source#}"><i class="bi bi-code-slash"></i></button>
-      <button type="button" class="btn btn-sm" data-tool="split-vertical" data-view-tool="split-vertical" title="{#Split left and right#}"><i class="bi bi-layout-split"></i></button>
-      <button type="button" class="btn btn-sm" data-tool="split-horizontal" data-view-tool="split-horizontal" title="{#Split top and bottom#}"><i class="bi bi-view-stacked"></i></button>
-      <button type="button" class="btn btn-sm" data-tool="preview" data-view-tool="preview" title="{#Preview#}"><i class="bi bi-eye"></i></button>
+  <div class="code-editor-toolbar btn-toolbar border-bottom" hidden>
+    <div class="code-editor-toolbar-start d-flex align-items-center me-auto small fw-semibold px-2"><span>{#Code#}</span><span slot-id="toolbar-start" class="ms-2"></span></div>
+    <div class="btn-group  code-editor-preview-tools" role="group" aria-label="{#Preview mode#}">
+      <button type="button" class="btn " data-tool="source" data-view-tool="source" title="{#Source#}"><i class="bi bi-code-slash"></i></button>
+      <button type="button" class="btn " data-tool="split-vertical" data-view-tool="split-vertical" title="{#Split left and right#}"><i class="bi bi-layout-split"></i></button>
+      <button type="button" class="btn " data-tool="split-horizontal" data-view-tool="split-horizontal" title="{#Split top and bottom#}"><i class="bi bi-view-stacked"></i></button>
+      <button type="button" class="btn " data-tool="preview" data-view-tool="preview" title="{#Preview#}"><i class="bi bi-eye"></i></button>
     </div>
-    <div class="btn-group btn-group-sm" role="group" aria-label="{#Code tools#}">
-      <button type="button" class="btn btn-sm btn-link text-body-secondary" data-tool="validate" title="{#Validate#}"><i class="bi bi-check2-circle"></i></button>
-      <button type="button" class="btn btn-sm btn-link text-body-secondary" data-tool="pretty" title="{#Pretty#}"><i class="bi bi-stars"></i></button>
-      <button type="button" class="btn btn-sm btn-link text-body-secondary" data-tool="wrap" title="{#Wrap lines#}"><i class="bi bi-text-wrap"></i></button>
-      <button type="button" class="btn btn-sm btn-link text-body-secondary" data-tool="fullscreen" title="{#Fullscreen#}"><i class="bi bi-arrows-fullscreen"></i></button>
+    <div class="btn-group " role="group" aria-label="{#Code tools#}">
+      <button type="button" class="btn  btn-link text-body-secondary" data-tool="validate" title="{#Validate#}"><i class="bi bi-check2-circle"></i></button>
+      <button type="button" class="btn  btn-link text-body-secondary" data-tool="pretty" title="{#Pretty#}"><i class="bi bi-stars"></i></button>
+      <button type="button" class="btn  btn-link text-body-secondary" data-tool="wrap" title="{#Wrap lines#}"><i class="bi bi-text-wrap"></i></button>
+      <button type="button" class="btn  btn-link text-body-secondary" data-tool="fullscreen" title="{#Fullscreen#}"><i class="bi bi-arrows-fullscreen"></i></button>
     </div>
   </div>
   <div class="code-editor-workspace">
@@ -337,8 +361,7 @@ globalThis.Component.register('CodeEditor', container => {
 `), globalThis.Util.makeDom(/*html*/`<style>
   CodeEditor { display:block; min-height:160px; overflow:hidden; background:var(--bs-body-bg); }
   CodeEditor.code-editor-root { display:flex; flex-direction:column; width:100%; height:100%; min-height:inherit; }
-	CodeEditor .code-editor-toolbar { min-height:28px; height:28px; justify-content:flex-end; padding:.05rem .25rem !important; }
-	CodeEditor .code-editor-toolbar .btn { font-size:.75rem; line-height:1; padding:.2rem .3rem; }
+	CodeEditor .code-editor-toolbar { min-height:var(--ui-toolbar-height,48px); height:auto; justify-content:flex-end; padding:var(--ui-tool-space,.5rem);gap:var(--ui-gap,.5rem); }
 	CodeEditor .code-editor-preview-tools .btn { position:relative; border:0; border-radius:0; color:var(--bs-secondary-color); background:transparent; }
 	CodeEditor .code-editor-preview-tools .btn + .btn::before { content:''; position:absolute; left:0; top:25%; height:50%; border-left:1px solid var(--bs-border-color); }
 	CodeEditor .code-editor-preview-tools .btn.active, CodeEditor .code-editor-preview-tools .btn:hover { color:var(--bs-primary); background:transparent; }

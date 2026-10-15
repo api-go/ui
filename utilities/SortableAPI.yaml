@@ -1,4 +1,7 @@
 name: SortableAPI
+kind: utility
+src: /ui/utilities/SortableAPI.js
+dependencies: [/ui/libraries/SortableJS.js]
 purpose: Provide reusable drag-sort lifecycle control over the embedded SortableJS library without exposing a UI component.
 
 global:
@@ -37,5 +40,4 @@ examples: |
   sortable.destroy()
 
 tests:
-  - SortableAPI.test.html
-  - ../components/editor/Kanban.test.html
+  - ../components/editor/Kanban.test.yaml

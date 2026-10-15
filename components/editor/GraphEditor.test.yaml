@@ -1,0 +1,113 @@
+timeout: 15000
+testData:
+  graph: { nodes: [{ id: n1, title: One, content: Full one, x: 0, y: 0, untouched: 7 }, { id: n2, title: Two, x: 300, y: 100 }], edges: [{ id: e1, from: n1, to: n2, label: Forward relationship label that wraps onto multiple lines, content: Relation }, { id: e2, from: n2, to: n1, label: Back }, { id: e3, from: n1, to: n2, label: Alternative forward path }], view: { x: 0, y: 0, scale: 1 } }
+  crudGraph: { nodes: [{ id: n1, title: One, x: 0, y: 0 }], edges: [], view: {} }
+  slotGraph: { nodes: [{ id: n1, title: One, x: 0, y: 0 }, { id: n2, title: Two, x: 260, y: 0 }], edges: [{ id: e1, from: n1, to: n2, label: Next }], view: {} }
+  extras: { node: [{ name: title, label: Topic, type: text }, { name: chapter, label: Chapter, type: number }], edge: [{ name: label, label: Relation, type: text }] }
+cases:
+  - name: render positions reciprocal routing selection preview and fit
+    covers: [methods.selectNode, methods.selectEdge, methods.fit, state.previewItem, state.previewNode]
+    attributes: { id: subject, node-width: 220, node-height: 100, toolbar: true, "$.state.data": testData.graph }
+    slots: {}
+    before:
+      - dom: { selector: '#subject .graph-editor-node', count: 2 }
+      - dom: { selector: '#subject .graph-edge-label', count: 3 }
+      - dom: { selector: '#subject', containsText: Forward }
+      - script: "const labels=[...subject.querySelectorAll('.graph-edge-label')], points=subject.state.edgeLayouts.map(edge=>`${edge.x},${edge.y}`); return getComputedStyle(labels[0]).whiteSpace==='normal' && labels[0].offsetWidth<=140 && labels[0].offsetHeight>30 && new Set(points).size===3"
+    actions:
+      - script: "const n=subject.state.data.nodes[0],e=subject.state.data.edges[0]; subject.selectNode(n); subject.togglePreview(); subject.selectEdge(e); subject.fit()"
+    after:
+      - property: { path: subject.state.selectedNodeId, equals: null }
+      - property: { path: subject.state.selectedEdgeId, equals: e1 }
+      - property: { path: subject.state.previewItem.value.id, equals: e1 }
+      - event: { name: select, count: 2 }
+  - name: schemas node and edge editing preserve custom fields
+    covers: [methods.schemas, methods.editNode, methods.editEdge, methods.commitEdit, methods.cancelEdit, state.editing]
+    attributes: { id: subject, "$.state.data": testData.graph, "$.state.extraSchemas": testData.extras }
+    slots: {}
+    before:
+      - property: { path: subject.state.extraSchemas, equals: testData.extras }
+      - script: "const s=subject.schemas(); return s.node.find(f=>f.name==='title').label==='Topic' && s.node.some(f=>f.name==='chapter') && s.edge.some(f=>f.name==='label')"
+    actions:
+      - script: "const n=subject.state.data.nodes[0]; subject.editNode(n); subject.state.editing.draft.title='Edited'; subject.commitEdit(); const e=subject.state.data.edges[0]; subject.editEdge(e); subject.state.editing.draft.label='Changed edge'; subject.commitEdit(); subject.editNode(n); subject.cancelEdit()"
+    after:
+      - property: { path: "subject.state.data.nodes[0].title", equals: Edited }
+      - property: { path: "subject.state.data.nodes[0].untouched", equals: 7 }
+      - property: { path: "subject.state.data.edges[0].label", equals: Changed edge }
+      - property: { path: subject.state.editing, equals: null }
+      - event: { name: change, count: 2 }
+      - event: { name: update, count: 2 }
+  - name: add connect drag and remove graph entities
+    covers: [methods.connect, methods.startNodeDrag, methods.removeSelected, events.change, events.update]
+    attributes: { id: subject, "$.state.data": testData.crudGraph }
+    slots: {}
+    before: []
+    actions:
+      - call: { method: addNode, args: [{ x: 100, y: 120 }], saveAs: addedNode }
+      - script: "subject.cancelEdit(); const node=subject.querySelector('[data-node-id=n1]'); globalThis.beforeDragX=subject.state.data.nodes[0].x; node.dispatchEvent(new PointerEvent('pointerdown',{bubbles:true,pointerId:4,button:0,clientX:100,clientY:100})); window.dispatchEvent(new PointerEvent('pointermove',{pointerId:4,clientX:150,clientY:130})); window.dispatchEvent(new PointerEvent('pointerup',{pointerId:4,clientX:150,clientY:130}))"
+      - script: "globalThis.addedEdge=subject.connect('n1',addedNode.id); subject.selectEdge(addedEdge); await subject.removeSelected({confirm:false})"
+      - script: "subject.selectNode(addedNode); await subject.removeSelected({confirm:false})"
+    after:
+      - property: { path: subject.state.data.nodes.length, equals: 1 }
+      - property: { path: subject.state.data.edges.length, equals: 0 }
+      - script: "return subject.state.data.nodes[0].x!==beforeDragX"
+      - script: "return __componentTestEvents.change.length>=4 && __componentTestEvents.update.length>=4"
+  - name: all slots readonly layout and toolbar commands
+    covers: [methods.getTools, methods.runTool, events.toolschange, events.layoutchange]
+    attributes: { id: subject, readonly: true, toolbar: true, "$.state.data": testData.slotGraph }
+    slots:
+      toolbar: <span class="slot-toolbar">Tools</span>
+      node: <span class="slot-node" $text="node.title"></span>
+      node-actions: <span class="slot-actions">Actions</span>
+      edge-label: <span class="slot-edge" $text="edge.label"></span>
+      empty: <span class="slot-empty">Empty</span>
+      editor: <span class="slot-editor">Editor</span>
+    before:
+      - dom: { selector: '#subject .slot-toolbar', count: 1 }
+      - dom: { selector: '#subject .slot-node', count: 2 }
+      - dom: { selector: '#subject .slot-actions', count: 2 }
+      - dom: { selector: '#subject .slot-edge', count: 1 }
+      - dom: { selector: '#subject .slot-editor', count: 1 }
+      - script: "return subject.getTools().some(t=>t.id==='add-node')"
+    actions:
+      - call: { method: runTool, args: [add-node] }
+      - script: "const node=subject.querySelector('[data-node-id=n1]'); node.dispatchEvent(new PointerEvent('pointerdown',{bubbles:true,pointerId:9,button:0,clientX:100,clientY:100})); window.dispatchEvent(new PointerEvent('pointermove',{pointerId:9,clientX:140,clientY:125})); window.dispatchEvent(new PointerEvent('pointerup',{pointerId:9,clientX:140,clientY:125}))"
+      - script: "subject.selectNode(subject.state.data.nodes[0],{}); subject.selectNode(subject.state.data.nodes[1],{shiftKey:true})"
+    after:
+      - property: { path: subject.state.data.nodes.length, equals: 2 }
+      - property: { path: subject.state.data.edges.length, equals: 1 }
+      - property: { path: subject.state.selectedNodeId, equals: n2 }
+      - property: { path: subject.state.dirty, equals: false }
+      - event: { name: layoutchange, count: 1 }
+      - event: { name: change, count: 0 }
+      - event: { name: update, count: 0 }
+  - name: authenticated API load save and document state
+    covers: [methods.load, state.path, state.version, state.loading, state.saving, state.loadedVersion]
+    attributes: { id: subject, api: /admin/ui-check-editor-fixture, path: fixtures/plot.graph, version: 3 }
+    slots: {}
+    before:
+      - wait: 180
+      - dom: { selector: '#subject', containsText: API Graph }
+      - property: { path: subject.state.path, equals: fixtures/plot.graph }
+      - property: { path: subject.state.version, equals: 3 }
+      - property: { path: subject.state.loading, equals: false }
+      - property: { path: subject.state.loadedVersion, equals: 3 }
+    actions:
+      - call: { method: load }
+      - call: { method: save, saveAs: apiSave }
+    after:
+      - property: { path: subject.state.saving, equals: false }
+      - property: { path: subject.state.dirty, equals: false }
+      - script: "return apiSave.succeeded===1"
+      - event: { name: loaded, count: 2 }
+      - event: { name: save, count: 1 }
+      - event: { name: saved, count: 1 }
+  - name: authenticated API error state
+    covers: [state.error]
+    attributes: { id: subject, api: /admin/ui-check-editor-fixture, path: fixtures/error.graph }
+    slots: {}
+    before: [{ wait: 180 }]
+    actions: []
+    after:
+      - script: "return !!subject.state.error"
+      - event: { name: error, count: 1 }

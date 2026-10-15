@@ -1,0 +1,22 @@
+name: RemoteSelect
+kind: component
+src: /ui/components/form/RemoteSelect.js
+dependencies: [HTTP, Toast, Disposer]
+purpose: Select one scalar value from a bounded server-side search without preloading a large collection.
+attributes:
+  api: POST endpoint.
+  action: Query action name.
+properties:
+  value: Selected scalar value.
+  params: Object or function returning request parameters.
+  placeholder: Search placeholder.
+methods:
+  search: Query options using the current text.
+  choose: Select one {value,label} or {id,name} option.
+  clear: Clear the selection and emit change.
+events:
+  change: detail is the selected scalar value.
+rules:
+  - Search is debounced and every response is bounded by the host API.
+  - A selected ID is resolved back to its display label through the same authorized API.
+tests: [RemoteSelect.test.yaml]

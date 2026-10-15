@@ -1,4 +1,7 @@
 name: Mindmap
+kind: component
+src: /ui/components/editor/Mindmap.js
+dependencies: [/ui/utilities/MouseMover.js, Editor, GraphDocument, GraphCanvas, Disposer, AutoForm, Modal, Dialog]
 purpose: Edit a logical tree with automatic left or right layout, reusable graph JSON, pan, zoom, slots, and optional document transport.
 
 attributes:
@@ -116,4 +119,4 @@ related:
   - ../base/AutoForm.yaml
 
 tests:
-  - Mindmap.test.html
+  - Mindmap.test.yaml

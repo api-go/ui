@@ -1,5 +1,12 @@
 # Changelog
 
+## [v1.0.10] - 2026-10-15
+
+- 新增 AppShell、SplitPane、Pane、PageHeader、FilterBar、ActionBar、RequestState、ItemCollection、SidePanel、RemoteSelect 和 CardGrid 等组合能力。
+- AutoForm 整体/局部响应式多列；全局密度、内部滚动、Hash 状态与组件生命周期修复。
+- 反写 master 中已验证的通用组件、工具及运行时快照，提供三类界面规范、无页面 CSS 模板及独立 YAML 契约测试。
+- 构建保留显式版本化框架快照，避免用旧兄弟产物覆盖修复；更新依赖加载表和可移植模板路径。
+
 ## [v1.0.9] - 2026-08-25
 
 - **组件**: 完善 Nav、DataGrid、TagsInput、IconPicker 与图形编辑器交互细节。

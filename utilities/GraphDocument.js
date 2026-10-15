@@ -74,6 +74,51 @@ const GraphDocument = (() => {
     return [...removed]
   }
   const removeEdge = (data, edgeId) => { data.edges = data.edges.filter(edge => edge.id !== edgeId) }
+  const layoutGraph = (input, { nodeWidth = 190, nodeHeight = 84, hGap = 168, vGap = 80, componentGap = 72, aspectRatio = 9 / 7, sizes = {} } = {}) => {
+    const data = normalize(input), index = new Map(data.nodes.map((node, position) => [node.id, position]))
+    if (!data.nodes.length) return { data, nodes: [], edges: data.edges }
+    const adjacency = new Map(data.nodes.map(node => [node.id, new Set()]))
+    for (const edge of data.edges) { adjacency.get(edge.from)?.add(edge.to); adjacency.get(edge.to)?.add(edge.from) }
+    const remaining = new Set(data.nodes.map(node => node.id)), components = []
+    while (remaining.size) {
+      const candidates = [...remaining]
+      const root = candidates.reduce((best, id) => adjacency.get(id).size > adjacency.get(best).size ? id : best, candidates[0])
+      const queue = [root], ordered = []; remaining.delete(root)
+      while (queue.length) {
+        const id = queue.shift(); ordered.push(id)
+        const neighbors = [...adjacency.get(id)].filter(next => remaining.has(next)).sort((a, b) => index.get(a) - index.get(b))
+        for (const next of neighbors) { remaining.delete(next); queue.push(next) }
+      }
+      components.push(ordered)
+    }
+    const sizeOf = id => ({ width: Number(sizes[id]?.width) || nodeWidth, height: Number(sizes[id]?.height) || nodeHeight })
+    const boxes = components.map(ids => {
+      const maxWidth = Math.max(...ids.map(id => sizeOf(id).width)), maxHeight = Math.max(...ids.map(id => sizeOf(id).height))
+      const cellWidth = maxWidth + hGap, cellHeight = maxHeight + vGap
+      const columns = Math.max(1, Math.ceil(Math.sqrt(ids.length * aspectRatio * cellHeight / cellWidth)))
+      const rows = Math.ceil(ids.length / columns), nodes = ids.map((id, position) => {
+        const row = Math.floor(position / columns), offset = position % columns
+        const column = row % 2 ? columns - offset - 1 : offset
+        const size = sizeOf(id), node = data.nodes[index.get(id)]
+        return { ...node, x: column * cellWidth + (maxWidth - size.width) / 2, y: row * cellHeight + (maxHeight - size.height) / 2, width: size.width, height: size.height }
+      })
+      return { nodes, width: Math.max(maxWidth, columns * cellWidth - hGap), height: Math.max(maxHeight, rows * cellHeight - vGap) }
+    })
+    boxes.sort((a, b) => b.width * b.height - a.width * a.height)
+    const packedArea = boxes.reduce((sum, box) => sum + (box.width + componentGap) * (box.height + componentGap), 0)
+    const targetWidth = Math.max(...boxes.map(box => box.width), Math.sqrt(packedArea * aspectRatio) * 1.15)
+    const positioned = [], positions = new Map(); let x = 0, y = 0, rowHeight = 0
+    for (const box of boxes) {
+      if (x && x + box.width > targetWidth) { x = 0; y += rowHeight + componentGap; rowHeight = 0 }
+      for (const node of box.nodes) {
+        const placed = { ...node, x: Math.round(node.x + x), y: Math.round(node.y + y) }
+        positioned.push(placed); positions.set(placed.id, placed)
+      }
+      x += box.width + componentGap; rowHeight = Math.max(rowHeight, box.height)
+    }
+    positioned.sort((a, b) => index.get(a.id) - index.get(b.id))
+    return { data, nodes: positioned, edges: data.edges.filter(edge => positions.has(edge.from) && positions.has(edge.to)) }
+  }
   const layoutTree = (input, { direction = 'right', nodeWidth = 160, nodeHeight = 56, hGap = 72, vGap = 24, sizes = {} } = {}) => {
     const data = normalize(input)
     const incoming = new Set(data.edges.map(edge => edge.to))
@@ -126,7 +171,7 @@ const GraphDocument = (() => {
     })
     return { data, nodes: positioned, edges }
   }
-  return { id, normalize, children, descendants, addNode, addEdge, removeNode, removeEdge, layoutTree }
+  return { id, normalize, children, descendants, addNode, addEdge, removeNode, removeEdge, layoutGraph, layoutTree }
 })()
 
 globalThis.GraphDocument = GraphDocument

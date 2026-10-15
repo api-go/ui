@@ -28845,6 +28845,7 @@
     Compartment: Compartment,
     EditorView: EditorView,
     keymap: keymap,
+    placeholder: placeholder,
     indentWithTab: indentWithTab,
     syntaxTree: syntaxTree,
     ensureSyntaxTree: ensureSyntaxTree,

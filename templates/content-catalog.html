@@ -1,0 +1,67 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<title>灵感精选 · UI 模板</title>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<script src="../frameworks/State.js"></script>
+<script src="../frameworks/Bootstrap.js"></script>
+<script src="../components/base/PageHeader.js"></script>
+<script>
+Bootstrap.config({bindDarkMode:[LocalStorage,'templateDark']})
+const catalogCategories=[{id:'all',label:'全部'},{id:'work',label:'效率工具'},{id:'design',label:'设计资源'},{id:'learn',label:'学习成长'}]
+const catalogProducts=[
+ {id:'focus',name:'专注工作流',category:'work',icon:'lightning-charge',description:'把零散任务整理成清晰的下一步，让工作更从容。',price:129},
+ {id:'studio',name:'轻量设计工作室',category:'design',icon:'palette',description:'为每个创意建立可复用的视觉起点。',price:199},
+ {id:'notes',name:'知识笔记系统',category:'learn',icon:'journal-bookmark',description:'连接阅读、思考与实践，建立自己的知识网络。',price:89},
+ {id:'planner',name:'一周计划手册',category:'work',icon:'calendar-week',description:'在重要的事情上投入时间，看到稳定的进展。',price:59},
+ {id:'type',name:'排版灵感库',category:'design',icon:'type',description:'从结构与节奏开始，让内容更有表达力。',price:159},
+ {id:'course',name:'从想法到作品',category:'learn',icon:'mortarboard',description:'通过一个个小项目，把学习变成可以分享的成果。',price:249}
+]
+const catalog_state=NewState({error:''})
+if(!Hash.catalogCategory)Hash.go({catalogCategory:'all'})
+if(!['recommended','price'].includes(Hash.catalogSort))Hash.go({catalogSort:'recommended'})
+function catalogResults(){
+ const rows=catalogProducts.filter(product=>(Hash.catalogCategory==='all'||product.category===Hash.catalogCategory)&&(!Hash.catalogQuery||(product.name+product.description).includes(Hash.catalogQuery)))
+ return Hash.catalogSort==='price'?rows.toSorted((a,b)=>a.price-b.price):rows
+}
+function catalogSelection(){return catalogProducts.find(product=>product.id===Hash.catalogItem)}
+function toggleCatalogFavorite(id){
+ const values=LocalStorage.catalogFavorites||[]
+ try{LocalStorage.catalogFavorites=values.includes(id)?values.filter(value=>value!==id):[...values,id];catalog_state.error=''}
+ catch(error){catalog_state.error='收藏保存失败，请重试。'}
+}
+</script>
+</head>
+<body class="m-0 bg-body text-body">
+<header class="border-bottom"><div class="container d-flex flex-wrap align-items-center gap-3 py-3"><a class="text-decoration-none text-body fw-semibold fs-5" href="#+catalogItem=null"><i class="bi bi-compass text-primary me-2" aria-hidden="true"></i>灵感精选</a><span class="small text-body-secondary">为每一种创造找到起点</span><a class="btn  btn-link ms-auto" href="index.html">模板目录</a><button class="btn  btn-outline-secondary" aria-label="切换主题" $aria-pressed="LocalStorage.templateDark?'true':'false'" $onclick="LocalStorage.templateDark=!LocalStorage.templateDark"><i class="bi bi-circle-half" aria-hidden="true"></i></button></div></header>
+<main class="container py-5">
+ <p class="alert alert-danger" role="alert" $if="catalog_state.error" $text="catalog_state.error"></p>
+ <template $if="!Hash.catalogItem">
+  <div class="row align-items-center g-4 mb-5"><div class="col-12 col-lg-8"><span class="badge text-bg-primary mb-3">精选资源</span><h1 class="display-5 fw-semibold mb-3">让好想法，走得更远。</h1><p class="lead text-body-secondary mb-0">发现精心整理的工具、资源和学习体验，为下一次创造积蓄灵感。</p></div><div class="col-12 col-lg-4"><div class="bg-body-tertiary border rounded p-4"><p class="h5 mb-2">从今天的小进步开始</p><p class="text-body-secondary mb-0">清晰的选择，实用的内容，适合自己的节奏。</p></div></div></div>
+  <section aria-label="筛选资源" class="d-flex flex-wrap align-items-end justify-content-between gap-3 mb-4">
+   <div class="d-flex flex-wrap gap-2"><button type="button" class="btn" $each="catalogCategories" as="category" $class="Hash.catalogCategory===category.id?'btn-primary':'btn-outline-secondary'" $aria-pressed="Hash.catalogCategory===category.id?'true':'false'" $onclick="Hash.go({catalogCategory:category.id})" $text="category.label"></button></div>
+   <div class="d-flex flex-wrap gap-2"><div><label for="catalogSearch" class="form-label small">搜索资源</label><input id="catalogSearch" type="search" class="form-control" placeholder="输入关键词" $bind="Hash.catalogQuery"></div><div><label for="catalogSort" class="form-label small">排序</label><select id="catalogSort" class="form-select" $bind="Hash.catalogSort"><option value="recommended">精选推荐</option><option value="price">价格从低到高</option></select></div></div>
+  </section>
+  <p class="text-body-secondary small" $text="'找到 '+catalogResults().length+' 项资源'"></p>
+  <div class="row g-4">
+   <article class="col-12 col-md-6 col-lg-4" $each="catalogResults()" as="product" key="id">
+    <div class="border rounded h-100 d-flex flex-column overflow-hidden">
+     <div class="bg-body-tertiary p-4 border-bottom"><i class="display-4 text-primary" $class="'bi bi-'+product.icon" aria-hidden="true"></i></div>
+     <div class="p-4 d-flex flex-column flex-fill"><h2 class="h5"><a class="text-decoration-none text-body" $href="'#+'+new URLSearchParams({catalogItem:JSON.stringify(product.id)})" $text="product.name"></a></h2><p class="text-body-secondary flex-fill" $text="product.description"></p><div class="d-flex align-items-center justify-content-between gap-2"><span class="fw-semibold" $text="'¥ '+product.price"></span><button class="btn  btn-outline-secondary" $aria-label="'收藏 '+product.name" $aria-pressed="(LocalStorage.catalogFavorites||[]).includes(product.id)?'true':'false'" $onclick="toggleCatalogFavorite(product.id)"><i class="bi" $class="(LocalStorage.catalogFavorites||[]).includes(product.id)?'bi-heart-fill text-danger':'bi-heart'" aria-hidden="true"></i></button></div></div>
+    </div>
+   </article>
+  </div>
+  <div $if="catalogResults().length===0" class="text-center border rounded p-5" role="status"><h2 class="h5">暂时没有匹配的资源</h2><p class="text-body-secondary">换个关键词，或重新浏览全部内容。</p><button class="btn btn-outline-primary" $onclick="Hash.go({catalogQuery:null,catalogCategory:'all'})">重置筛选</button></div>
+ </template>
+ <template $if="Hash.catalogItem">
+  <button class="btn btn-link px-0 mb-4" $onclick="Hash.go({catalogItem:null})"><i class="bi bi-arrow-left me-2" aria-hidden="true"></i>返回资源列表</button>
+  <div $if="!catalogSelection()" class="alert alert-warning" role="alert">资源不存在或已不可用，请返回列表重新选择。</div>
+  <div $if="catalogSelection()" class="row g-4 align-items-start">
+   <div class="col-12 col-lg-5"><div class="bg-body-tertiary border rounded p-5 text-center"><i class="display-1 text-primary" $class="'bi bi-'+catalogSelection()?.icon" aria-hidden="true"></i></div></div>
+   <div class="col-12 col-lg-7"><p class="small text-body-secondary">精选数字资源</p><h1 class="display-6 fw-semibold" $text="catalogSelection()?.name"></h1><p class="lead text-body-secondary" $text="catalogSelection()?.description"></p><p class="h3 my-4" $text="'¥ '+catalogSelection()?.price"></p><button class="btn btn-primary" $onclick="toggleCatalogFavorite(Hash.catalogItem)" $text="(LocalStorage.catalogFavorites||[]).includes(Hash.catalogItem)?'已加入收藏':'加入收藏'"></button><p class="small text-body-secondary mt-3">模板仅演示浏览与本地收藏，不包含购买或支付行为。</p><hr class="my-4"><h2 class="h5">为清晰而设计</h2><p class="text-body-secondary">把复杂信息组织成可以理解、可以行动的内容，让每一步都有明确的方向。</p></div>
+  </div>
+ </template>
+</main>
+<footer class="border-top"><div class="container py-4 d-flex flex-wrap gap-2 justify-content-between text-body-secondary small"><span>灵感精选 · 内容应用模板</span><span>浏览状态随链接恢复 · 收藏保存在当前浏览器</span></div></footer>
+</body></html>

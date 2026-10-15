@@ -1,0 +1,21 @@
+testData: { title: Records, description: Supporting information }
+cases:
+  - name: reactive hierarchy and host actions
+    attributes: { id: subject, heading: Fallback, "$.state.title": testData.title, "$.state.description": testData.description, style: "width:280px" }
+    slots:
+      actions: '<template><button class="btn btn-primary">Create</button><button class="btn btn-outline-secondary">Export</button></template>'
+    before:
+      - property: { path: subject.state.title, equals: Records }
+      - property: { path: subject.state.description, equals: Supporting information }
+      - dom: { selector: '#subject h1', text: Records }
+      - dom: { selector: '#subject button', count: 2 }
+    actions:
+      - script: "testData.title='Updated title with a very long uninterrupted word '+ 'x'.repeat(120); testData.description=''"
+    after:
+      - dom: { selector: '#subject p', count: 0 }
+      - script: "return subject.querySelector('h1').textContent.startsWith('Updated') && subject.scrollWidth<=subject.clientWidth"
+  - name: heading fallback and empty description
+    attributes: { id: subject, heading: Fallback }
+    before:
+      - dom: { selector: '#subject h1', text: Fallback }
+      - dom: { selector: '#subject p', count: 0 }

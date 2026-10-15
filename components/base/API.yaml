@@ -1,4 +1,7 @@
 name: API
+kind: component
+src: /ui/components/base/API.js
+dependencies: [Toast]
 purpose: Bind HTTP request configuration and response state to a declarative page element.
 
 attributes:
@@ -60,4 +63,4 @@ examples:
     <!-- data is present, so this request uses POST unless method is explicitly set -->
 
 tests:
-  - API.test.html
+  - API.test.yaml

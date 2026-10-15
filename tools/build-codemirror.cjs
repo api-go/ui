@@ -87,6 +87,7 @@ globalThis.CodeMirror = {
   Compartment: state.Compartment,
   EditorView: view.EditorView,
   keymap: view.keymap,
+  placeholder: view.placeholder,
   indentWithTab: commands.indentWithTab,
   syntaxTree: language.syntaxTree,
   ensureSyntaxTree: language.ensureSyntaxTree,

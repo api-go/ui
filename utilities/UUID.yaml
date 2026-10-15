@@ -1,0 +1,14 @@
+name: UUID
+kind: utility
+src: /ui/utilities/UUID.js
+purpose: Generate native cryptographically random UUIDv4 identifiers without requiring a secure browser context.
+
+methods:
+  make: 'UUID.make() returns a UUIDv4 string. Prefer native crypto.randomUUID; when unavailable use crypto.getRandomValues with RFC version and variant bits. Throw when native cryptographic randomness is unavailable.'
+
+rules:
+  - Use for UI identifiers and unique attachment path segments; it does not establish identity, permissions, or authorization.
+  - Never replace cryptographic randomness with Math.random or timestamps.
+
+examples: |
+  const controlID = 'model-options-' + UUID.make()

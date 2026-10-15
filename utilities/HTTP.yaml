@@ -1,3 +1,9 @@
+reference:
+  docdbPath: /_system/AI/Development/Frontend/HTTP.yaml
+  kind: utility
+  category: utility
+  source: /ui/utilities/HTTP.js
+
 name: HTTP
 purpose: Send browser HTTP requests with JSON, form, upload, timeout, and retained-header handling.
 
@@ -16,7 +22,14 @@ methods:
     signature: HTTP.head(options)
 
 properties:
-  keepHeaders: 'Header names retained from responses and injected into later requests. Default: [Session-Id, Device-Id].'
+  globalHeaders: 'Page-local outbound defaults for same-origin requests. Explicit request headers override them. Never read from storage or updated by responses; snapshotted across authentication retry.'
+  keepHeaders: 'Header names retained from same-origin responses and injected into later same-origin requests. Default: [Session-Id, Device-Id]. External responses never replace platform credentials.'
+  onUnauthorized: 'Optional async `(response, request) => boolean` hook. Concurrent 401 or 403 responses share one recovery attempt; a true result retries each original request once.'
+
+connections:
+  connectionURL: 'connectionURL(url, headers={}) adapts outbound headers to query parameters for transports without custom headers; existing URL parameters win. Session, Device, Cookie and Authorization credentials are excluded.'
+  eventSource: 'eventSource(url, {headers, withCredentials=false, recoverUnauthorized, onUnauthorized}={}) opens fetch-backed SSE through HTTP.request. Returns an EventSource-compatible EventTarget with onopen/onmessage/onerror, named event listeners, readyState (0/1/2), url, withCredentials and close(). Error events include status (0 for transport failure); hosts must not restart a subscription after final 401/403. Preserves completed id/Last-Event-ID and retry fields across reconnects. Final 401/403 and HTTP 204 close the subscription; network failures reconnect. Headers and Workspace context are snapshotted at creation. Close when the owning view unloads.'
+  webSocket: 'webSocket(url, {headers, protocols}={}) creates a native WebSocket using connectionURL. Close the connection when its owning view unloads.'
 
 options:
   url: Required request URL.
@@ -25,6 +38,10 @@ options:
   headers: Request headers.
   responseType: json, text, binary, or stream. Stream returns the response ReadableStream without buffering. Defaults from Content-Type.
   timeout: Milliseconds. Default is 10000.
+  signal: Optional AbortSignal. Aborting it cancels the underlying fetch and any streamed response reader. When both signal and timeout are present, either may cancel the request.
+  recoverUnauthorized: 'Enabled by default (omitted or true). Set false to skip all authentication recovery, especially for login itself. Without a recovery hook, returns the original denial. Applies to streaming handshakes too, not errors inside an already opened body.'
+  onUnauthorized: 'Optional request-local async (response, request) => boolean hook overriding HTTP.onUnauthorized, for example to refresh an Agent token. Return true to retry once; update request.headers for replacement credentials. Local hooks are independent of the shared page-login recovery.'
+  credentials: 'Optional fetch credentials mode; defaults to browser same-origin. eventSource uses include when withCredentials is true.'
 
 response:
   fields: [ok, status, headers, responseType, result, error]
@@ -35,6 +52,7 @@ rules:
   - File-like values are converted to FormData.
   - Do not set Content-Type for FormData.
   - Session-Id and Device-Id response headers are retained by default; extend HTTP.keepHeaders to retain additional headers.
+  - A request is retried at most once after successful unauthorized recovery, including legacy endpoints that return 403 for an expired session. A repeated permission denial is returned without another recovery attempt.
 
 examples:
   get_json: |
@@ -46,6 +64,3 @@ examples:
     const response = await HTTP.post({ url: '/api/upload', data: document.querySelector('#form') })
   api_component: |
     <API id="usersApi" auto $.request="{ url: '/api/users', method: 'GET' }"></API>
-
-tests:
-  - HTTP.test.html

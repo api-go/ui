@@ -21,6 +21,14 @@ init:
       for (let i=1; i<=20; i++) testData.tree.push({id:`child-${i}`,label:`Child ${i}`,summary:'Tree child',parent:'root'})
       for (let i=1; i<=1000; i++) testData.virtual.push({id:i,label:`Virtual user ${i}`,summary:`Row ${i}`})
 cases:
+  - name: default expansion depth shows three levels and preserves user expansion
+    covers: [attributes.default-expand-depth, methods.expandAll, methods.collapseAll]
+    attributes: { id: subject, mode: tree, collapsible: true, default-expand-depth: 3 }
+    before: []
+    actions:
+      - script: "subject.state.list=[{id:'d1',label:'Depth 1'},{id:'d2',label:'Depth 2',parent:'d1'},{id:'d3',label:'Depth 3',parent:'d2'},{id:'d4',label:'Depth 4',parent:'d3'},{id:'d5',label:'Depth 5',parent:'d4'}]"
+      - script: "if(subject.state.flatList.length!==3)throw Error('expected three visible levels');subject.expandItem('d3');subject.state.list=[...subject.state.list];if(subject.state.flatList.length!==4)throw Error('user expansion was reset');subject.expandAll();if(subject.state.flatList.length!==5)throw Error('unseen parent remained collapsed');subject.collapseAll();if(subject.state.flatList.length!==1)throw Error('collapse failed')"
+    after: []
   - name: grouped row icons and disabled labels reflect item fields
     attributes: { id: subject, mode: group, groupiconfield: roleIcon, groupiconclassfield: roleClass, iconfield: agentIcon, iconclassfield: agentClass, disabledfield: disabled, groupidfield: id, grouplabelfield: label, groupfield: group, "$.state.groups": testData.roleGroups, "$.state.list": testData.roleAgents }
     before:
@@ -412,3 +420,37 @@ cases:
       - property: { path: subject.state.selectedItem, equals: a }
       - event: { name: itemclick, count: 1 }
       - event: { name: change, count: 0 }
+
+  - name: reveal selected ancestors on refresh
+    covers: [attributes.reveal-selected]
+    attributes: { id: subject, mode: tree, collapsible: true, reveal-selected: true, default-expand-depth: 1, "$.state.list": "[{id:'a',label:'A'},{id:'b',parent:'a',label:'B'},{id:'c',parent:'b',label:'C'}]", "$.state.selectedItem": "'c'" }
+    before:
+      - dom: { selector: '#subject .list-group-item', count: 3 }
+    actions:
+      - script: "subject.state.list=[...subject.state.list]"
+    after:
+      - dom: { selector: '#subject .list-group-item', count: 3 }
+
+  - name: temporary search expansion restores depth
+    covers: [state.expandmatches]
+    attributes: { id: subject, mode: tree, collapsible: true, default-expand-depth: 1, "$.state.list": "[{id:'a',label:'A'},{id:'b',parent:'a',label:'B'}]" }
+    before:
+      - dom: { selector: '#subject .list-group-item', count: 1 }
+    actions:
+      - script: "subject.state.expandmatches=true"
+    after:
+      - dom: { selector: '#subject .list-group-item', count: 2 }
+      - script: "subject.state.expandmatches=false;return true"
+      - dom: { selector: '#subject .list-group-item', count: 1 }
+
+  - name: folder selection expands children without toggling
+    covers: [attributes.expand-on-select]
+    attributes: { id: subject, mode: tree, collapsible: true, expand-on-select: true, default-expand-depth: 1, "$.state.list": "[{id:'a',label:'A'},{id:'b',parent:'a',label:'B'}]" }
+    before:
+      - dom: { selector: '#subject .list-group-item', count: 1 }
+    actions:
+      - click: '#subject .list-primary-text'
+    after:
+      - dom: { selector: '#subject .list-group-item', count: 2 }
+      - script: "subject.querySelector('.list-primary-text').click();return true"
+      - dom: { selector: '#subject .list-group-item', count: 2 }

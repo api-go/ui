@@ -11,11 +11,14 @@ appearance:
   tree: Uses compact pt-1/pb-0 spacing; expandable parent nodes use the caret without a second folder icon.
 
 attributes:
+  expand-on-select: "Tree: selecting an expandable row opens its immediate children; selecting an open row does not collapse it. Caret clicks still toggle."
+  reveal-selected: "Tree: expand ancestors of the selected item on selection/list replacement."
   mode: [normal, group, tree]
   fast: "boolean — virtual scrolling"
   remote: "boolean — remote fixed-height windows; requires fast and mode=normal."
   row-height: "Remote row height in pixels; defaults to inherited density (32 compact, 40 default, 48 spacious), minimum 20. Explicit value wins. Custom remote rows must use this exact height."
   collapsible: "boolean — collapsible tree nodes"
+  default-expand-depth: "Positive visible tree depth (root=1); unseen parents at that depth start collapsed. Omitted/0 keeps the existing policy. User toggles remain authoritative across list updates."
   default-collapsed: "boolean — unseen tree parents start collapsed, including lazy parents."
   haschildrenfield: "Optional field indicating children that have not been loaded yet."
   activemode: [background, rounded, text]
@@ -45,6 +48,7 @@ attributes:
   itemicon: "Fallback Bootstrap Icons suffix for item rows; defaults to file."
 
 state:
+  expandmatches: "Tree: temporarily expand every supplied branch without changing stored collapse choices; clear to restore them. Use $.state.expandmatches."
   total: "Remote source's current total row count; read-only to hosts."
   loading: "Whether remote requests are pending; read-only to hosts."
   error: "Last remote loading error message; cleared by reload."

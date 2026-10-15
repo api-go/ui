@@ -13,6 +13,7 @@ globalThis.Component.register('List', container => {
 	container.rowHeight = Math.max(20, Number(container.getAttribute('row-height')) || parseFloat(getComputedStyle(container).getPropertyValue('--ui-list-row')) || 40)
 	if (container.remote && (!container.fast || container.mode !== 'normal')) throw new Error('remote List requires fast and mode=normal')
 	container.collapsible = container.hasAttribute('collapsible')
+	container.defaultExpandDepth = Math.max(0, Math.floor(Number(container.getAttribute('default-expand-depth')) || 0))
 	container.treeIndent = Math.max(0, Number(container.getAttribute('indent')) || 12)
 	container.collapseThreshold = Math.max(0, Number(container.getAttribute('collapse-threshold')) || 0)
 	if (container.hasAttribute('auto-select') && !container.hasAttribute('tabindex')) container.tabIndex = 0
@@ -191,10 +192,11 @@ globalThis.Component.register('List', container => {
 				const hasChildren = !!childrenMap[id]?.length || !!(container.haschildrenfield && item[container.haschildrenfield])
 				if (hasChildren && container.hasAttribute('default-collapsed') && container.collapsed[id] === undefined) container.collapsed[id] = true
 				if (hasChildren && container.collapseThreshold && (childrenMap[id]?.length || 0) > container.collapseThreshold && container.collapsed[id] === undefined) container.collapsed[id] = true
-				const isCollapsed = container.collapsed[id]
+				if (hasChildren && container.defaultExpandDepth && container.collapsed[id] === undefined) container.collapsed[id] = level + 1 >= container.defaultExpandDepth
+				const isCollapsed = container.state.expandmatches ? false : container.collapsed[id]
 				// `type` is also a common business field (for example Doc folders).
 				// Keep the renderer discriminator authoritative after spreading user data.
-				flatList.push({ ...item, type: 'item', _level: level, _hasChildren: hasChildren, _parents: parents })
+				flatList.push({ ...item, type: 'item', _level: level, _hasChildren: hasChildren, _collapsed: isCollapsed, _parents: parents })
 				if (childrenMap[id]?.length && !isCollapsed) traverse(childrenMap[id], level + 1, [...parents, id])
 			})
 			traverse(childrenMap[''] || [], 0, [])
@@ -205,7 +207,15 @@ globalThis.Component.register('List', container => {
 		container.state.flatList = flatList
 	}
 
-	container.state.__watch('list', updateFlatList)
+	const revealSelected = () => {
+		if (!container.hasAttribute('reveal-selected') || container.mode !== 'tree') return
+		const map = new Map((container.state.list || []).map(item => [item[container.idfield],item]))
+		let item = map.get(container.state.selectedItem); const seen = new Set()
+		while (item) { const id = item[container.parentfield]; if (!id || seen.has(id)) break; seen.add(id); container.collapsed[id] = false; item = map.get(id) }
+	}
+	container.state.__watch('list', () => { revealSelected(); updateFlatList() })
+	container.state.__watch('selectedItem', () => { revealSelected(); updateFlatList() })
+	container.state.__watch('expandmatches', updateFlatList)
 	container.state.__watch('filter', updateFlatList)
 	container.state.__watch('order', updateFlatList)
 	const vs = container.fast ? globalThis.VirtualScroll() : null
@@ -340,6 +350,7 @@ globalThis.Component.register('List', container => {
 			if (container.mode === 'group' && container.hasAttribute('auto-select-group')) container.state.selectedGroup = null
 			if (container.remote) selectedIndex = selected == null ? -1 : index + (options.absolute ? 0 : (container.state.listStartIndex || 0))
 		}
+		if (container.mode === 'tree' && container.collapsible && container.hasAttribute('expand-on-select') && item._hasChildren && container.collapsed[item[container.idfield]]) container.toggleCollapse(item)
 		if (!container.hasAttribute('silent')) container.dispatchEvent(new CustomEvent('change', { detail: selected, bubbles: false }))
 		if (container.multiple) container.dispatchEvent(new CustomEvent('selectionchange', { detail: [...container.state.selectedItems], bubbles: false }))
 		container.dispatchEvent(new CustomEvent('itemclick', { bubbles: false, detail: { item, selected, selectedItems: container.multiple ? [...container.state.selectedItems] : undefined, index: index + (container.fast && !options.absolute ? (container.state.listStartIndex || 0) : 0), discarded } }))
@@ -404,7 +415,7 @@ globalThis.Component.register('List', container => {
 	container.toggleAll = () => container.isAllCollapsed() ? container.expandAll() : container.collapseAll()
 	container.expandAll = () => {
 		if (container.mode !== 'tree' || !container.collapsible) return
-		Object.keys(container.collapsed).forEach(id => { container.collapsed[id] = false })
+		(Array.isArray(container.state.list) ? container.state.list : []).forEach(item => { container.collapsed[item[container.idfield]] = false })
 		updateFlatList()
 	}
 	container.itemIcon = item => (container.iconfield && item?.[container.iconfield]) || container.itemicon
@@ -460,6 +471,7 @@ globalThis.Component.register('List', container => {
 		set: v => { container._orderFunc = v; updateFlatList(); }
 	})
 
+	revealSelected()
 	updateFlatList()
 	if (globalThis.Bootstrap?.observeDensity) DOMDisposer.add(container, Bootstrap.observeDensity(container, (_, css) => {
 		const previous = container.rowHeight;
@@ -483,7 +495,7 @@ globalThis.Component.register('List', container => {
                                 <template $if="this.groupicon">
 									<span $class="bi bi-\${this.groupiconfield ? item[this.groupiconfield] || this.groupicon : this.groupicon} \${this.groupiconclassfield ? item[this.groupiconclassfield] || 'text-body' : 'text-body'}"></span>
                                 </template>
-                                <div class="list-primary-text text-truncate px-1" $text="\${item[this.grouplabelfield]}"></div>
+                                <div class="list-primary-text text-truncate px-1" $title="item[this.labelfield] || item[this.grouplabelfield] || ''" $text="\${item[this.grouplabelfield]}"></div>
                                 <div class="list-summary-text opacity-75 small text-truncate text-end" $text="\${item[this.groupsummaryfield] || ''}"></div>
                                 <div slot-id="group-actions"></div>
                         </template>
@@ -491,7 +503,7 @@ globalThis.Component.register('List', container => {
                                 <template $if="this.mode === 'tree'">
 								<div $style="width:\${item._level * this.treeIndent + (this.collapsible ? 16 : 0)}px; cursor:\${this.collapsible ? 'pointer' : 'default'}" class="text-end text-muted flex-shrink-0" $onclick="event.stopPropagation(); this.toggleCollapse(item)">
 								<template $if="this.collapsible && item._hasChildren">
-										<i $class="bi \${this.collapsed[item[this.idfield]] ? 'bi-caret-right-fill' : 'bi-caret-down-fill'}"></i>
+										<i $class="bi \${item._collapsed ? 'bi-caret-right-fill' : 'bi-caret-down-fill'}"></i>
 								</template>
 								<template $if="!item._hasChildren && this.itemIcon(item)">
 										<i $class="opacity-50 bi bi-\${this.itemIcon(item)}"></i>
@@ -511,5 +523,5 @@ globalThis.Component.register('List', container => {
 </div>
 `), globalThis.Util.makeDom(`<style>
 List .list-group-item {font-size:var(--ui-item-font,1rem);padding:var(--ui-item-y,.5rem) var(--ui-item-x,1rem);}
-List .list-primary-text{min-width:0;max-width:75%;flex:0 1 auto}List .list-summary-text{min-width:25%;flex:1 1 25%}List .list-summary-text:empty{min-width:0;flex:1 1 0}List .list-group-item:not(:has(.list-summary-text:not(:empty))) .list-primary-text{max-width:100%}List .list-group-item.list-drop-target{outline:2px solid var(--bs-primary);outline-offset:-2px;background:rgba(var(--bs-primary-rgb),.12)!important}
+List .list-primary-text{min-width:0;max-width:none;flex:1 1 0}List .list-summary-text{min-width:0;max-width:40%;flex:0 0 auto}List .list-summary-text:empty{display:none}List .list-group-item:not(:has(.list-summary-text:not(:empty))) .list-primary-text{max-width:100%}List .list-group-item.list-drop-target{outline:2px solid var(--bs-primary);outline-offset:-2px;background:rgba(var(--bs-primary-rgb),.12)!important}
 </style>`))

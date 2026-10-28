@@ -1,0 +1,128 @@
+dependencies: [ListDataSource]
+testData:
+  records: []
+init:
+  - 'for(let i=1;i<=137;i++)testData.records.push({id:i,name:"Record "+i})'
+  - 'testData.source=ListDataSource.create({items:testData.records,pagesize:10})'
+cases:
+  - name: numbered controlled navigation sizes cancellation slots and busy
+    attributes:
+      id: subject
+      "$.state.page": "2"
+      "$.state.pagesize": "10"
+      "$.state.total": "137"
+      "$.state.busy": "false"
+      "$.state.sizes": "[10,20,50]"
+    before:
+      - dom: {selector: '#subject .page-item.active button', text: '2'}
+      - dom: {selector: '#subject select[aria-label="Per page"]', value: '10'}
+      - dom: {selector: '#subject [role=status]', containsText: '137'}
+    actions:
+      - click: '#subject button[aria-label=Next]'
+      - call: {method: total, saveAs: total}
+      - call: {method: rangeStart, saveAs: start}
+      - call: {method: rangeEnd, saveAs: end}
+      - call: {method: pageCount, saveAs: count}
+      - call: {method: currentPage, saveAs: current}
+      - call: {method: pages, saveAs: pages}
+      - call: {method: resize, args: [20]}
+      - call: {method: go, args: [0]}
+      - prevent: beforechange
+      - call: {method: go, args: [4], saveAs: cancelled}
+      - script: 'subject.state.busy=true;subject.go(1);subject.resize(50)'
+    after:
+      - property: {path: total, equals: 137}
+      - property: {path: start, equals: 11}
+      - property: {path: end, equals: 20}
+      - property: {path: count, equals: 14}
+      - property: {path: current, equals: 2}
+      - property: {path: cancelled, equals: false}
+      - event: {name: change, count: 2, last: {page: 1, pagesize: 20}}
+      - event: {name: beforechange, count: 3}
+      - script: 'return pages.length<=15 && subject.state.page===2'
+  - name: shared source and default markup actually navigate and resize
+    covers: [properties.source]
+    attributes:
+      id: subject
+      "$.source": testData.source
+    actions:
+      - click: '#subject button[aria-label=Next]'
+      - wait: 30
+      - click: '#subject button[aria-label="Page settings"]'
+      - select: {selector: '#subject .dropdown-menu select', value: '20'}
+    after:
+      - property: {path: subject.source.state.page, equals: 1}
+      - property: {path: subject.source.state.pagesize, equals: 20}
+      - script: 'const ok=subject.source.state.rows.length===20;subject.source.dispose();return ok'
+  - name: fully replaceable summary size and navigation slots
+    attributes: {id: subject, "$.state.total": "100"}
+    slots:
+      summary: '<span>Custom summary</span>'
+      size: '<button type="button" $onclick="this.resize(50)">Custom size</button>'
+      controls: '<button type="button" $onclick="this.go(2)">Custom navigation</button>'
+    before:
+      - dom: {selector: '#subject', containsText: Custom summary}
+      - dom: {selector: '#subject', containsText: Custom size}
+      - dom: {selector: '#subject', containsText: Custom navigation}
+      - dom: {selector: '#subject .pagination', count: 0}
+    actions:
+      - click: '#subject [role=navigation] button'
+      - click: '#subject button:not([role=navigation] button)'
+    after:
+      - event: {name: change, count: 2, last: {page: 1, pagesize: 50}}
+  - name: empty disabled boundaries and huge totals stay bounded
+    attributes: {id: subject, "$.state.total": "0", "$.state.pagesize": "0"}
+    before:
+      - script: 'return subject._size()===20 && subject.querySelectorAll(".dropdown-menu option").length===3'
+    actions:
+      - call: {method: go, args: [2], saveAs: rejected}
+      - script: 'subject.state.total=1000000;subject.state.page=25000'
+    after:
+      - property: {path: rejected, equals: false}
+      - script: 'return subject.pages().length<=15 && subject.pages().some(page=>page.page===25000)'
+  - name: explicit Bootstrap pagination size overrides inherited density
+    attributes: {id: subject}
+    slots:
+      controls: '<ul class="pagination pagination-lg mb-0"><li class="page-item"><button type="button" class="page-link">Large page</button></li></ul>'
+    after:
+      - script: 'return Math.abs(parseFloat(getComputedStyle(subject.querySelector(".page-link")).fontSize)-parseFloat(getComputedStyle(document.documentElement).fontSize)*1.25)<.1'
+  - name: settings and actions extend defaults without replacing page size
+    attributes: {id: subject, "$.state.total": '137'}
+    slots:
+      settings: '<label class="d-block mt-2"><input type="checkbox" class="form-check-input"> Extra setting</label>'
+      actions: '<button class="btn btn-link" type="button">Extra action</button>'
+    actions:
+      - click: '#subject [data-page-settings]'
+    after:
+      - dom: {selector: '#subject [role=status]', text: 'Current 1~20 / Total 137'}
+      - dom: {selector: '#subject .dropdown-menu select', count: 1}
+      - dom: {selector: '#subject .dropdown-menu select', value: '20'}
+      - dom: {selector: '#subject .dropdown-menu', containsText: Extra setting}
+      - dom: {selector: '#subject .pagination-actions', containsText: Extra action}
+  - name: every abbreviated window retains an ellipsis and current page
+    covers: [methods.pages]
+    attributes: {id: subject}
+    actions:
+      - script: |
+          for(const total of [1,2,3,7,1000])for(let limit=2;limit<=15;limit++)for(const page of [1,Math.ceil(total/2),total]){
+            subject.state.total=total*20;subject.state.page=page;subject.state._pageLimit=limit;
+            const entries=subject.pages();
+            if(entries.length>limit||!entries.some(entry=>entry.page===page)||entries.some(entry=>!entry.page)!==(total>limit))throw new Error('Invalid compact page window');
+            if(limit>=4&&((page>1&&!entries.some(entry=>entry.page===page-1))||(page<total&&!entries.some(entry=>entry.page===page+1))))throw new Error('Missing adjacent page');
+            if(entries.some(entry=>!entry.page&&(!(entry.target>=1&&entry.target<=total)||entry.target===page)))throw new Error('Invalid jump target');
+          }
+          subject.state.page=1;subject.state.total=137;subject.state._pageLimit=5;
+    after:
+      - script: 'return subject.pages().some(entry=>!entry.page)'
+  - name: ellipses jump through the same change cancellation and busy contract
+    attributes: {id: subject, "$.state.total": '1000000', "$.state.page": '25000'}
+    before:
+      - dom: {selector: '#subject [aria-label="Jump forward"]', count: 1}
+    actions:
+      - click: '#subject [aria-label="Jump forward"]'
+      - prevent: beforechange
+      - click: '#subject [aria-label="Jump forward"]'
+      - script: 'subject.state.busy=true;subject.querySelector("[aria-label=\"Jump forward\"]").click()'
+    after:
+      - event: {name: change, count: 1}
+      - event: {name: beforechange, count: 2}

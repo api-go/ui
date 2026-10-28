@@ -42,3 +42,8 @@ Set ui-sm/ui-lg once on html/body for global density; omit for BS defaults and u
 7. Remove temporary test data only after persistence has been verified.
 
 Code inspection alone is not UI acceptance. A feature is complete only when its real browser interaction and saved result agree.
+
+
+Control appearance is independent of density: apply ui-link to a container for link-style buttons/pagination and underlined text inputs or single-value selects. Input-group labels/icons have no filled background or border and sit outside the input underline. Focus, validation, disabled/readonly states and native select arrows remain visible and functional. Checkboxes, radios, ranges, file/color inputs and multi-row select boxes retain their native UI; card/table borders remain independent. Remove ui-link to restore the original controls. Reuse this Bootstrap-level scope; do not introduce per-component noborder flags or conditional class rewrites. Do not substitute form-control-plaintext for editable controls. The density example demonstrates this appearance switch.
+
+Use ui-toolbar with px-2 px-sm-3 for toolbars. Bordered controls need breathing room between their boxes and the toolbar boundary; the shared style adds density-aware vertical padding and gap, with more compact spacing in ui-link mode. Use ui-toolbar-fields on flex filter forms to inherit that gap. Align toolbar and list/header gutters instead of adding page-specific offsets. Numeric values use text-body; auxiliary captions/separators use text-body-tertiary and auxiliary controls use text-body-secondary. Keep primary actions and validation states semantically emphasized.

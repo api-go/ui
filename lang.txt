@@ -9,6 +9,7 @@ Add column
 Add node
 Advanced Settings
 Advanced mode
+All
 And...
 Apply
 Are you sure you want to delete field "{field}"?
@@ -38,12 +39,14 @@ Control Attributes must be a JSON object
 Copy protected value
 Create Time
 Creator
+Current
 DESC
 Database Type
 Date
 Date & Time
 DateTime
 Decimals
+Default order
 Delete
 Delete Field
 Delete Selected Rows
@@ -73,6 +76,7 @@ Field ID
 Field Name
 Field Type
 Filter
+Filters
 Fit graph
 Fit map
 Fixed Text (CHAR)
@@ -83,6 +87,8 @@ HTML preview
 Index
 Integer
 Invalid JSON
+Jump backward
+Jump forward
 Kanban
 Label
 Label Off
@@ -116,6 +122,9 @@ Number
 Object (JSON)
 Only
 Options
+Page settings
+Pagination
+Per page
 Pin Column
 Placeholder
 Prefix (e.g. $)
@@ -147,6 +156,9 @@ Select All Rows
 Select Icon
 Select a result
 Select all / clear
+Select item
+Select page
+Selected
 Semantics
 Settings
 Shift-click another node to connect
@@ -173,6 +185,8 @@ Time
 Tiny Integer
 Title
 Toggle all rows selection
+Total
+Unable to load data
 Unsigned Big Integer
 Unsigned Integer
 Untitled
@@ -180,6 +194,7 @@ Update Time
 Updater
 Validate
 Validate syntax
+Validating
 Validation Pattern
 Validation Pattern must be a valid regular expression
 Wrap lines

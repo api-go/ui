@@ -339,3 +339,54 @@ cases:
       - dom: { selector: '#subject legend', text: Empty group }
       - event: { name: submit, count: 1 }
       - property: { path: subject.data.kept, equals: value }
+  - name: complete draft validation server errors and hidden field recovery
+    covers: [properties.validator]
+    attributes:
+      id: subject
+      "$.state.data": "NewState({name:'Ada',hidden:''})"
+      "$.state.schema": "[{name:'name',label:'Name',type:'text'},{type:'group',if:'false',items:[{name:'hidden',type:'text'}]}]"
+    actions:
+      - script: "subject.validator=async draft=>draft.hidden?{}:{hidden:'Hidden value is required'}"
+      - call: {method: validate, saveAs: valid}
+      - call: {method: submit}
+      - call: {method: setErrors, args: [{name: 'Name already exists'}]}
+      - call: {method: focusField, args: [name], saveAs: focused}
+    after:
+      - property: {path: valid, equals: false}
+      - property: {path: focused, equals: true}
+      - property: {path: subject.state.errors.name, equals: Name already exists}
+      - property: {path: subject.state.validating, equals: false}
+      - dom: {selector: '#subject .invalid-feedback', text: Name already exists}
+      - event: {name: revealfield, count: 2, last: {name: hidden}}
+      - event: {name: submit, count: 0}
+  - name: changed drafts and rejected validators cannot submit
+    attributes:
+      id: subject
+      "$.state.data": "NewState({name:'Ada'})"
+      "$.state.schema": testData.compactSchema
+    actions:
+      - script: |
+          let resolveValidation;
+          subject.validator=()=>new Promise(resolve=>{resolveValidation=resolve});
+          const pending=subject.submit();
+          if(!subject.state.validating)throw new Error('Missing pending validation state');
+          subject.data.name='Grace';resolveValidation({});await pending;
+          subject.validator=async()=>{throw new Error('private backend error')};
+          await subject.submit();
+    after:
+      - event: {name: submit, count: 0}
+      - property: {path: subject.state.validating, equals: false}
+      - dom: {selector: '#subject [role=alert]', containsText: Validation failed. Please retry.}
+  - name: valid cross-field draft submits once while validation is pending
+    attributes:
+      id: subject
+      "$.state.data": "NewState({name:'Ada'})"
+      "$.state.schema": testData.compactSchema
+    actions:
+      - prevent: submit
+      - script: |
+          subject.validator=async draft=>draft.name==='Ada'?{}:{name:'Unexpected name'};
+          await Promise.all([subject.submit(),subject.submit()]);
+    after:
+      - event: {name: submit, count: 1}
+      - property: {path: subject.state.validating, equals: false}

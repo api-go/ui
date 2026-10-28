@@ -4,6 +4,10 @@
 
 const AUTOFORM_BLUEPRINT = globalThis.Util.makeDom(/*html*/`
 <div class="auto-form-root d-block">
+  <div class="alert alert-danger" role="alert" $if="Object.keys(this.state.errors || {}).length">
+    <ul class="mb-0 ps-3"><li $each="Object.entries(this.state.errors || {})" as="failure"><button type="button" class="btn btn-link text-danger text-start p-0" $onclick="this.focusField(failure[0])" $text="failure[1]"></button></li></ul>
+  </div>
+  <p role="status" $if="this.state.validating" class="text-body-secondary">{#Validating#}…</p>
   <form $class="this.state._columnsLayout ? 'auto-form-sections d-flex flex-column' : (this.inline ? 'd-flex flex-wrap align-items-center gap-3' : (this.vertical ? 'd-flex flex-column' : (this.horizontal ? 'auto-grid-form forced-horizontal' : 'auto-grid-form')))" $onsubmit="event.stopPropagation();event.preventDefault();this.submit()">
 
   <template $each="this.state._sections || []" as="section">
@@ -48,6 +52,7 @@ const AUTOFORM_BLUEPRINT = globalThis.Util.makeDom(/*html*/`
           </div>
           </template>
           </template>
+          <template $each="group.items" as="fieldError"><span class="invalid-feedback d-block" $if="this.state.errors?.[fieldError.name]" $text="this.state.errors?.[fieldError.name]"></span></template>
         </div>
     </div>
     </template>
@@ -231,17 +236,63 @@ globalThis.Component.register('AutoForm', container => {
 	})
 
 	container.form = globalThis.$(container, 'form')
-	container.submit = (opt = {}) => {
+	container.state.errors ??= {}
+	container.state.validating = false
+	let validationVersion = 0, submitting = false
+	container.setErrors = errors => {
+		const clean = {}
+		for (const [name, message] of Object.entries(errors || {})) {
+			if (typeof message === 'string' && message.trim()) Object.defineProperty(clean, name, {value:message, enumerable:true})
+		}
+		container.state.errors = clean
+	}
+	container.focusField = name => {
+		const control = Array.from(container.form.elements).find(node => node.name === name && node.getClientRects().length && !node.disabled)
+		if (control) { control.focus(); return true }
+		container.dispatchEvent(new CustomEvent('revealfield', {detail:{name}, bubbles:false}))
+		return false
+	}
+	const invalidateValidation = () => { validationVersion++; container.state.validating = false }
+	DOMDisposer.add(container, invalidateValidation)
+	container.addEventListener('input', invalidateValidation)
+	container.addEventListener('change', invalidateValidation)
+	container.addEventListener('changed', invalidateValidation)
+	container.validate = async () => {
+		const version = ++validationVersion
+		container.setErrors({})
+		if (!container.form.reportValidity()) return false
+		if (typeof container.validator !== 'function') return true
+		const snapshot = JSON.stringify(container.data)
+		container.state.validating = true
+		try {
+			// Validate the complete draft, including fields absent from the DOM.
+			const errors = await container.validator(JSON.parse(snapshot))
+			if (version !== validationVersion || snapshot !== JSON.stringify(container.data)) return false
+			container.setErrors(errors)
+			const first = Object.keys(container.state.errors)[0]
+			if (first) container.focusField(first)
+			return !first
+		} catch (_) {
+			if (version === validationVersion && snapshot === JSON.stringify(container.data)) container.setErrors({_form:'Validation failed. Please retry.'})
+			return false
+		} finally {
+			if (version === validationVersion) container.state.validating = false
+		}
+	}
+	container.submit = async (opt = {}) => {
+		if (submitting) return false
+		submitting = true
+		try {
 		// Native validation identifies/focuses the field. A bottom-corner toast can
 		// cover a fixed Save action and hover there indefinitely while retrying.
-		if (!container.form.reportValidity()) return
+		if (!await container.validate()) return false
 		if (!container.dispatchEvent(new CustomEvent('submit', { detail: container.data, cancelable: true, bubbles: false }))) return
 		const req = { ...container.request, data: container.data, noui: true, ...opt }
 		let task = null
 		if (container.api) task = container.api.do(req)
 		else if (container.request.url) task = globalThis.HTTP.request(req)
 		else return console.warn('{#please config .api or .request.url to auto submit#}')
-		task.then(resp => {
+		await task.then(resp => {
 			container.response = resp
 			container.result = resp.result
 			if (resp.result !== null && typeof resp.result === 'object' && resp.result.error) throw new Error(resp.result.error)
@@ -250,6 +301,7 @@ globalThis.Component.register('AutoForm', container => {
 			globalThis.Toast?.show(err.message, { type: 'danger' })
 			container.dispatchEvent(new CustomEvent('error', { detail: err, bubbles: true }))
 		})
+		} finally { submitting = false }
 	}
 
 }, AUTOFORM_BLUEPRINT, AUTOFORM_STYLE)

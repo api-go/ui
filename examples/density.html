@@ -24,7 +24,7 @@
 <script src="../components/base/RequestState.js"></script>
 <script src="../components/data/DataGrid.js"></script>
 <script>
-const density_state=NewState({query:NewState({search:''}),notice:'',loading:false,error:'',dark:false,contacts:['客户负责人'],draft:NewState({field0:'切换密度时保留编辑'})})
+const density_state=NewState({query:NewState({search:''}),notice:'',loading:false,error:'',dark:false,link:false,contacts:['客户负责人'],draft:NewState({field0:'切换密度时保留编辑'})})
 const densityRows=Array.from({length:2000},(_,i)=>({id:'r'+i,label:'客户 '+i,name:'客户 '+i}))
 const densityFields=[{id:'name-field',name:'name',type:'v100',settings:{type:'text'}}]
 const densitySchema=Array.from({length:6},(_,i)=>({name:'field'+i,label:'字段 '+(i+1),type:'text'}))
@@ -32,8 +32,10 @@ const densityActions=[{id:'create',label:'新建客户',icon:'plus-lg',primary:t
 function densityApply(query){Hash.go({query:query.search||null});density_state.notice='已应用：'+(query.search||'全部')}
 Bootstrap.config({bindDarkMode:[density_state,'dark']})
 </script></head>
-<body $class="['sm','lg'].includes(Hash.density)?'ui-'+Hash.density:'ui-default'">
+<body $class="(['sm','lg'].includes(Hash.density)?'ui-'+Hash.density:'ui-default')+(density_state.link?' ui-link':'')">
 <main class="container py-4">
+<label class="form-check mb-3"><input id="appearance-choice" class="form-check-input" type="checkbox" $bind="density_state.link">链接按钮（ui-link）</label>
+<div class="d-flex flex-wrap gap-2 mb-3"><button id="appearance-outline" class="btn btn-outline-primary">边框按钮</button><button id="appearance-danger" class="btn btn-danger">危险操作</button><button id="appearance-semantic" class="btn btn-link btn-link-danger">语义链接</button><button id="appearance-disabled" class="btn btn-primary" disabled>禁用操作</button><button id="appearance-active" class="btn btn-primary active" aria-pressed="true">激活操作</button></div>
 <header class="d-flex flex-wrap align-items-center gap-3 mb-4"><div class="flex-fill"><h1 class="h4">全局密度与工具栏</h1><p class="text-body-secondary mb-0">一处切换，所有默认控件继承。显式 BS 尺寸保持优先。</p></div><label>密度<select id="density-choice" class="form-select" $bind="Hash.density"><option value="default">默认</option><option value="sm">紧凑 sm</option><option value="lg">宽松 lg</option></select></label><label class="form-check"><input class="form-check-input" type="checkbox" $bind="density_state.dark">深色</label></header>
 <section class="border rounded p-3 mb-4"><ActionBar class="w-100" $.state.actions="densityActions" $.state.selection="['r1','r2']" $onaction="density_state.notice='动作：'+event.detail.id"><strong slot="start">客户管理</strong></ActionBar><hr><FilterBar $.state.query="density_state.query" $.state.defaults="{search:''}" $onapply="densityApply(event.detail)" data-no-changebind><label slot="fields">搜索客户<input class="form-control" $bind="density_state.query.search"></label></FilterBar><p role="status" class="mb-0 mt-2 text-body-secondary" $text="density_state.notice"></p></section>
 <section class="mb-4"><h2 class="h5">默认控件与显式覆盖</h2><div class="d-flex flex-wrap gap-3 align-items-center"><button id="density-native" class="btn btn-primary">继承密度</button><button id="density-explicit-sm" class="btn btn-primary btn-sm">固定 sm</button><button id="density-explicit-lg" class="btn btn-primary btn-lg">固定 lg</button><input id="density-native-input" class="form-control" aria-label="继承密度输入" value="密度不改变数据"><div class="ui-default"><button id="density-local-default" class="btn btn-secondary">局部默认</button></div><div class="input-group input-group-lg"><input aria-label="固定大输入组" class="form-control"><button class="btn btn-secondary">固定 lg 组</button></div></div></section>

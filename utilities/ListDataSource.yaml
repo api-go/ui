@@ -1,0 +1,32 @@
+name: ListDataSource
+kind: utility
+src: /ui/utilities/ListDataSource.js
+purpose: Share one reactive paged collection between PagedList, independent Pagination and arbitrary host rendering.
+dependencies: []
+methods:
+  create: 'ListDataSource.create({items?,load?,page?,pagesize?,search?,sort?,filters?,filterfields?,searchFields?,errorMessage?,auto?}) returns a source. Supply items for local data OR async load(query,signal) returning {rows,total}. Default auto=true starts one read; ready is its Promise.'
+source:
+  state: 'NewState {page,pagesize,search,sort,filters,rows,total,loading,loaded,error}; this is the single owner shared by consumers. rows/total/loading/loaded/error are read-only to consumers.'
+  query: 'query() returns {page,pagesize,search,sort,filters}; filters is a fresh flat snapshot. One-based page; pagesize is a positive safe integer.'
+  setPage: 'setPage(page) changes an in-range page. Invalid input returns false.'
+  setPageSize: 'setPageSize(size) changes a positive page size and resets to page 1.'
+  setQuery: 'setQuery({search?,sort?,filters?}) changes applied query fields and resets page 1. filters replaces the complete applied map; null/undefined/empty-string values are omitted and zero/false are retained. Use setQuery to apply a whole filter draft; direct reactive assignment of page/search/sort works too.'
+  filterfields: 'Readonly schema shared by local filtering and default PagedList controls: {name,label?,type?,options?,field?,operator?,placeholder?}. field defaults to name. Operators eq/contains/gte/lte combine with AND; default contains for text, eq for select/number/date. number comparisons use Number; date controls provide sortable ISO date strings. Remote load receives the filters map and owns validation and server semantics.'
+  setItems: 'setItems(array) replaces local source rows and reloads. Local search uses searchFields (default name,label,summary); sort is field or -field.'
+  reload: 'reload() aborts the previous request, calls load once, retains old rows on failure and publishes the latest valid result only. Out-of-range pages recover to the last page. Invalid {rows,total} blocks publication.'
+  dispose: 'dispose() aborts active work, detaches watches and rejects late publication. Host disposes shared sources when their owning view closes; a PagedList never disposes a supplied source.'
+events:
+  querychange: 'query snapshot when a read starts; subscribe through addEventListener. Use at the host boundary to persist Hash.'
+  load: 'detail {rows,total} after successful publication.'
+  loaderror: 'detail {error}; state.error contains only the configured safe errorMessage.'
+rules:
+  - Source creation is explicit and shared by identity; two consumers never independently fetch the same source.
+  - Query writes in one turn coalesce. Loading uses HTTP and an AbortSignal in the host adapter; no resource authorization or server persistence belongs here.
+  - PagedList selection is view-owned and clears across queries; it is not persisted in this source.
+  - Local arrays are demo/small-collection mode. Remote services own filtering, sorting, count, authorization and input bounds.
+examples: |
+  const orders_state=NewState({source:ListDataSource.create({items:[{id:1,name:'Example'}]})})
+  // <PagedList $.source="orders_state.source"></PagedList>
+  // Arbitrary markup can render orders_state.source.state.rows.
+  // <List labelfield="name" $.state.list="orders_state.source.state.rows"></List>
+  // <Pagination $.source="orders_state.source"></Pagination>

@@ -20,4 +20,5 @@ rules:
   - Do not nest forms. Apply on Enter uses native form validation.
   - Filter controls are not persisted business edits; mark the host data-no-changebind.
   - Inherits ui-sm/ui-lg and wraps inside its available width.
+  - Fields-slot markup belongs to the host. For a form-label wrapping its control, add mb-0 so its bottom margin does not offset Apply/Reset; the component does not rewrite slotted labels.
 tests: [FilterBar.test.yaml]

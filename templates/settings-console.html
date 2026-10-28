@@ -44,19 +44,26 @@ const settingsSchema=[
 const settings_state=NewState({draft:NewState({...settingsDefaults,...LocalStorage.templateSettings}),error:'',notice:''})
 State.changes.TemplateSettings=false
 if(!Hash.settingsSection)Hash.go({settingsSection:'profile'})
+function validateSettings(draft){
+ const errors={}
+ if(!draft.name.trim())errors.name='请填写姓名。'
+ if(!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(draft.email))errors.email='请填写有效的工作邮箱。'
+ return errors
+}
+function revealSettingField(event){
+ if(!['name','email'].includes(event.detail.name))return
+ Hash.go({settingsSection:'profile'})
+ requestAnimationFrame(()=>settingsForm.focusField(event.detail.name))
+}
 function saveSettings(event){
  event.preventDefault();settings_state.error='';settings_state.notice=''
- // Domain checks include required data in hidden sections; DOM validation
- // alone checks only the currently rendered controls.
- if(!settings_state.draft.name.trim()||!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(settings_state.draft.email)){
-  settings_state.error='请填写姓名和有效的工作邮箱。';Hash.go({settingsSection:'profile'});return
- }
  try{LocalStorage.templateSettings={...event.detail};State.changes.TemplateSettings=false;settings_state.notice='设置已保存到当前浏览器。'}
  catch(error){settings_state.error='保存失败，编辑内容已保留，请重试。'}
 }
 async function resetSettings(){
  if(State.changes.TemplateSettings&&!await Dialog.confirm('放弃尚未保存的修改？'))return
  settings_state.draft=NewState({...settingsDefaults,...LocalStorage.templateSettings})
+ settingsForm.setErrors({})
  State.changes.TemplateSettings=false;settings_state.error='';settings_state.notice=''
 }
 </script>
@@ -72,7 +79,7 @@ async function resetSettings(){
    <p class="alert alert-danger" role="alert" $if="settings_state.error" $text="settings_state.error"></p>
    <p class="alert alert-success" role="status" $if="settings_state.notice" $text="settings_state.notice"></p>
    <div $if="!settingsSections.some(section=>section.name===Hash.settingsSection)" class="alert alert-warning" role="alert">未知设置页面。<button class="btn  btn-link" $onclick="Hash.go({settingsSection:'profile'})">返回基本资料</button></div>
-   <AutoForm id="settingsForm" columns="2" nobutton $.state.data="settings_state.draft" $.state.schema="settingsSchema" $onsubmit="saveSettings(event)"></AutoForm>
+   <AutoForm id="settingsForm" columns="2" nobutton $.state.data="settings_state.draft" $.state.schema="settingsSchema" $.validator="validateSettings" $onrevealfield="revealSettingField(event)" $onsubmit="saveSettings(event)"></AutoForm>
    <p class="small text-body-secondary mt-4">设置仅保存在当前浏览器，不会同步到其他设备。</p>
   </div>
   <div slot="footer" class="d-flex flex-wrap align-items-center justify-content-between gap-2">

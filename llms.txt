@@ -27,6 +27,7 @@ Read [SOP.md](SOP.md), [State](frameworks/State.yaml), [Bootstrap](frameworks/Bo
 - Navigable module/resource/tab identity binds explicitly to namespaced Hash fields. Width preferences bind to stable LocalStorage fields. Validate restored routes; show recovery for unavailable resources.
 - Bootstrap is the visual base. Reusable missing layout behavior belongs in components; do not repeat ad hoc height/overflow patches in each page.
 - Set ui-sm/ui-lg once on html/body; omit for BS default. Nearest ui-default/ui-sm/ui-lg scope wins. Explicit Bootstrap sizing and spacing remain higher-priority choices. See the [density and toolbar example](examples/density.html).
+- Apply ui-link for shared link-style buttons/pagination and underlined text inputs/single selects, independently of density. Addon labels stay outside the underline without backgrounds; focus/validation and specialized native inputs remain intact. Use ui-toolbar/ui-toolbar-fields for density-aware toolbar spacing and mute auxiliary metadata with Bootstrap text utilities. Do not duplicate this with per-component noborder flags or conditional class rewrites.
 - Use [FilterBar](components/base/FilterBar.yaml), [ActionBar](components/base/ActionBar.yaml) and [RequestState](components/base/RequestState.yaml) for repeated query, command and read-state behavior; hosts own Hash, requests and persistence.
 - A single primary action, consistent spacing, semantic theme colors, explicit request states and usable narrow layouts are defaults.
 - Use one canonical declarative expression of each behavior. Avoid hidden state mirrors, internal DOM access and equivalent competing APIs.
@@ -39,6 +40,7 @@ Prefer a matching runnable HTML before composing markup. Open the [live template
 - [Settings console](templates/settings-console.html): global/local AutoForm columns, field spans, shared draft and explicit save/recovery.
 - [Writing studio](templates/note-studio.html): retained multi-note draft, Hash editor modes, CodeEditor and one save boundary.
 - [Content catalog](templates/content-catalog.html): responsive browsing, Hash search/category/sort/detail and local favorites.
+- [Paged records](templates/records-table.html): bounded PagedList workspace with internal scrolling, schema-defined filters, separate sorting, optional headers and footer selection actions. List/card views share one ListDataSource and independent Bootstrap Pagination. Host controls have a separate background.
 
 These templates contain no custom CSS, style blocks or inline styles. Public components own sizing and scrolling. They use current same-origin /ui assets; browser-only persistence is labeled explicitly.
 
@@ -143,6 +145,8 @@ When the hosting service manages static asset versions and conditional caching, 
 ## Data components
 
 - [DataGrid](components/data/DataGrid.yaml): virtualized data table.
+- [PagedList](components/data/PagedList.yaml): lightweight internally scrolling list/card views, schema filters, optional headers/tools/selection and footer action slots.
+- [Pagination](components/base/Pagination.yaml): independent Bootstrap pager with slots, events and optional shared [ListDataSource](utilities/ListDataSource.yaml).
 - [CardGrid](components/data/CardGrid.yaml): wrapping card results and selection.
 - [DBTypeInput](components/data/DBTypeInput.yaml): bindable database type editor, also registered by DataGrid.
 - [Chart](components/data/Chart.yaml): native Chart.js configuration component.

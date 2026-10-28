@@ -1,0 +1,44 @@
+name: Pagination
+kind: component
+src: /ui/components/base/Pagination.js
+dependencies: [Disposer]
+purpose: Independent Bootstrap numbered pagination, customizable by slots and linked to any collection through events or one shared ListDataSource.
+properties:
+  source: 'Optional shared ListDataSource. Bind $.source; source.state owns page/pagesize/total/loading and paging updates it automatically. The pager never independently fetches.'
+state:
+  page: 'Controlled one-based page when no source; default 1.'
+  pagesize: 'Controlled positive safe integer page size when no source; default 20; invalid values display 20.'
+  total: 'Controlled nonnegative safe integer total when no source; invalid values use 0.'
+  busy: 'Controlled loading/disabled state when no source.'
+  sizes: 'Available positive page sizes, default [10,20,50].'
+methods:
+  pageCount: 'Return at least one page.'
+  currentPage: 'Return normalized current page, clamped without modifying controlled state.'
+  total: 'Return normalized record count.'
+  rangeStart: 'First visible record number, or 0 when empty.'
+  rangeEnd: 'Last visible record number, or 0 when empty.'
+  pages: 'Return a bounded array of {page,label,key,target?,direction?}; page=0 marks a clickable ellipsis with target and backward/forward direction. Always includes the current page, prioritizes adjacent page numbers over boundary numbers, and marks omitted ranges. Very narrow windows retain Previous/Next plus clickable jump ellipses.'
+  go: 'go(page) requests a different valid page; busy, invalid and unchanged requests return false.'
+  resize: 'resize(size) requests a positive page size and page 1; invalid, unchanged or busy requests return false.'
+events:
+  beforechange: 'Cancelable detail {page,pagesize}. Cancel before updating source or publishing change.'
+  change: 'detail {page,pagesize}. Shared mode already updates source; controlled mode host applies it. No independent fetch is performed.'
+slots:
+  summary: 'Replace Current 1~20 / Total 137; Current and Total labels are hidden below 576px of available component width. Empty ranges are 0~0 / 0.'
+  size: 'Replace the small btn-link gear icon and native Bootstrap dropdown immediately after the summary.'
+  settings: 'Append extra settings after the built-in page-size select inside the dropdown. Does not replace the select.'
+  actions: 'Optional inline controls after summary/settings. PagedList supplies page selection and selection-actions. Overlong action content scrolls horizontally inside its region, keeping the footer on one line.'
+  controls: 'Replace numbered navigation. Host can call go/resize from this slot.'
+rules:
+  - Bootstrap pagination/page-item/page-link, active/disabled and aria-current are the default visual language.
+  - Inherits ui-sm/ui-lg density through Bootstrap variables; explicit pagination-sm/pagination-lg in custom controls retain their native sizing.
+  - Inherits the shared Bootstrap ui-link appearance scope. Use class="ui-link" on this component or a parent instead of a component-specific noborder attribute. The summary slash is text-body-tertiary. Ellipses and page numbers use the same label width and button padding.
+  - Numeric values use text-body; Current/Total captions and separators use text-body-tertiary. The settings icon and its label use secondary text color so auxiliary controls do not compete with counts.
+  - All built-in text and accessible labels carry translation markers. Current/Total summary labels are visible at component widths of 576px and above; narrower screens or embedded containers retain only range / total numbers.
+  - Normal windows prioritize the current page and one clickable neighbor on each side; spend extra space on first/last boundaries and wider windows afterward. Ellipses are accessible, keyboard-operable jump buttons, moving by the visible window (at least three pages), with targets clamped to valid bounds. Busy state and beforechange cancellation apply to jumps too.
+  - Default summary is Current rangeStart~rangeEnd / Total total, with labels hidden on small screens. The adjacent btn-link settings icon opens a native select for page size; settings slot appends future controls.
+  - The footer stays on one line at mobile widths. Page buttons keep native Bootstrap padding with equal-width numeric/ellipsis labels; a flex-fill spacer pushes navigation right. Page count adapts to space remaining after summary/settings/actions, density and page-number length (at most 15 entries). Show all pages when they fit; every abbreviated window retains an ellipsis, including very narrow current-page windows. Without ui-link, native Bootstrap colors, borders and disabled styling apply.
+  - Use a div role=navigation because loading Nav reserves the native nav tag in this runtime.
+  - With a shared source, bind the same object to arbitrary rendering, PagedList and separate pagers. No event-copy bridge is needed.
+  - With no source, bind $.state.page/pagesize/total/busy and apply change in the host. No business schema, route or selection is owned here.
+tests: [Pagination.test.yaml]

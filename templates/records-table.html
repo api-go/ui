@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>分页数据列表</title>
+<script src="../ui.js" components="AppShell,Pane,PagedList"></script>
+<script>
+Bootstrap.config({bindDarkMode:[LocalStorage,'templateDark']})
+const recordItems=Array.from({length:137},(_,i)=>({id:'record-'+(i+1),name:'业务记录 '+(i+1),amount:(i+1)*12,status:i%2?'完成':'处理中'}))
+const recordFilters=[
+ {name:'status',label:'状态',type:'select',options:['处理中','完成']},
+ {name:'minAmount',field:'amount',label:'最低金额',type:'number',operator:'gte'}
+]
+const recordColumns=[
+ {name:'name',label:'名称',class:'col-6'},
+ {name:'status',label:'状态',class:'col-3'},
+ {name:'amount',label:'金额（元）',class:'col-3',align:'end',format:value=>Number(value).toFixed(2)}
+]
+const recordSorts=[{value:'amount',label:'金额从低到高'},{value:'-amount',label:'金额从高到低'},{value:'name',label:'名称'}]
+const records_state=NewState({
+ source:ListDataSource.create({items:recordItems,filterfields:recordFilters,filters:Hash.recordsFilters||{},pagesize:Number(Hash.recordsSize)||20,page:Number(Hash.recordsPage)||1,search:Hash.recordsSearch||'',sort:Hash.recordsSort||''}),
+ tools:true,selectable:false,view:'list',header:true,link:false,notice:''
+})
+records_state.source.addEventListener('querychange',event=>Hash.go({recordsPage:event.detail.page,recordsSize:event.detail.pagesize,recordsSearch:event.detail.search||null,recordsSort:event.detail.sort||null,recordsFilters:Object.keys(event.detail.filters).length?event.detail.filters:null}))
+for(const key of ['recordsPage','recordsSize','recordsSearch','recordsSort','recordsFilters'])Hash.__watch(key,()=>{
+ const source=records_state.source
+ source.setQuery({search:Hash.recordsSearch||'',sort:Hash.recordsSort||'',filters:Hash.recordsFilters||{}})
+ if(source.state.pagesize!==(Number(Hash.recordsSize)||20))source.state.pagesize=Number(Hash.recordsSize)||20
+ if(source.state.page!==(Number(Hash.recordsPage)||1))source.state.page=Number(Hash.recordsPage)||1
+})
+function inspectSelected(){records_state.notice='已接收 '+recordList.state.selection.length+' 条选中记录；示例不执行写入。'}
+addEventListener('pagehide',()=>records_state.source.dispose())
+</script></head>
+<body class="m-0 bg-body-tertiary">
+<AppShell viewport>
+ <div slot="header" class="d-flex flex-wrap align-items-center gap-3"><a href="../templates/index.html" aria-label="返回模板库"><i class="bi bi-arrow-left"></i></a><h1 class="h5 mb-0">分页数据列表</h1><span class="small text-body-secondary" $if="!records_state.notice">本地只读数据 · 列表与卡片共用筛选、排序和分页</span><span class="small text-body-secondary" role="status" $if="records_state.notice" $text="records_state.notice"></span></div>
+ <Pane slot="content" scroll="none">
+  <details slot="header" class="bg-body-secondary p-2">
+   <summary class="small text-body-secondary">宿主演示设置：切换视图、工具、选择与表头</summary>
+   <div class="d-flex flex-wrap align-items-center gap-3 pt-2">
+    <label class="d-flex align-items-center gap-2 mb-0"><input type="checkbox" class="form-check-input m-0" $bind="records_state.tools">显示筛选与排序</label>
+    <label class="d-flex align-items-center gap-2 mb-0"><input type="checkbox" class="form-check-input m-0" $bind="records_state.selectable">启用选择</label>
+    <label class="d-flex align-items-center gap-2 mb-0"><input type="checkbox" class="form-check-input m-0" $bind="records_state.header">显示表头</label>
+    <label class="d-flex align-items-center gap-2 mb-0"><input type="checkbox" class="form-check-input m-0" $bind="records_state.link">链接按钮</label>
+    <label class="d-flex align-items-center gap-2 mb-0">呈现方式<select class="form-select w-auto" aria-label="呈现方式" $bind="records_state.view"><option value="list">数据列表</option><option value="cards">卡片</option></select></label>
+   </div>
+  </details>
+  <PagedList id="recordList" slot="content" height="100%" class="bg-body" $class="records_state.link?'ui-link':''" $.source="records_state.source" $.state.searchable="records_state.tools" $.state.filterfields="records_state.tools?recordFilters:[]" $.state.sortable="records_state.tools" $.state.selectable="records_state.selectable" $.state.sortoptions="recordSorts" $.state.columns="recordColumns" $.state.showheader="records_state.header" $.state.view="records_state.view">
+   <template slot="selection-actions"><button type="button" class="btn btn-outline-primary" aria-label="查看选中" title="查看选中" $disabled="!recordList.state.selection.length" $onclick="inspectSelected()"><i class="bi bi-eye" aria-hidden="true"></i><span class="d-none d-sm-inline ms-sm-1">查看选中</span></button></template>
+  </PagedList>
+ </Pane>
+</AppShell>
+</body></html>

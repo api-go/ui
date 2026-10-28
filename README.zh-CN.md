@@ -20,3 +20,5 @@ AI 辅助开发时，只需把统一入口 [https://apigo.cc/web/ui/ai/llms.txt]
 
 
 先读 [llms.txt](llms.txt)，选择界面类型，再打开[模板库](templates/index.html)。新增布局与工具栏组件继承 ui-sm/ui-lg；AutoForm 支持整体和分组响应式多列。普通构建保留已验证的框架快照，避免 Hash、绑定等修复被兄弟项目的旧产物覆盖。仅在主动导入已验证的 State/Bootstrap 产物时运行 `npm run sync:frameworks`。`npm test` 运行公开 YAML 密度契约，`npm run test:legacy` 保留历史 HTML 回归，并须使用内置浏览器交互验收。详见 [Component-Testing.md](Component-Testing.md)。
+
+PagedList 提供轻量列表/卡片、数据定义筛选和选择操作插槽，通过 ListDataSource 与独立 Pagination 联动。ui-link 统一链接按钮与下划线输入控件，ui-toolbar 统一密度间距。AutoForm 支持整份草稿异步校验并定位字段错误。

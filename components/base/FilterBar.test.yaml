@@ -1,6 +1,14 @@
 testData:
   query: {search: Ada, status: enabled}
 cases:
+  - name: labeled controls and apply actions align at their lower edge
+    attributes: {id: subject}
+    slots:
+      fields: '<label class="form-label mb-0">Search<input class="form-control"></label>'
+    after:
+      - script: |
+          const input=subject.querySelector('input').getBoundingClientRect(),button=subject.querySelector('button').getBoundingClientRect();
+          return button.top>=input.bottom || Math.abs(input.bottom-button.bottom)<2;
   - name: host draft apply reset slots and busy guard
     attributes:
       id: subject

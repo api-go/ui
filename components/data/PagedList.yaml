@@ -1,0 +1,63 @@
+name: PagedList
+kind: component
+src: /ui/components/data/PagedList.js
+dependencies: [ListDataSource, Pagination, RequestState, Disposer]
+purpose: Lightweight paged object list with optional search, sorting and selection; custom item UI is a slot. No virtual scrolling, cell editing or TableDB protocol.
+attributes:
+  searchable: 'Boolean, absent by default; show the built-in search tool.'
+  sortable: 'Boolean, absent by default; show sorting using state.sortoptions.'
+  selectable: 'Boolean, absent by default; enable row checkboxes and page selection controls.'
+  hidepagination: 'Boolean, absent by default; hide the integrated pager when using an external Pagination.'
+  idfield: 'Stable primitive identity field, default id; required for selectable items.'
+  scroll: [internal, document]
+  height: 'Internal scrolling height, CSS length; default 32rem. Use 100% in a bounded Pane/AppShell. Ignored in document mode.'
+  view: [list, cards]
+  hideheader: 'Boolean; initially hide the column header.'
+properties:
+  source: 'Shared ListDataSource object. Bind $.source. Omitted creates an owned empty local source. Replacing it releases old subscriptions; a supplied source remains host-owned.'
+state:
+  searchable: 'Reactive override of the initial searchable attribute.'
+  sortable: 'Reactive override of the initial sortable attribute.'
+  selectable: 'Reactive override of the initial selectable attribute; disabling clears selection.'
+  hidepagination: 'Reactive override of the initial hidepagination attribute.'
+  sortoptions: 'Array of {value,label}; local sort values are field or -field. Remote load interprets its accepted sort enum.'
+  searchdraft: 'Explicit unapplied search draft. Search button or Enter applies to the shared source and resets page 1.'
+  selection: 'Array of selected primitive IDs; page-local, cleared by a new query or source replacement.'
+  scroll: 'internal by default: only the content body scrolls; document lets content grow in normal flow.'
+  height: 'Reactive internal scrolling height; default from height or 32rem.'
+  view: 'list (default) or cards. Both use the same toolbar, filters, source, selection and pager.'
+  showheader: 'Boolean, default true unless hideheader. Header is shown for list view with columns or a header slot; cards hide it.'
+  columns: 'Array {name,label?,class?,align?,format?}. class is Bootstrap column sizing (default col); align is start/center/end; optional format(value,item) returns display text. Default row renders these same columns under the header; cards show their labels and values.'
+  filterfields: 'Filter schema, default source.filterfields or []. Each field is {name,label,type?,options?,field?,operator?,placeholder?}; types text/select/number/date. Schema labels are inline input-group labels; no separate label row. Local operators contains/eq/gte/lte are owned by ListDataSource. Remote adapter validates its accepted fields.'
+  filterdraft: 'One reactive unapplied object bound to schema controls. Apply combines it with searchdraft; empty values are omitted. Applied values live only in the shared source.'
+methods:
+  search: 'Apply searchdraft and emit querychange.'
+  toggle: 'toggle(item) toggles one stable ID only when selectable and not loading.'
+  selectAll: 'Select the current page only when selectable and not loading.'
+  clearSelection: 'Clear selected IDs and emit selectionchange; return false when already empty.'
+  resetFilters: 'Clear keyword and all filter drafts, then apply once. Sorting remains independent.'
+events:
+  selectionchange: 'detail is a fresh array of selected IDs.'
+  querychange: 'detail is the applied query when a read starts, including search, sorting, paging and retry. Mirrors the shared source event.'
+  itemclick: 'detail {item} on double-click of item content; host owns business actions.'
+slots:
+  item: 'Replace each item content using item and rowIndex. Selection checkbox remains component-owned. Host uses documented events; do not inspect internal DOM.'
+  toolbar: 'Optional additional host tools below the optional built-in toolbar.'
+  selection-actions: 'Host-defined batch action buttons beside range/settings/selection/Clear in the single-line footer. Overlong actions scroll within their own region. Read state.selection and call existing business APIs in the host; component owns no business effects.'
+  settings: 'Append controls inside the default Pagination settings dropdown after its page-size select.'
+  header: 'Replace the list column header. The receiver stays sticky inside the content scroll owner. Control visibility with showheader; cards omit it.'
+  empty: 'Replace successful empty-result content.'
+  pagination: 'Replace the footer; reuse a Pagination bound to the same source or provide custom controls.'
+rules:
+  - Default is a plain list plus pagination. Search/sort/selection are opt-in; one header toolbar owns their presentation.
+  - Default row label is name, label or id, with optional summary. Use item for cards, custom rows or other business content.
+  - Loading/error/retry uses RequestState and retains rows; source owns request concurrency and no business persistence.
+  - Internal scrolling is the default, with fixed tools and footer and a sticky column header. Default 32rem is self-bounded; height=100% fills a bounded parent. Set scroll=document for a natural content page.
+  - Keyword and schema filters belong to one compact inline form with a Search button and no Reset button. Sort is a separate icon menu; view switches preserve the query and use these same tools for cards. Clear controls and Search again to remove conditions, or call resetFilters programmatically.
+  - Below Bootstrap sm, Search and Clear show only their icons while keeping translated accessible names and titles. The footer uses compact spacing and a gap before page selection. Its selection controls use a local ui-sm scope, so injected action buttons inherit the compact size; slot authors can explicitly override their own subtree density. Numbered navigation retains page density.
+  - Selection controls belong to the single-line footer actions region. Clear is a btn-link; no separate selection bar is added. Page selection supports the native indeterminate state.
+  - All built-in user-facing text uses translation markers. Uses Bootstrap classes and inherited density.
+  - Use ui-sm/ui-lg for density and ui-link for link-style buttons on this component or a parent. ui-link also reaches the independent pager and slotted business buttons; no per-button conditional class expressions are needed.
+  - Toolbar/footer reuse ui-toolbar spacing, with aligned responsive gutters across tools, headers and rows. ui-link also underlines the filter/search inputs and selects; input-group labels/icons are transparent and outside the underline. Auxiliary captions/actions are muted while values and primary actions retain emphasis.
+related: [../../utilities/ListDataSource.yaml, ../base/Pagination.yaml, ../base/RequestState.yaml]
+tests: [PagedList.test.yaml]

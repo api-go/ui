@@ -1,6 +1,6 @@
 (() => {
   // Updated by `npm run build`. Source files stay directly executable.
-  const build = { version: 'mv9e8f1l', files: {"frameworks/Bootstrap.js":"mv92v90j","frameworks/State.js":"mv92v90i","libraries/ChartJS.js":"mrpzd5nk","libraries/CodeMirror.js":"mv9e8eus","libraries/CodeMirrorCPP.js":"mv9e8f07","libraries/CodeMirrorCSS.js":"mv9e8f07","libraries/CodeMirrorGo.js":"mv9e8f07","libraries/CodeMirrorHTML.js":"mv9e8f0u","libraries/CodeMirrorJSON.js":"mv9e8f04","libraries/CodeMirrorJava.js":"mv9e8f07","libraries/CodeMirrorJavaScript.js":"mv9e8f04","libraries/CodeMirrorMarkdown.js":"mv9e8f1l","libraries/CodeMirrorPlain.js":"mv9e8euw","libraries/CodeMirrorPython.js":"mv9e8f07","libraries/CodeMirrorRust.js":"mv9e8f07","libraries/CodeMirrorSQL.js":"mv9e8evv","libraries/CodeMirrorShell.js":"mv9e8evv","libraries/CodeMirrorTypeScript.js":"mv9e8f06","libraries/CodeMirrorXML.js":"mv9e8f07","libraries/CodeMirrorYAML.js":"mv9e8f06","libraries/Markdown.js":"mv9e8f07","libraries/SortableJS.js":"mrpzd5nk","utilities/Disposer.js":"mv92v90c","utilities/Editor.js":"mv92v90d","utilities/GraphCanvas.js":"mv92v90d","utilities/GraphDocument.js":"mv92v90d","utilities/HTTP.js":"mv92v90e","utilities/MouseMover.js":"mv92v90e","utilities/SortableAPI.js":"mv92v90e","utilities/UUID.js":"mv92v90e","utilities/VirtualScroll.js":"mv92v90e","components/base/API.js":"mv92v8zx","components/base/ActionBar.js":"mv92v8zy","components/base/AppShell.js":"mv92v8zy","components/base/AutoForm.js":"mv92v8zz","components/base/Dialog.js":"mv92v8zz","components/base/FilterBar.js":"mv92v900","components/base/ItemCollection.js":"mv92v900","components/base/List.js":"mv9ar9ds","components/base/Modal.js":"mv92v901","components/base/Nav.js":"mv92v901","components/base/PageHeader.js":"mv92v902","components/base/Pane.js":"mv92v902","components/base/RequestState.js":"mv92v902","components/base/Resizer.js":"mv92v903","components/base/SidePanel.js":"mv92v903","components/base/SplitPane.js":"mv92v903","components/base/Toast.js":"mv92v904","components/base/View.js":"mv92v905","components/data/CardGrid.js":"mv92v905","components/data/Chart.js":"mv92v906","components/data/DataGrid.js":"mv92v907","components/editor/CodeEditor.js":"mv92v908","components/editor/GraphEditor.js":"mv92v908","components/editor/Kanban.js":"mv92v909","components/editor/MarkdownViewer.js":"mv92v909","components/editor/Mindmap.js":"mv92v90a","components/editor/Resizer.js":"mt1jtr6w","components/form/ColorPicker.js":"mv92v90a","components/form/DatePicker.js":"mv92v90b","components/form/IconPicker.js":"mv92v90b","components/form/RemoteSelect.js":"mv92v90c","components/form/TagsInput.js":"mv92v90c"} };
+  const build = { version: 'mvrzayty', files: {"frameworks/Bootstrap.js":"mvrz6r0t","frameworks/State.js":"mv92v90i","libraries/ChartJS.js":"mrpzd5nk","libraries/CodeMirror.js":"mvrzayo5","libraries/CodeMirrorCPP.js":"mvrzaysr","libraries/CodeMirrorCSS.js":"mvrzaysp","libraries/CodeMirrorGo.js":"mvrzaysr","libraries/CodeMirrorHTML.js":"mvrzaytb","libraries/CodeMirrorJSON.js":"mvrzaysk","libraries/CodeMirrorJava.js":"mvrzayss","libraries/CodeMirrorJavaScript.js":"mvrzaysl","libraries/CodeMirrorMarkdown.js":"mvrzayty","libraries/CodeMirrorPlain.js":"mvrzayo8","libraries/CodeMirrorPython.js":"mvrzaysp","libraries/CodeMirrorRust.js":"mvrzaysr","libraries/CodeMirrorSQL.js":"mvrzayp0","libraries/CodeMirrorShell.js":"mvrzayp1","libraries/CodeMirrorTypeScript.js":"mvrzaysr","libraries/CodeMirrorXML.js":"mvrzaysr","libraries/CodeMirrorYAML.js":"mvrzaysk","libraries/Markdown.js":"mvrzaysb","libraries/SortableJS.js":"mrpzd5nk","utilities/Disposer.js":"mv92v90c","utilities/Editor.js":"mv92v90d","utilities/GraphCanvas.js":"mv92v90d","utilities/GraphDocument.js":"mv92v90d","utilities/HTTP.js":"mv92v90e","utilities/ListDataSource.js":"mvrz6r0d","utilities/MouseMover.js":"mv92v90e","utilities/SortableAPI.js":"mv92v90e","utilities/UUID.js":"mv92v90e","utilities/VirtualScroll.js":"mv92v90e","components/base/API.js":"mv92v8zx","components/base/ActionBar.js":"mv92v8zy","components/base/AppShell.js":"mv92v8zy","components/base/AutoForm.js":"mvrz6qy6","components/base/Dialog.js":"mv92v8zz","components/base/FilterBar.js":"mv92v900","components/base/ItemCollection.js":"mv92v900","components/base/List.js":"mv9ar9ds","components/base/Modal.js":"mv92v901","components/base/Nav.js":"mv92v901","components/base/PageHeader.js":"mv92v902","components/base/Pagination.js":"mvrz6qy7","components/base/Pane.js":"mv92v902","components/base/RequestState.js":"mv92v902","components/base/Resizer.js":"mv92v903","components/base/SidePanel.js":"mv92v903","components/base/SplitPane.js":"mv92v903","components/base/Toast.js":"mv92v904","components/base/View.js":"mv92v905","components/data/CardGrid.js":"mv92v905","components/data/Chart.js":"mv92v906","components/data/DataGrid.js":"mv92v907","components/data/PagedList.js":"mvrzarjm","components/editor/CodeEditor.js":"mv92v908","components/editor/GraphEditor.js":"mv92v908","components/editor/Kanban.js":"mv92v909","components/editor/MarkdownViewer.js":"mv92v909","components/editor/Mindmap.js":"mv92v90a","components/editor/Resizer.js":"mt1jtr6w","components/form/ColorPicker.js":"mv92v90a","components/form/DatePicker.js":"mv92v90b","components/form/IconPicker.js":"mv92v90b","components/form/RemoteSelect.js":"mv92v90c","components/form/TagsInput.js":"mv92v90c"} };
   const script = document.currentScript;
   if (!script || document.readyState !== 'loading') {
     throw new Error('ui.js must be loaded by a normal <script> while the document is parsing');
@@ -15,6 +15,7 @@
     SortableJS: { path: 'libraries/SortableJS.js' },
     CodeMirror: { path: 'libraries/CodeMirror.js' },
     Markdown: { path: 'libraries/Markdown.js' },
+    ListDataSource: { path: 'utilities/ListDataSource.js' },
     Disposer: { path: 'utilities/Disposer.js' },
     Editor: { path: 'utilities/Editor.js', needs: ['HTTP'] },
     GraphCanvas: { path: 'utilities/GraphCanvas.js' },
@@ -34,6 +35,7 @@
     Modal: { path: 'components/base/Modal.js' },
     Nav: { path: 'components/base/Nav.js', needs: ['Dialog'] },
     PageHeader: { path: 'components/base/PageHeader.js' },
+    Pagination: { path: 'components/base/Pagination.js', needs: ['Disposer'] },
     Pane: { path: 'components/base/Pane.js' },
     RequestState: { path: 'components/base/RequestState.js' },
     MouseMover: { path: 'utilities/MouseMover.js' },
@@ -42,6 +44,7 @@
     SplitPane: { path: 'components/base/SplitPane.js', needs: ['Resizer','Disposer'] },
     Toast: { path: 'components/base/Toast.js', needs: ['Disposer'] },
     View: { path: 'components/base/View.js' },
+    PagedList: { path: 'components/data/PagedList.js', needs: ['ListDataSource','Pagination','RequestState','Disposer'] },
     CardGrid: { path: 'components/data/CardGrid.js', needs: ['AutoForm','Modal','Dialog','RemoteSelect'] },
     Chart: { path: 'components/data/Chart.js', needs: ['ChartJS','Disposer'] },
     DBTypeInput: { path: 'components/data/DataGrid.js', needs: ['DataGrid'] },
@@ -71,6 +74,7 @@
     "Modal",
     "Nav",
     "PageHeader",
+    "Pagination",
     "Pane",
     "RequestState",
     "Resizer",
@@ -87,6 +91,7 @@
     "TagsInput"
   ],
   "data": [
+    "PagedList",
     "CardGrid",
     "Chart",
     "DBTypeInput",

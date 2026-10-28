@@ -12,6 +12,7 @@
 | 设置中心 | 管理工作台 | `./templates/settings-console.html`：AutoForm 整体两列、分组两列/三列、通栏字段；Hash 页面切换共享同一草稿；统一保存、撤销和错误恢复 |
 | 写作工作室 | 交互应用 | `./templates/note-studio.html`：List、CodeEditor、Hash 编辑/分屏/预览；跨笔记保留草稿、统一保存、浏览器刷新保护 |
 | 内容精选 | 自然滚动页面 | `./templates/content-catalog.html`：Bootstrap 响应式卡片；Hash 分类、搜索、排序和详情；LocalStorage 收藏 |
+| 分页数据列表 | 管理工作台 | `./templates/records-table.html`：AppShell + Pane + PagedList；列表内部滚动、固定工具栏与分页；数据定义多条件筛选、独立排序菜单、可选表头与底部选择操作插槽；列表/卡片共用查询与 Pagination；灰色宿主控制区与组件区分开 |
 
 这些 HTML 不包含 `<style>`、`style=` 或应用专用样式表。尺寸、滚动与响应式行为由公共组件承担，页面表达使用 Bootstrap 类。框架组件内部仍拥有必要 CSS；不要把内部布局规则复制回页面。
 
@@ -48,7 +49,7 @@ const formSchema = [
 
 ## 下一轮能力顺序
 
-1. AutoForm 字段级错误、跨字段/异步校验和跨隐藏分组的统一校验协议；动态重复字段与步骤表单在协议稳定后跟进。
+1. AutoForm 已提供 validator 完整草稿同步/异步校验、setErrors 服务端字段错误和 revealfield 隐藏字段恢复协议；动态重复字段与步骤表单在此基础上跟进。服务器仍承担业务校验。
 2. 数据管理组合：基于已有 FilterBar、ActionBar、RequestState，继续贯通分页、排序、列配置、批量动作和请求取消，复用领域 API 与 DataGrid，避免重造数据层。
 3. 状态与恢复：统一 request-state 呈现、保存冲突与草稿恢复；自动保存必须解决并发写入和错误恢复后再开放。
 4. 模板扩充：数据表管理、步骤任务、概览分析；每个模板都要求零页面 CSS、可运行数据边界及完整交互测试。

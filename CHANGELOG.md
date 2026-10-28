@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased — 2026-10-28
+
+- 新增独立 Pagination、轻量 PagedList 与共享 ListDataSource，覆盖筛选、排序、卡片、选择插槽和响应式分页。
+- 同步 Bootstrap ui-link / ui-toolbar、AutoForm 完整草稿校验及可运行模板、契约和测试。
+- 保持 State 快照不变；登记新组件依赖并生成浏览器构建产物。
+
 ## [v1.0.10] - 2026-10-15
 
 - 新增 AppShell、SplitPane、Pane、PageHeader、FilterBar、ActionBar、RequestState、ItemCollection、SidePanel、RemoteSelect 和 CardGrid 等组合能力。

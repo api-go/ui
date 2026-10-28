@@ -1,0 +1,238 @@
+testData:
+  records: []
+init:
+  - 'for(let i=1;i<=35;i++)testData.records.push({id:i,name:"Record "+i,summary:"Summary "+i})'
+  - 'testData.plain=ListDataSource.create({items:testData.records,pagesize:10});testData.tools=ListDataSource.create({items:testData.records,pagesize:10});testData.empty=ListDataSource.create({items:[]});testData.replace=ListDataSource.create({items:testData.records})'
+  - 'testData.linked=ListDataSource.create({items:testData.records,pagesize:10});testData.network={fail:false};testData.remote=ListDataSource.create({auto:false,errorMessage:"Read failed",load:async()=>{await new Promise(resolve=>setTimeout(resolve,5));if(testData.network.fail)throw new Error("private provider error");return {rows:[{id:55,name:"Retained result"}],total:1}}})'
+  - 'testData.long=ListDataSource.create({items:[{id:1,name:"X".repeat(300),summary:"LongSummary".repeat(30)}]})'
+  - |
+      testData.richFields=[{name:'status',label:'Status',type:'select',options:['open','done']},{name:'minimum',field:'amount',label:'Minimum',type:'number',operator:'gte'},{name:'since',field:'date',label:'Since',type:'date',operator:'gte'},{name:'title',field:'name',label:'Title',type:'text'}];
+      testData.richColumns=[{name:'name',label:'Name',class:'col-6'},{name:'status',label:'Status',class:'col-3'},{name:'amount',label:'Amount',class:'col-3',align:'end',format:value=>Number(value).toFixed(2)}];
+      const rich=testData.records.map(item=>({...item,amount:item.id*10,status:item.id%2?'open':'done',date:'2026-02-01'}));
+      testData.rich=ListDataSource.create({items:rich,filterfields:testData.richFields,pagesize:10});
+      testData.cards=ListDataSource.create({items:rich,pagesize:10});testData.document=ListDataSource.create({items:rich,pagesize:35});
+      testData.draft=NewState({status:''});testData.header=ListDataSource.create({items:rich,pagesize:10});
+cases:
+  - name: native selection resets across query and page changes with custom identity
+    attributes:
+      id: subject
+      selectable: true
+      idfield: code
+      "$.source": "ListDataSource.create({items:Array.from({length:25},(_,i)=>({code:i+1,name:'Check '+(i+1)})),pagesize:10})"
+    actions:
+      - click: '#subject .paged-list-body input[type=checkbox]'
+      - wait: 30
+      - script: 'return subject.state.selection[0]===1 && subject.querySelector(".paged-list-body input").checked'
+      - call: {method: clearSelection}
+      - wait: 30
+      - script: 'return !subject.querySelector(".paged-list-body input").checked'
+      - click: '#subject .paged-list-body input[type=checkbox]'
+      - script: 'subject.source.setPage(2);return true'
+      - wait: 30
+      - script: 'return subject.state.selection.length===0 && !subject.querySelector(".paged-list-body input").checked'
+      - click: '#subject .paged-list-body input[type=checkbox]'
+      - wait: 30
+      - script: 'return subject.state.selection[0]===11 && subject.querySelector(".paged-list-body input").checked'
+      - click: '#subject input[aria-label="Select page"]'
+      - wait: 30
+      - script: 'return subject.state.selection.length===10 && [...subject.querySelectorAll("input[type=checkbox]")].every(input=>input.checked)'
+      - click: '#subject input[aria-label="Select page"]'
+      - wait: 30
+      - script: 'return subject.state.selection.length===0 && [...subject.querySelectorAll("input[type=checkbox]")].every(input=>!input.checked)'
+    after:
+      - script: 'subject.source.dispose();return true'
+  - name: internal scroll schema filters columns and reset keep one draft identity
+    attributes:
+      id: subject
+      scroll: internal
+      height: 24rem
+      view: list
+      "$.source": testData.rich
+      "$.state.scroll": "'internal'"
+      "$.state.height": "'24rem'"
+      "$.state.view": "'list'"
+      "$.state.showheader": "true"
+      "$.state.columns": testData.richColumns
+      "$.state.filterfields": testData.richFields
+      "$.state.filterdraft": testData.draft
+    before:
+      - dom: {selector: '#subject .paged-list-header', containsText: Amount}
+      - script: 'const body=subject.querySelector(".paged-list-body");return getComputedStyle(body).overflowY==="auto" && body.scrollHeight>body.clientHeight'
+    actions:
+      - select: {selector: '#subject [aria-label=Status]', value: done}
+      - fill: {selector: '#subject [aria-label=Minimum]', value: '200'}
+      - fill: {selector: '#subject [aria-label=Since]', value: '2026-02-01', event: change}
+      - fill: {selector: '#subject [aria-label=Title]', value: Record}
+      - call: {method: search}
+      - wait: 30
+      - script: 'if(subject.source.state.total!==8||subject.source.state.rows[0].id!==20||subject.source.query().filters.since!=="2026-02-01"||subject.state.filterdraft!==testData.draft)throw new Error("Schema query/draft failed")'
+      - call: {method: resetFilters}
+      - wait: 30
+    after:
+      - property: {path: subject.source.state.total, equals: 35}
+      - property: {path: testData.draft.status, equals: ''}
+      - script: 'subject.source.dispose();return true'
+  - name: cards share the same filter tools and document scrolling is explicit
+    attributes:
+      id: subject
+      scroll: document
+      view: cards
+      searchable: true
+      "$.source": testData.cards
+      "$.state.columns": testData.richColumns
+    before:
+      - dom: {selector: '#subject .paged-list-card', count: 10}
+      - dom: {selector: '#subject .paged-list-header', count: 0}
+      - dom: {selector: '#subject input[type=search]', count: 1}
+      - script: 'return getComputedStyle(subject.querySelector(".paged-list-body")).overflowY==="visible"'
+    actions:
+      - fill: {selector: '#subject input[type=search]', value: Record 35}
+      - call: {method: search}
+    after:
+      - dom: {selector: '#subject .paged-list-card', count: 1}
+      - dom: {selector: '#subject .paged-list-card', containsText: '350.00'}
+      - script: 'subject.source.dispose();return true'
+  - name: header switch and host header slot remain independent of item UI
+    attributes:
+      id: subject
+      hideheader: true
+      "$.source": testData.header
+    slots:
+      header: '<span>Custom columns</span>'
+    before:
+      - dom: {selector: '#subject .paged-list-header', count: 0}
+    actions:
+      - script: 'subject.state.showheader=true'
+    after:
+      - dom: {selector: '#subject .paged-list-header', containsText: Custom columns}
+      - script: 'subject.source.dispose();return true'
+  - name: long unbroken default labels wrap inside the row
+    attributes: {id: subject, "$.source": testData.long}
+    after:
+      - script: 'const row=subject.querySelector(".list-group-item");const valid=row.scrollWidth<=row.clientWidth+1;subject.source.dispose();return valid'
+  - name: native HTML datalist remains an autocomplete element
+    attributes: {id: subject}
+    slots:
+      toolbar: '<div><input class="form-control" list="nativeListOptions" aria-label="Native autocomplete"><datalist id="nativeListOptions"><option value="One"></option><option value="Two"></option></datalist></div>'
+    before:
+      - dom: {selector: '#nativeListOptions option', count: 2}
+      - script: 'const native=subject.querySelector("datalist");return native instanceof HTMLDataListElement && native.options.length===2 && !native.model'
+  - name: plain default list and shared source footer navigate without tools
+    covers: [properties.source]
+    attributes:
+      id: subject
+      "$.source": testData.plain
+    before:
+      - dom: {selector: '#subject .list-group-item', count: 10}
+      - dom: {selector: '#subject form', count: 0}
+      - dom: {selector: '#subject input[type=checkbox]', count: 0}
+    actions:
+      - click: '#subject Pagination button[aria-label=Next]'
+    after:
+      - dom: {selector: '#subject .list-group-item:first-child', containsText: Record 11}
+      - script: 'const ok=subject.source.state.page===2;subject.source.dispose();return ok'
+  - name: optional search sort selection row slots and selection actions
+    attributes:
+      id: subject
+      searchable: true
+      sortable: true
+      selectable: true
+      idfield: id
+      "$.source": testData.tools
+      "$.state.searchable": "true"
+      "$.state.sortable": "true"
+      "$.state.selectable": "true"
+      "$.state.sortoptions": "[{value:'-id',label:'Newest'}]"
+      "$.state.searchdraft": "''"
+    slots:
+      item: '<span $text="item.name"></span>'
+      toolbar: '<span>Extra tools</span>'
+      selection-actions: '<button type="button">Batch action</button>'
+      settings: '<span>List setting</span>'
+    before:
+      - dom: {selector: '#subject', containsText: Extra tools}
+      - dom: {selector: '#subject Pagination .dropdown-menu', containsText: List setting}
+    actions:
+      - call: {method: toggle, args: [{id: 1}]}
+      - wait: 30
+      - script: 'if(!subject.querySelector("input[aria-label=\"Select page\"]").indeterminate)throw new Error("Missing partial selection state")'
+      - call: {method: selectAll}
+      - call: {method: clearSelection}
+      - fill: {selector: '#subject input[type=search]', value: Record 2}
+      - call: {method: search}
+      - wait: 30
+      - click: '#subject .paged-list-toolbar button[aria-label=Sort]'
+      - click: '#subject .paged-list-toolbar .dropdown-menu button:last-of-type'
+      - wait: 30
+      - script: 'subject.querySelector(".paged-list-item-content").dispatchEvent(new MouseEvent("dblclick",{bubbles:true}))'
+    after:
+      - property: {path: subject.state.selection, equals: []}
+      - property: {path: subject.source.state.search, equals: Record 2}
+      - dom: {selector: '#subject .list-group-item:first-child', containsText: Record 29}
+      - event: {name: selectionchange, count: 3}
+      - event: {name: querychange, count: 2}
+      - event: {name: itemclick, count: 1}
+      - script: 'subject.source.dispose();return true'
+  - name: hidden footer and custom empty pagination content
+    attributes:
+      id: subject
+      hidepagination: true
+      "$.state.hidepagination": "true"
+      "$.source": testData.empty
+    slots:
+      empty: '<span>Nothing matching</span>'
+      pagination: '<span>Custom footer</span>'
+    before:
+      - dom: {selector: '#subject', containsText: Nothing matching}
+      - dom: {selector: '#subject Pagination', count: 0}
+    actions:
+      - script: 'subject.state.hidepagination=false'
+    after:
+      - dom: {selector: '#subject', containsText: Custom footer}
+      - script: 'subject.source.dispose();return true'
+  - name: replacing shared sources releases subscriptions and resets selection
+    attributes:
+      id: subject
+      selectable: true
+      "$.source": testData.replace
+    actions:
+      - call: {method: selectAll}
+      - script: |
+          const previous=subject.source;
+          subject.source=ListDataSource.create({items:[{id:99,name:'Replacement'}]});
+          previous.setQuery({search:'unused'});previous.dispose();
+    after:
+      - dom: {selector: '#subject .list-group-item', count: 1}
+      - dom: {selector: '#subject', containsText: Replacement}
+      - property: {path: subject.state.selection, equals: []}
+      - script: 'subject.source.dispose();return true'
+  - name: independent pager and integrated pager share one source in both directions
+    attributes: {id: subject, "$.source": testData.linked}
+    slots:
+      toolbar: '<Pagination id="externalPager" $.source="testData.linked"></Pagination>'
+    actions:
+      - click: '#externalPager button[aria-label=Next]'
+      - wait: 30
+      - script: |
+          if(subject.source.state.rows[0].id!==11)throw new Error('External paging did not update list');
+          const pager=Array.from(subject.querySelectorAll('Pagination')).find(node=>node.id!=='externalPager');
+          pager.go(3);
+    after:
+      - dom: {selector: '#externalPager .active', text: '3'}
+      - dom: {selector: '#subject .list-group-item:first-child', containsText: Record 21}
+      - script: 'subject.source.dispose();return true'
+  - name: failed reads retain rows and retry uses the supplied source
+    attributes: {id: subject, "$.source": testData.remote}
+    actions:
+      - script: |
+          await subject.source.reload();testData.network.fail=true;await subject.source.reload();
+          if(subject.source.state.rows[0].name!=='Retained result')throw new Error('Lost rows');
+          if(!subject.querySelector('[role=alert]'))await new Promise(resolve=>setTimeout(resolve,30));
+          if(!subject.querySelector('[role=alert]'))throw new Error('Missing read error');
+          testData.network.fail=false;
+      - click: '#subject RequestState button'
+      - wait: 30
+    after:
+      - dom: {selector: '#subject [role=alert]', count: 0}
+      - dom: {selector: '#subject .list-group-item', containsText: Retained result}
+      - script: 'subject.source.dispose();return true'

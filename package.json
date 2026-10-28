@@ -5,7 +5,7 @@
   "scripts": {
     "build": "node tools/build.cjs",
     "dev": "node tools/dev.cjs",
-    "test": "node tools/test.cjs",
+    "test": "node --test test/list-data-source.test.mjs && node tools/test.cjs",
     "pub": "npm run build && npm publish --access public",
     "sync:frameworks": "node tools/build.cjs --sync-frameworks",
     "test:legacy": "node tools/test-legacy.cjs"

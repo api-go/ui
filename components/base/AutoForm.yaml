@@ -17,20 +17,27 @@ state:
   data: object; form values, keyed by schema.name
   schema: array; field definitions
   columns: 'Reactive preferred column count, 1 through 4. Overrides the initial columns attribute. Missing defaults to 1; invalid counts render as 1. Existing inputs retain their DOM and data when columns or host width changes.'
+  errors: 'Field-name to safe error-message map. Rendered beside fields and in an actionable summary; use setErrors for server errors.'
+  validating: 'Read-only boolean while an asynchronous validator is pending.'
 
 properties:
   api: API element used by submit when present.
   request: HTTP request defaults used when api is absent.
   response: Latest full HTTP response after submit.
   result: Latest response.result after submit.
+  validator: 'Optional function(snapshot) returning a field-error map or Promise of a map. Receives a JSON copy of the complete draft, including hidden groups. Return {} for valid. Host owns cross-field and business rules.'
 
 methods:
-  submit: "submit(options?) validates the form, emits cancelable submit, and sends through api or request.url."
+  submit: "Async submit(options?) validates the form, emits cancelable submit, and sends through api or request.url. Concurrent submit calls are ignored until validation/transport settles; await it before inspecting results."
+  validate: 'Async validate() returns boolean; native validation then validator. Changed drafts and superseded validations cannot submit. Rejected validators block submit with a safe summary error.'
+  setErrors: 'setErrors(map) replaces field/server errors; only nonempty string messages are rendered as text.'
+  focusField: 'focusField(name) focuses a mounted enabled named native control; otherwise emits revealfield and returns false.'
 
 events:
   submit: "Cancelable; detail is the complete form data."
   response: "detail is the successful HTTP response, including null or primitive result values; those values are preserved without being treated as application errors."
   error: "detail is the Error raised by transport or an application error result."
+  revealfield: 'detail {name}; host reveals the relevant hidden group, then may call focusField again after render.'
 
 slots:
   actions: "Custom action controls rendered beside the default submit button; combine with nobutton to replace it."

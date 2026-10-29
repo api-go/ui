@@ -1,0 +1,66 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>客户详情 · 页面模板</title>
+<script src="../frameworks/State.js"></script><script src="../frameworks/Bootstrap.js"></script>
+<script src="../components/base/PageHeader.js"></script>
+<script>
+const customerExamples={
+ north:{id:'C-1001',name:'北辰设计事务所',status:'合作中',industry:'设计服务',owner:'林悦',contact:'周宁',email:'zhou.ning@example.test',phone:'021-5550-0188',city:'上海',address:'上海市徐汇区漕溪北路 88 号，3 层 301 室',revenue:268000,balance:0,subscribed:false,tags:['长期合作','品牌设计'],note:'偏好邮件沟通。\n项目资料由客户联系人统一确认。',website:''},
+ south:{id:'C-1002',name:'南方科技与创新服务有限公司 · 企业数字化协作中心',status:'洽谈中',industry:'技术服务',owner:'陈安',contact:'许舟',email:'xu.zhou@example.test',phone:'',city:'深圳',address:'广东省深圳市南山区科技园创新大厦 A 座，客户接待请提前与负责人确认。',revenue:1358000.5,balance:12500,subscribed:true,tags:['新客户'],note:'支持跨部门协作，报价单需要分项说明。',website:'customer-reference-with-a-very-long-unbroken-identifier-20261029'}
+}
+const customer_state=NewState({record:NewState({...customerExamples[Hash.customer]||customerExamples.north}),density:'default',link:false,dark:false,notice:''})
+if(!customerExamples[Hash.customer])Hash.go({customer:'north'})
+Hash.__watch('customer',()=>{customer_state.record=NewState({...customerExamples[Hash.customer]||customerExamples.north});customer_state.notice=''})
+Bootstrap.config({bindDarkMode:[customer_state,'dark']})
+function toggleCustomerFavorite(){const id=customer_state.record.id,list=LocalStorage.detailCustomerFavorites||[];LocalStorage.detailCustomerFavorites=list.includes(id)?list.filter(value=>value!==id):[...list,id];customer_state.notice='{#关注偏好已保存到当前浏览器。#}'}
+function customerMoney(value){return '¥ '+Number(value??0).toLocaleString('zh-CN',{minimumFractionDigits:2,maximumFractionDigits:2})}
+</script></head>
+<body class="bg-body-tertiary" $class="(customer_state.density==='default'?'':'ui-'+customer_state.density)+(customer_state.link?' ui-link':'')">
+<main class="container py-4">
+ <a href="../templates/index.html" class="small text-decoration-none"><i class="bi bi-arrow-left me-1" aria-hidden="true"></i>{#模板目录#}</a>
+ <PageHeader class="d-block mt-3 mb-4" heading="{#客户详情#}" $.state.description="'{#可自由修改的详情页模板 · 虚构客户，关注偏好仅存本机浏览器。#}'"></PageHeader>
+ <details class="bg-body-secondary rounded p-3 mb-4">
+  <summary class="small text-body-secondary">{#模板演示设置：切换数据与外观#}</summary>
+  <div class="d-flex flex-wrap align-items-end gap-3 pt-3">
+   <label class="form-label mb-0">{#示例客户#}<select class="form-select" $aria-label="'{#示例客户#}'" $bind="Hash.customer"><option value="north">北辰设计事务所</option><option value="south">南方科技</option></select></label>
+   <label class="form-label mb-0">{#密度#}<select class="form-select" $aria-label="'{#密度#}'" $bind="customer_state.density"><option value="default">{#默认#}</option><option value="sm">{#紧凑#}</option><option value="lg">{#宽松#}</option></select></label>
+   <label class="d-flex align-items-center gap-2 mb-0"><input type="checkbox" class="form-check-input m-0" $bind="customer_state.link">{#链接外观#}</label>
+   <label class="d-flex align-items-center gap-2 mb-0"><input type="checkbox" class="form-check-input m-0" $bind="customer_state.dark">{#深色#}</label>
+  </div>
+ </details>
+ <!-- Copy and edit these ordinary sections freely: add business UI wherever it belongs. -->
+ <section id="customerDetail" class="bg-body border rounded p-3 p-md-4">
+  <header class="d-flex flex-wrap align-items-start justify-content-between gap-3 mb-4">
+   <div class="col-12 col-md-auto"><div class="d-flex flex-wrap align-items-center gap-2 mb-1"><h2 class="h4 mb-0 text-break" $text="customer_state.record.name"></h2><span class="badge bg-primary-subtle text-primary-emphasis" $text="customer_state.record.status"></span></div><span class="small text-body-secondary" $text="customer_state.record.id"></span></div>
+   <button type="button" class="btn btn-outline-primary" $aria-pressed="(LocalStorage.detailCustomerFavorites||[]).includes(customer_state.record.id)?'true':'false'" $onclick="toggleCustomerFavorite()"><i class="bi me-1" $class="(LocalStorage.detailCustomerFavorites||[]).includes(customer_state.record.id)?'bi-star-fill':'bi-star'" aria-hidden="true"></i><span $text="(LocalStorage.detailCustomerFavorites||[]).includes(customer_state.record.id)?'{#已关注#}':'{#关注客户#}'"></span></button>
+  </header>
+  <section aria-labelledby="profileHeading">
+   <h3 id="profileHeading" class="h6 mb-3">{#客户概况#}</h3>
+   <dl class="row g-3 mb-0">
+    <div class="col-12 col-md-6 col-xl-4"><dt class="small fw-normal text-body-secondary mb-1">{#行业#}</dt><dd class="mb-0 text-break" $text="customer_state.record.industry"></dd></div>
+    <div class="col-12 col-md-6 col-xl-4"><dt class="small fw-normal text-body-secondary mb-1">{#客户负责人#}</dt><dd class="mb-0 text-break" $text="customer_state.record.owner"></dd></div>
+    <div class="col-12 col-md-6 col-xl-4"><dt class="small fw-normal text-body-secondary mb-1">{#城市#}</dt><dd class="mb-0 text-break" $text="customer_state.record.city"></dd></div>
+    <div class="col-12"><dt class="small fw-normal text-body-secondary mb-1">{#标签#}</dt><dd class="d-flex flex-wrap gap-2 mb-0"><span class="badge bg-secondary-subtle text-secondary-emphasis" $each="customer_state.record.tags" as="tag" $text="tag"></span></dd></div>
+   </dl>
+  </section>
+  <section class="border-top pt-4 mt-4" aria-labelledby="contactHeading">
+   <h3 id="contactHeading" class="h6 mb-3">{#联系信息#}</h3>
+   <dl class="row g-3 mb-0">
+    <div class="col-12 col-md-6 col-xl-4"><dt class="small fw-normal text-body-secondary mb-1">{#联系人#}</dt><dd class="mb-0 text-break" $text="customer_state.record.contact"></dd></div>
+    <div class="col-12 col-md-6 col-xl-4" data-field="phone"><dt class="small fw-normal text-body-secondary mb-1">{#电话#}</dt><dd class="mb-0 text-break" $text="customer_state.record.phone||'{#未提供#}'"></dd></div>
+    <div class="col-12 col-md-6 col-xl-4" data-field="email"><dt class="small fw-normal text-body-secondary mb-1">{#邮箱#}</dt><dd class="mb-0 text-break"><a $href="'mailto:'+customer_state.record.email" $text="customer_state.record.email"></a></dd></div>
+    <div class="col-12"><dt class="small fw-normal text-body-secondary mb-1">{#地址#}</dt><dd class="mb-0 text-break" $text="customer_state.record.address"></dd></div>
+   </dl>
+  </section>
+  <section class="border-top pt-4 mt-4" aria-labelledby="businessHeading">
+   <h3 id="businessHeading" class="h6 mb-3">{#业务概况#}</h3>
+   <dl class="row g-3 mb-0">
+    <div class="col-12 col-md-6 col-xl-4"><dt class="small fw-normal text-body-secondary mb-1">{#合同金额#}</dt><dd class="mb-0" $text="customerMoney(customer_state.record.revenue)"></dd></div>
+    <div class="col-12 col-md-6 col-xl-4"><dt class="small fw-normal text-body-secondary mb-1">{#待收金额#}</dt><dd class="mb-0" $text="customerMoney(customer_state.record.balance)"></dd></div>
+    <div class="col-12 col-md-6 col-xl-4"><dt class="small fw-normal text-body-secondary mb-1">{#邮件订阅#}</dt><dd class="mb-0" $text="customer_state.record.subscribed?'{#已订阅#}':'{#未订阅#}'"></dd></div>
+    <div class="col-12"><dt class="small fw-normal text-body-secondary mb-1">{#参考编号#}</dt><dd class="mb-0 text-break" $text="customer_state.record.website||'{#未提供#}'"></dd></div>
+    <div class="col-12"><dt class="small fw-normal text-body-secondary mb-1">{#备注#}</dt><dd class="mb-0"><p class="mb-0 text-break" $each="(customer_state.record.note||'').split('\n')" as="line" $text="line"></p></dd></div>
+   </dl>
+  </section>
+  <footer class="border-top pt-3 mt-4 small text-body-secondary"><span>{#这是可自由增删区块的 HTML 模板；邮件链接与关注操作由应用自己定义。#}</span><p class="mb-0 mt-2" role="status" $text="customer_state.notice"></p></footer>
+ </section>
+</main></body></html>

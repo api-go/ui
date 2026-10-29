@@ -17,7 +17,7 @@
 <script src="../components/base/SplitPane.js"></script>
 <script src="../components/base/PageHeader.js"></script>
 <script src="../components/base/Pane.js"></script>
-<script src="../components/base/AppShell.js"></script>
+<script src="../utilities/UUID.js"></script><script src="../components/base/AppShell.js"></script>
 <script>
 Bootstrap.config({bindDarkMode:[LocalStorage,'templateDark']})
 const customerRecords=Array.from({length:120},(_,i)=>({id:'customer-'+i,label:['星河科技','远山设计','青禾商贸','云帆咨询'][i%4]+' '+(i+1),summary:i%3===0?'待跟进':'合作中',contact:['林悦','陈墨','周宁'][i%3],email:'contact'+i+'@example.test',city:['上海','杭州','深圳'][i%3],orders:12+i,revenue:32000+i*1250}))
@@ -40,7 +40,7 @@ function toggleCustomerFavorite(){
   <div slot="header" class="d-flex align-items-center gap-2 flex-fill">
     <i class="bi bi-grid-1x2-fill text-primary" aria-hidden="true"></i><span class="fw-semibold">客户中心</span>
     <span class="badge text-bg-secondary">工作台模板</span>
-    <a class="btn  btn-link ms-auto" href="index.html">模板目录</a>
+    <a class="btn  btn-link ms-auto" href="../templates/">模板目录</a>
     <button type="button" class="btn  btn-outline-secondary" aria-label="切换主题" $aria-pressed="LocalStorage.templateDark?'true':'false'" $onclick="LocalStorage.templateDark=!LocalStorage.templateDark"><i class="bi bi-circle-half" aria-hidden="true"></i></button>
   </div>
   <SplitPane slot="content" $bind="LocalStorage.customerSidebarWidth" $.state.pane="Hash.customerID?'main':'sidebar'">

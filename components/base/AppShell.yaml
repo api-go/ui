@@ -1,12 +1,20 @@
 name: AppShell
 kind: component
 src: /ui/components/base/AppShell.js
-dependencies: [Disposer]
+dependencies: [Disposer, SplitPane]
 purpose: Bounded application shell with persistent navigation, top bar and a filling main region.
 attributes:
   viewport: 'Opt in to 100dvh at the document root. Omit inside another bounded host.'
+  navigation: 'adaptive opts into bottom destinations below600px, an icon rail at600–959px and a resizable sidebar at960px+. Default is sidebar with a drawer below600px. Decisions use shell width.'
+binding:
+  behavior: 'Positive pixel width sets the preferred navigation width. User resize publishes change for LocalStorage binding; temporary rail/bottom modes do not overwrite it.'
 state:
-  navOpen: 'Boolean, default false. Controls navigation visibility below 768px of actual shell width; wide navigation stays visible.'
+  navOpen: 'Boolean, default false. Controls the narrow navigation drawer; wide navigation stays visible.'
+  navwidth: 'Preferred navigation width, default240px. Bind the component to a durable width preference.'
+  detail: 'Boolean, default false. Adaptive drill-down hides bottom root navigation while wide navigation stays available.'
+  navigationMode: 'Read-only bottom, rail or sidebar derived from actual shell width.'
+events:
+  change: 'Final user-resized navigation width in pixels.'
 methods:
   toggleNavigation: 'Toggle state.navOpen; navigation content remains mounted.'
 slots:
@@ -14,8 +22,8 @@ slots:
   navigation: 'Application navigation. Prefer Nav bound to a namespaced Hash field.'
   content: 'Main workspace; a sole element fills the available region.'
 rules:
-  - Set --ui-navigation-width to customize the default 14rem navigation width.
-  - Narrow navigation overlays content within the shell; its toggle remains available when navigation is supplied. Escape closes navigation and returns focus to its toggle. Host may set state.navOpen=false after confirmed navigation.
+  - Navigation uses SplitPane and its automatic Resizer/drawer. The shell does not reimplement sidebar lifecycle. Bind width to LocalStorage; the navigation View/Nav must fill its slot.
+  - Adaptive placement moves the same navigation subtree and calls Nav[adaptive].setOrientation; it does not mount duplicate controls. Selection, routes and drafts stay owned by the host. Escape closes a drawer and returns focus to the shell toggle.
   - Owns no route, dirty guard, authorization or resource data. Bind Nav and resource components explicitly.
   - viewport belongs only on the outer application shell, never on nested views.
 examples:

@@ -1,0 +1,5 @@
+<AppShell id="adminShell" viewport navigation="adaptive" $.state.detail="!adminMobileRoot()" $bind="LocalStorage.mobileNavigationWidth" $onload="document.title='{#云间随行 · 移动应用模板#}'">
+ <View slot="header" class="w-100" file="../blocks/header.html"></View>
+ <Nav slot="navigation" adaptive .changebind="*" $.state.list="adminMobileTabs.map(tab=>({type:'button',name:tab.id,label:tab.label,icon:tab.icon}))" $.state.value="adminMobileTab()" $onchange="adminGo({adminPage:event.detail},true)"></Nav>
+ <View slot="content" class="d-flex flex-column flex-fill overflow-hidden" file="../../admin/blocks/content.html" $onerror="adminViewFailure(event)" $onready="adminViewReady(event)"></View>
+</AppShell>

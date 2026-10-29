@@ -19,4 +19,23 @@ cases:
     slots:
       content: '<div>Embedded content</div>'
     before:
-      - script: "return subject.clientHeight===260 && getComputedStyle(subject.querySelector('[data-shell-navigation]')).display==='none' && subject.querySelector('[data-shell-toggle]').hidden"
+      - script: "return subject.clientHeight===260 && subject.querySelector('[data-shell-navigation]').closest('[data-split-sidebar]').hidden && subject.querySelector('[data-shell-toggle]').hidden"
+
+  - name: adaptive navigation moves the same controls and retains the width preference
+    attributes: { id: subject, navigation: adaptive, "$.state.detail": 'false', "$.state.navwidth": '260', style: 'width:1100px;height:400px;flex:none' }
+    slots:
+      navigation: '<input value="Retained navigation">'
+      content: '<div>Main</div>'
+    before:
+      - script: "await new Promise(resolve=>setTimeout(resolve,80));return true"
+      - property: { path: subject.state.navigationMode, equals: sidebar }
+      - script: "testData.input=subject.querySelector('input');return !!subject.querySelector('Resizer:not([hidden])')"
+    actions:
+      - script: "const r=subject.querySelector('Resizer');r.dispatchEvent(new KeyboardEvent('keydown',{key:'ArrowRight',bubbles:true}));subject.style.width='760px';await new Promise(resolve=>setTimeout(resolve,80));return subject.state.navigationMode==='rail'"
+      - script: "subject.style.width='390px';await new Promise(resolve=>setTimeout(resolve,80));return subject.querySelector('[data-shell-bottom] input')===testData.input"
+      - script: "subject.state.detail=true;await new Promise(resolve=>setTimeout(resolve,50));return subject.querySelector('[data-shell-navigation]').hidden"
+      - script: "subject.state.detail=false"
+    after:
+      - property: { path: subject.state.navigationMode, equals: bottom }
+      - property: { path: subject.state.navwidth, equals: 270 }
+      - event: { name: change, count: 1, last: 270 }

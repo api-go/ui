@@ -1,0 +1,7 @@
+<div class="flex-fill overflow-auto p-3 p-md-4">
+ <h2 class="h5">{#选择导出内容#}</h2><p class="text-body-secondary">{#下载本机数据。当前页沿用客户列表的筛选与排序，文件只含所选字段。#}</p>
+ <label class="form-label" for="adminExportScope">{#数据范围#}</label><select id="adminExportScope" class="form-select mb-4" $bind="admin_state.exportDraft.scope"><option value="page">{#当前列表页#}</option><option value="all">{#全部客户#}</option></select>
+ <fieldset class="mb-4"><legend class="h6">{#导出字段#}</legend><div class="row g-3"><label class="col-12 col-sm-6 d-flex align-items-center gap-2" $each="adminImportFields" as="field" key="name"><input class="form-check-input mt-0" type="checkbox" $value="field.name" $bind="admin_state.exportDraft.fields"><span $text="field.label"></span></label></div></fieldset>
+ <p role="status"><strong $text="adminExportRows().length"></strong> {#位客户#} · <span $text="admin_state.exportDraft.fields.length"></span> {#个字段#}</p>
+ <div class="d-flex flex-wrap gap-2"><button type="button" class="btn btn-primary" $disabled="!admin_state.exportDraft.fields.length||admin_state.customerSource.state.loading" $onclick="adminExport()"><i class="bi bi-download me-1" aria-hidden="true"></i>{#生成并下载#}</button><button type="button" class="btn btn-outline-secondary" $onclick="adminGo({adminPage:'customers'})">{#返回客户列表#}</button></div>
+</div>

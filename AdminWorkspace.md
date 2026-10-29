@@ -41,20 +41,20 @@ This complete same-origin example intentionally uses local immutable IDs and rep
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
-  <script src="./frameworks/State.js"></script>
-  <script src="./frameworks/Bootstrap.js"></script>
-  <script src="./utilities/Disposer.js"></script>
-  <script src="./utilities/MouseMover.js"></script>
-  <script src="./utilities/VirtualScroll.js"></script>
-  <script src="./components/base/Modal.js"></script>
-  <script src="./components/base/Dialog.js"></script>
-  <script src="./components/base/Resizer.js"></script>
-  <script src="./components/base/PageHeader.js"></script>
-  <script src="./components/base/Pane.js"></script>
-  <script src="./components/base/SplitPane.js"></script>
-  <script src="./components/base/AppShell.js"></script>
-  <script src="./components/base/Nav.js"></script>
-  <script src="./components/base/List.js"></script>
+  <script src="/ui/frameworks/State.js"></script>
+  <script src="/ui/frameworks/Bootstrap.js"></script>
+  <script src="/ui/utilities/Disposer.js"></script>
+  <script src="/ui/utilities/MouseMover.js"></script>
+  <script src="/ui/utilities/VirtualScroll.js"></script>
+  <script src="/ui/components/base/Modal.js"></script>
+  <script src="/ui/components/base/Dialog.js"></script>
+  <script src="/ui/components/base/Resizer.js"></script>
+  <script src="/ui/components/base/PageHeader.js"></script>
+  <script src="/ui/components/base/Pane.js"></script>
+  <script src="/ui/components/base/SplitPane.js"></script>
+  <script src="/ui/utilities/UUID.js"></script><script src="/ui/components/base/AppShell.js"></script>
+  <script src="/ui/components/base/Nav.js"></script>
+  <script src="/ui/components/base/List.js"></script>
 </head>
 <body class="m-0">
 <script>
@@ -89,4 +89,4 @@ This complete same-origin example intentionally uses local immutable IDs and rep
 
 ## Acceptance
 
-At 1280px, only list and detail scroll, the document does not scroll, and resizing retains a usable detail region. At 390px or a narrow embedding host, Browse/Detail switches retain content. Reload and back/forward restore the selected resource. Invalid IDs show a recoverable state. For remote data, distinguish loading, successful empty results and errors; verify retry and dirty save/discard through the actual owning APIs.
+At 1280px, only list and detail scroll, the document does not scroll, and resizing retains a usable detail region. At 390px or a narrow embedding host, a list icon opens the same resource list in the shared SplitPane drawer, retaining content, search and selection; close/Escape restore focus. Reload and back/forward restore the selected resource. Invalid IDs show a recoverable state. For remote data, distinguish loading, successful empty results and errors; verify retry and dirty save/discard through the actual owning APIs.

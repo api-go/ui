@@ -86,8 +86,8 @@ Component.register('PagedList',container=>{
     </div></template>
   </div>
     <RequestState $.state.loading="this.model().loading" $.state.error="this.model().error" $.state.empty="this.model().loaded&&!this.model().rows.length" $.state.hasdata="this.model().rows.length>0" $onretry="this.source.reload()">
-      <div slot="content" $class="this.parent.state.view==='cards'?'row g-3 py-3 px-2 px-sm-3':'list-group list-group-flush'">
-        <div data-list-rows $each="this.parent.model().rows" as="item" index="rowIndex" $class="this.parent.state.view==='cards'?'col-12 col-sm-6 col-lg-4':''">
+      <div slot="content" $class="this.parent.state.view==='cards'?'paged-list-cards gap-3 py-3 px-2 px-sm-3':'list-group list-group-flush'">
+        <div data-list-rows $each="this.parent.model().rows" as="item" index="rowIndex">
           <article $class="(this.parent.state.view==='cards'?'card paged-list-card h-100':'list-group-item px-2 px-sm-3')+(this.parent.selected(item)?' bg-primary-subtle':'')" $aria-selected="this.parent.selected(item)?'true':'false'">
             <div class="d-flex gap-3" $class="this.parent.state.view==='cards'?'card-body align-items-start':'align-items-center'">
               <input $if="this.parent.state.selectable" class="form-check-input flex-shrink-0 m-0" type="checkbox" $aria-label="{#Select item#}: \${item.name??item.label??item.id}" $.checked="this.parent.selected(item)" $disabled="this.parent.model().loading" $onchange="event.stopPropagation();this.parent.toggle(item)">
@@ -110,7 +110,7 @@ Component.register('PagedList',container=>{
       <template slot="actions"><div class="d-flex align-items-center gap-2 small ps-2 ui-sm">
         <template $if="this.parent.state.selectable">
           <input class="form-check-input m-0" type="checkbox" aria-label="{#Select page#}" title="{#Select page#}" $.checked="this.parent.model().rows.length>0&&this.parent.state.selection.length===this.parent.model().rows.length" $.indeterminate="this.parent.state.selection.length>0&&this.parent.state.selection.length<this.parent.model().rows.length" $disabled="this.parent.model().loading||!this.parent.model().rows.length" $onchange="event.stopPropagation();this.parent.state.selection.length===this.parent.model().rows.length?this.parent.clearSelection():this.parent.selectAll()">
-          <span $if="this.parent.state.selection.length"><span class="d-none d-md-inline text-body-tertiary">{#Selected#}: </span><strong class="text-body" $text="this.parent.state.selection.length"></strong></span>
+          <span $if="this.parent.state.selection.length"><span class="d-none d-md-inline text-body-secondary">{#Selected#}: </span><strong class="text-body" $text="this.parent.state.selection.length"></strong></span>
           <button type="button" class="btn btn-link text-body-secondary px-1 py-0" aria-label="{#Clear#}" title="{#Clear#}" $if="this.parent.state.selection.length" $onclick="this.parent.clearSelection()"><i class="bi bi-x-lg d-sm-none" aria-hidden="true"></i><span class="d-none d-sm-inline">{#Clear#}</span></button>
           <div slot-id="selection-actions" class="d-flex gap-2"></div>
         </template>
@@ -125,7 +125,10 @@ PagedList.paged-list-root[data-scroll=document] > .paged-list-body {overflow:vis
 PagedList.paged-list-root[data-scroll=document] {max-height:none;}
 PagedList .paged-list-toolbar form, PagedList .paged-list-cell, PagedList .paged-list-item-content {min-width:0;}
 PagedList .paged-list-search {flex:1 1 12rem;}
-PagedList .paged-list-filter {flex:1 1 10rem;}
+PagedList .paged-list-filter {flex:1 1 14rem;}
+PagedList .paged-list-filter .form-select {min-width:calc(4ch + 3rem);}
 PagedList .paged-list-toolbar, PagedList .paged-list-header, PagedList .paged-list-footer {flex-shrink:0;}
+PagedList .paged-list-cards {display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,18rem),1fr));}
+PagedList [data-list-rows] {min-width:0;}
 PagedList .paged-list-selection-spacer {width:1em;flex-shrink:0;}
 </style>`))

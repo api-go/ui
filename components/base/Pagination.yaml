@@ -30,6 +30,8 @@ slots:
   actions: 'Optional inline controls after summary/settings. PagedList supplies page selection and selection-actions. Overlong action content scrolls horizontally inside its region, keeping the footer on one line.'
   controls: 'Replace numbered navigation. Host can call go/resize from this slot.'
 rules:
+  - Numeric page buttons expose their visible number as the accessible name; inactive aria-current is false, never a literal null attribute.
+  - 'Current/Total captions use text-body-secondary for readable auxiliary text. The weakened slash is decorative and aria-hidden; numeric range and total remain exposed.'
   - Bootstrap pagination/page-item/page-link, active/disabled and aria-current are the default visual language.
   - Inherits ui-sm/ui-lg density through Bootstrap variables; explicit pagination-sm/pagination-lg in custom controls retain their native sizing.
   - Inherits the shared Bootstrap ui-link appearance scope. Use class="ui-link" on this component or a parent instead of a component-specific noborder attribute. The summary slash is text-body-tertiary. Ellipses and page numbers use the same label width and button padding.

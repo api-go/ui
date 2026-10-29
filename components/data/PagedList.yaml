@@ -49,6 +49,7 @@ slots:
   empty: 'Replace successful empty-result content.'
   pagination: 'Replace the footer; reuse a Pagination bound to the same source or provide custom controls.'
 rules:
+  - Card columns adapt to the component's own available width with an intrinsic grid, rather than viewport Bootstrap column breakpoints; a narrow SplitPane must not squeeze three cards into a desktop sidebar.
   - Default is a plain list plus pagination. Search/sort/selection are opt-in; one header toolbar owns their presentation.
   - Default row label is name, label or id, with optional summary. Use item for cards, custom rows or other business content.
   - Loading/error/retry uses RequestState and retains rows; source owns request concurrency and no business persistence.

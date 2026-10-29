@@ -1,0 +1,272 @@
+{
+  "id": "admin",
+  "title": "云间工作台",
+  "type": "workspace",
+  "entry": "index.html",
+  "dataBoundary": "虚构数据；保存到当前浏览器 LocalStorage.adminTemplateData；无业务后端、身份或权限模拟。",
+  "state": "app.js",
+  "fixtures": "data/fixtures.js",
+  "layouts": [
+    {
+      "id": "sidebar",
+      "label": "侧栏导航",
+      "file": "layouts/sidebar.html"
+    },
+    {
+      "id": "topnav",
+      "label": "顶部导航",
+      "file": "layouts/topnav.html"
+    },
+    {
+      "id": "mixed",
+      "label": "混合导航",
+      "file": "layouts/mixed.html"
+    }
+  ],
+  "composition": "所有布局通过 blocks/content.html 挂载同一套 View；不按布局复制业务页面。",
+  "sharedBlocks": [
+    "blocks/header.html",
+    "blocks/navigation-side.html",
+    "blocks/content.html"
+  ],
+  "views": [
+    {
+      "id": "home",
+      "title": "工作概览",
+      "file": "views/home.html",
+      "scroll": "flow",
+      "interactions": [
+        "进入筛选结果",
+        "新建客户",
+        "查看记录"
+      ]
+    },
+    {
+      "id": "customers",
+      "title": "客户管理",
+      "file": "views/customers/list.html",
+      "scroll": "internal",
+      "interactions": [
+        "搜索/筛选/排序/分页",
+        "选择/批量跟进",
+        "进入客户详情"
+      ]
+    },
+    {
+      "id": "customer-workspace",
+      "title": "客户工作台",
+      "file": "views/customers/workspace.html",
+      "scroll": "split",
+      "interactions": [
+        "同一列表/详情 View 复用",
+        "拖动/键盘调整分栏",
+        "Hash恢复选择与窄屏面板",
+        "编辑后返回同一客户"
+      ]
+    },
+    {
+      "id": "customer-detail",
+      "title": "客户详情",
+      "file": "views/customers/detail.html",
+      "scroll": "flow",
+      "interactions": [
+        "关注",
+        "编辑",
+        "查看关联订单"
+      ]
+    },
+    {
+      "id": "customer-edit",
+      "title": "编辑客户",
+      "file": "views/customers/edit.html",
+      "scroll": "flow",
+      "interactions": [
+        "校验",
+        "保存/取消",
+        "跨布局保留草稿"
+      ]
+    },
+    {
+      "id": "orders",
+      "title": "订单管理",
+      "file": "views/orders/list.html",
+      "scroll": "internal",
+      "interactions": [
+        "搜索/筛选/排序/分页",
+        "查看订单"
+      ]
+    },
+    {
+      "id": "order-detail",
+      "title": "订单详情",
+      "file": "views/orders/detail.html",
+      "scroll": "flow",
+      "interactions": [
+        "确认/完成",
+        "取消确认",
+        "查看客户"
+      ]
+    },
+    {
+      "id": "history",
+      "title": "操作记录",
+      "file": "views/history.html",
+      "scroll": "flow",
+      "interactions": [
+        "搜索记录",
+        "空结果恢复"
+      ]
+    },
+    {
+      "id": "profile",
+      "title": "个人资料",
+      "file": "views/settings/profile.html",
+      "scroll": "flow",
+      "interactions": [
+        "校验/保存",
+        "撤销草稿"
+      ]
+    },
+    {
+      "id": "preferences",
+      "title": "界面偏好",
+      "file": "views/settings/preferences.html",
+      "scroll": "flow",
+      "interactions": [
+        "保存密度/外观/页长",
+        "撤销草稿"
+      ]
+    },
+    {
+      "id": "states",
+      "title": "状态与恢复",
+      "file": "views/states/examples.html",
+      "scroll": "flow",
+      "interactions": [
+        "加载/空态/失败/重试",
+        "下一次保存失败",
+        "重置确认"
+      ]
+    },
+    {
+      "id": "guide",
+      "title": "模板使用说明",
+      "file": "views/guide.html",
+      "scroll": "flow",
+      "interactions": [
+        "查看布局/View/状态源码"
+      ]
+    },
+    {
+      "id": "missing",
+      "title": "不存在的页面",
+      "file": "views/states/not-found.html",
+      "scroll": "flow",
+      "interactions": [
+        "返回工作概览"
+      ]
+    },
+    {
+      "id": "customer-import",
+      "title": "导入客户",
+      "file": "views/customers/import.html",
+      "scroll": "flow",
+      "interactions": [
+        "文件读取",
+        "字段映射",
+        "错误修正",
+        "确认新增与失败重试"
+      ]
+    },
+    {
+      "id": "customer-export",
+      "title": "导出客户",
+      "file": "views/customers/export.html",
+      "scroll": "flow",
+      "interactions": [
+        "范围与字段",
+        "真实JSON下载",
+        "快照重复下载"
+      ]
+    },
+    {
+      "id": "tasks",
+      "title": "任务与结果",
+      "file": "views/tasks/list.html",
+      "scroll": "flow",
+      "interactions": [
+        "本机结果搜索",
+        "进入任务详情"
+      ]
+    },
+    {
+      "id": "task-detail",
+      "title": "处理结果",
+      "file": "views/tasks/detail.html",
+      "scroll": "flow",
+      "interactions": [
+        "完成/跳过/失败结果",
+        "失效任务恢复"
+      ]
+    },
+    {
+      "id": "customer-create",
+      "title": "分步创建客户",
+      "file": "views/customers/create.html",
+      "scroll": "flow",
+      "interactions": [
+        "完整草稿",
+        "分组校验",
+        "返回保留",
+        "确认创建"
+      ]
+    }
+  ],
+  "dependencies": [
+    "State",
+    "Bootstrap",
+    "HTTP",
+    "UUID",
+    "Disposer",
+    "ListDataSource",
+    "View",
+    "Modal",
+    "Dialog",
+    "Toast",
+    "AutoForm",
+    "Nav",
+    "AppShell",
+    "Pane",
+    "PageHeader",
+    "RequestState",
+    "Pagination",
+    "PagedList",
+    "MouseMover",
+    "Resizer",
+    "SplitPane"
+  ],
+  "preview": "同源 HTTP(S) 静态服务映射 /ui；不支持 file:// 双击预览。",
+  "routeState": {
+    "adminLayout": "布局",
+    "adminPage": "当前页面",
+    "adminId": "独立详情或编辑资源",
+    "adminCustomers/adminOrders": "已应用查询、排序、页码和页长",
+    "adminWorkspaceCustomer": "工作台客户选择",
+    "adminCustomerPane": "手机浏览/详情面板",
+    "adminCustomerView": "列表/卡片",
+    "adminHistory": "已应用历史搜索",
+    "adminImportStep": "导入阶段；文件不放入地址",
+    "adminTask": "本机任务ID",
+    "adminTaskSearch": "任务搜索",
+    "adminReturn": "编辑返回上下文",
+    "adminCreateStep": "创建阶段；新上下文缺少草稿时回到第一步"
+  },
+  "preferences": {
+    "adminCustomerListWidth": "SplitPane宽度，LocalStorage",
+    "adminNavigationWidth": "AppShell自动Resizer宽度，LocalStorage"
+  },
+  "scripts": [
+    "app.js",
+    "workflows.js"
+  ]
+}

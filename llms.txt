@@ -16,7 +16,7 @@ Choose by layout and interaction, not To B / To C. One product can contain all t
 | Management workspace | Records, configuration, review and operations; bounded regions scroll independently | [AdminWorkspace.md](AdminWorkspace.md) |
 | Interactive application | Chat, inbox, editor, board or canvas; bounded working space retains context | [InteractiveApp.md](InteractiveApp.md) |
 
-Read [SOP.md](SOP.md), [State](frameworks/State.yaml), [Bootstrap](frameworks/Bootstrap.yaml), the selected type guide, then only contracts needed by its recipe. Hosts may add API, authorization and deployment rules. The master application uses its public Frontend Development contracts for those additions.
+Read [SOP.md](SOP.md), [application-level UI design SOP](Interface-Design.md), [State](frameworks/State.yaml), [Bootstrap](frameworks/Bootstrap.yaml), the selected type guide, then only contracts needed by its recipe. The design SOP also applies to reusable components; protocol/geometry checks do not replace visual self-review. Hosts may add API, authorization and deployment rules. The master application uses its public Frontend Development contracts for those additions.
 
 ## Composition defaults
 
@@ -34,9 +34,12 @@ Read [SOP.md](SOP.md), [State](frameworks/State.yaml), [Bootstrap](frameworks/Bo
 
 ## Start from a complete template
 
-Prefer a matching runnable HTML before composing markup. Open the [live template gallery](templates/index.html) or read the [template guide](Templates.md), then consult only the selected type and the component contracts it uses.
+Start with the [system catalog](templates/index.html) and filter by task/type. Choose [admin](templates/systems/admin/index.html) (three navigation layouts, creation/import/export/results), [mobile](templates/systems/mobile/index.html) (adaptive bottom/rail/sidebar, directly shares admin Views), or [desktop](templates/systems/desktop/index.html) (explorer with narrow list drawer, retained editor drafts and tasks). Read that system's README/manifest, copy the matching layout/View, then consult only the required State/save/component contracts. The [template guide](Templates.md) explains the reuse boundary.
+
+The following are retained standalone composition examples, not separate published systems:
 
 - [Customer workspace](templates/customer-workspace.html): Hash filters/selection/tabs, resizable master/detail, local preferences.
+- [Customer detail](templates/customer-detail.html): editable HTML + Bootstrap + State; freely rearrange business sections and actions, with no DetailView component or field schema. See [template/component boundaries](Templates.md).
 - [Settings console](templates/settings-console.html): global/local AutoForm columns, field spans, shared draft and explicit save/recovery.
 - [Writing studio](templates/note-studio.html): retained multi-note draft, Hash editor modes, CodeEditor and one save boundary.
 - [Content catalog](templates/content-catalog.html): responsive browsing, Hash search/category/sort/detail and local favorites.
@@ -87,14 +90,14 @@ When the hosting service manages static asset versions and conditional caching, 
 
 ## Retrieval rules
 
-- Read this file first. For application or component development, read [Frontend Development SOP](SOP.md) completely before implementation, then open only the framework, utility, and component documents required by the current task.
+- Read this file first. For application or component development, read [Frontend Development SOP](SOP.md) and [UI design SOP](Interface-Design.md) completely before implementation, then open only the framework, utility, and component documents required by the current task.
 - Resolve every relative link from the URL of this file. Linked YAML files are authoritative API contracts.
 - Flat names inside YAML related/dependencies refer to contract names: resolve them through this index across component categories. A sibling Name.test.yaml is the executable contract, not an extra production script.
 - Do not preload every linked document. Follow `related` and `tests` references only when they are relevant to the task.
 - Preserve declarative bindings when extending a component.
 - Use `$.state.*` for reactive component-property expressions, including asynchronous API result bindings such as `<List $.state.list="usersApi.result.list">`; do not omit `$`.
 - Do not change framework internals unless framework changes are requested.
-- Sibling YAML files and executable .test.yaml cases describe this exact release. Use the portable component runner described in [Component-Testing.md](Component-Testing.md).
+- Shared YAML and type guides are mirrored from master/Doc/_system/AI/Development/Frontend in this repository. Edit the canonical source, then run `node TESTS/frontend/sync-ui-contracts.mjs` from master; `node --test TESTS/frontend/ui-contracts.test.mjs` rejects drift. Do not maintain independent overlapping contracts.
 - Add or update a regression test for every public behavior change.
 - Before declaring a public API complete, compare its YAML attributes, properties, methods, events, slots, state fields, options, and rules against named test assertions and examples. Every documented item needs coverage; examples must visibly demonstrate the core behavior declaratively.
 - In an ordered value list, the first value is the default.
@@ -148,7 +151,6 @@ When the hosting service manages static asset versions and conditional caching, 
 - [PagedList](components/data/PagedList.yaml): lightweight internally scrolling list/card views, schema filters, optional headers/tools/selection and footer action slots.
 - [Pagination](components/base/Pagination.yaml): independent Bootstrap pager with slots, events and optional shared [ListDataSource](utilities/ListDataSource.yaml).
 - [CardGrid](components/data/CardGrid.yaml): wrapping card results and selection.
-- [DBTypeInput](components/data/DBTypeInput.yaml): bindable database type editor, also registered by DataGrid.
 - [Chart](components/data/Chart.yaml): native Chart.js configuration component.
 
 ## Editor components

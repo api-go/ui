@@ -1,6 +1,8 @@
 # Frontend Development SOP
 
-This SOP applies to application pages and reusable components built with this package. Read `llms.txt` first, then this file, before changing frontend code.
+This SOP applies to application pages and reusable components built with `www/ui`. Read `llms.txt` first, then this file, before changing frontend code.
+
+Read [Interface-Design.md](Interface-Design.md) completely for application and reusable component work. It defines application-level region roles, alignment/spacing, hierarchy, toolbars/forms, pagination/selection, responsive contraction and visual acceptance on top of Bootstrap. Before markup, record the primary task/action, component choices, scroll owner and narrow-host strategy; no extra user approval is implied. Keep host/demo controls visibly separate and identify slot-provided business actions. Protocol and geometry success do not replace visual self-review of the final rendered artifact.
 
 ## Design philosophy
 
@@ -16,12 +18,14 @@ This SOP applies to application pages and reusable components built with this pa
 
 ## Component workflow
 
+Choose the reuse layer using Templates.md before creating a component. Stable interactions/state/lifecycle or structural capabilities belong in components; customizable business pages and sections belong in the separate templates/ library. Copy and edit template HTML freely using Bootstrap and State; do not require a page schema or invent many slots merely to support arbitrary placement. Templates have application-level browser tests, not registered component contracts.
+
 Set ui-sm/ui-lg once on html/body for global density; omit for BS defaults and use ui-default for a local reset. Explicit BS size classes and spacing utilities win. New generated controls inherit density instead of repeating fixed small classes. See examples/density.html for a complete zero-page-CSS demonstration with FilterBar, ActionBar, RequestState and virtualized data. Density is independent of screen size and theme.
 
 1. Fix the lowest reusable abstraction first, then integrate it into the page.
 2. A Slot receiver must contain only replaceable Slot content. Keep required controls, such as remove buttons, in a stable wrapper outside the receiver.
 3. Document every public attribute, property, method, event, and Slot in YAML and cover each behavior in the component test page.
-4. Application-specific components belong to their host application; framework-neutral primitives belong in this package.
+4. Application-level reusable components belong in `www/admin/components`; framework-neutral primitives belong in `www/ui/components`.
 5. When the host uses automatic asset versioning, load `ui.js?autoversion=1`; do not append or hard-code child asset versions.
 
 ## Save and navigation contract
@@ -34,7 +38,7 @@ Set ui-sm/ui-lg once on html/body for global density; omit for BS defaults and u
 ## Required verification
 
 1. Run focused syntax/component tests.
-2. Use this package's local static test server and the Codex in-app browser. Follow the host application's own acceptance commands when integrating.
+2. Use the browser against the human-managed development process; do not use an external watch or start another server. Follow the hosting project's build/restart and final acceptance commands. UI asset changes alone do not require a Go rebuild.
 3. Exercise every changed control through the UI: add, edit/select, remove, reorder where supported, save, reload, and verify persisted values.
 4. Verify Save enabled/disabled transitions and navigation/unload protection.
 5. Test affected page states at wide and narrow sizes, both themes, keyboard navigation, long content and route reload/back/forward. Verify bounded workspaces do not scroll the document and natural pages do.
@@ -42,8 +46,3 @@ Set ui-sm/ui-lg once on html/body for global density; omit for BS defaults and u
 7. Remove temporary test data only after persistence has been verified.
 
 Code inspection alone is not UI acceptance. A feature is complete only when its real browser interaction and saved result agree.
-
-
-Control appearance is independent of density: apply ui-link to a container for link-style buttons/pagination and underlined text inputs or single-value selects. Input-group labels/icons have no filled background or border and sit outside the input underline. Focus, validation, disabled/readonly states and native select arrows remain visible and functional. Checkboxes, radios, ranges, file/color inputs and multi-row select boxes retain their native UI; card/table borders remain independent. Remove ui-link to restore the original controls. Reuse this Bootstrap-level scope; do not introduce per-component noborder flags or conditional class rewrites. Do not substitute form-control-plaintext for editable controls. The density example demonstrates this appearance switch.
-
-Use ui-toolbar with px-2 px-sm-3 for toolbars. Bordered controls need breathing room between their boxes and the toolbar boundary; the shared style adds density-aware vertical padding and gap, with more compact spacing in ui-link mode. Use ui-toolbar-fields on flex filter forms to inherit that gap. Align toolbar and list/header gutters instead of adding page-specific offsets. Numeric values use text-body; auxiliary captions/separators use text-body-tertiary and auxiliary controls use text-body-secondary. Keep primary actions and validation states semantically emphasized.

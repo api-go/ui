@@ -1,0 +1,7 @@
+<SplitPane id="adminCustomerSplit" min="360" max="720" main-min="320" $bind="LocalStorage.adminCustomerListWidth" $.state.width="LocalStorage.adminCustomerListWidth||520" $.state.pane="adminCustomerPane()" $onpanechange="Hash.go({adminCustomerPane:event.detail})">
+ <Pane slot="sidebar" scroll="none"><View slot="content" class="d-flex flex-column flex-fill overflow-hidden" file="list.html" $onerror="adminViewFailure(event)" $onready="adminViewReady(event)"></View></Pane>
+ <Pane slot="main" scroll="none">
+  <div slot="header"><PageHeader heading="{#客户详情#}"><template slot="actions"><button type="button" class="btn btn-primary" $if="adminCustomer()" $onclick="adminGo({adminPage:'customer-edit',adminId:Hash.adminWorkspaceCustomer})">{#编辑客户#}</button></template></PageHeader></div>
+  <div slot="content" class="d-flex flex-column overflow-hidden"><p class="small text-body-secondary px-3 pt-3 mb-0" role="status" $if="adminCustomer()&&!admin_state.customerSource.state.rows.some(row=>row.id===Hash.adminWorkspaceCustomer)">{#当前客户不在列表本页，详情仍保留；可继续浏览其他结果。#}</p><View class="d-flex flex-column flex-fill overflow-hidden" file="detail.html" $if="Hash.adminWorkspaceCustomer" $onerror="adminViewFailure(event)" $onready="adminViewReady(event)"></View><div class="p-3 text-body-secondary" $if="!Hash.adminWorkspaceCustomer"><p>{#从左侧选择客户查看详情。#}</p><p class="small mb-0">{#手机上可切换浏览与详情，选择和查询会保留。#}</p></div></div>
+ </Pane>
+</SplitPane>

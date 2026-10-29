@@ -15,8 +15,11 @@ cases:
       "$.state.sizes": "[10,20,50]"
     before:
       - dom: {selector: '#subject .page-item.active button', text: '2'}
+      - script: "return [...subject.querySelectorAll('button')].every(button=>button.getAttribute('aria-label')!=='null') && subject.querySelector('.page-item.active button').getAttribute('aria-label')==='2'"
       - dom: {selector: '#subject select[aria-label="Per page"]', value: '10'}
       - dom: {selector: '#subject [role=status]', containsText: '137'}
+      - dom: {selector: '#subject .pagination-caption.text-body-secondary', count: 2}
+      - script: "return subject.querySelector('.pagination-separator').getAttribute('aria-hidden')==='true'"
     actions:
       - click: '#subject button[aria-label=Next]'
       - call: {method: total, saveAs: total}

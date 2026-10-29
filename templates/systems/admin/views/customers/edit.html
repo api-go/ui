@@ -1,0 +1,9 @@
+<div class="flex-fill overflow-auto p-3 p-md-4">
+ <div class="alert alert-warning" $if="Hash.adminId&&!adminCustomer()"><p>{#客户不存在，不能编辑这个编号。#}</p><button class="btn btn-outline-secondary" type="button" $onclick="adminGo({adminPage:'customers'})">{#返回客户列表#}</button></div>
+ <div class="alert alert-warning" $if="(!Hash.adminId||adminCustomer())&&admin_state.customerDraftId!==(Hash.adminId||'new')"><p>{#另一个客户有未保存的草稿，已为你保留。#}</p><button type="button" class="btn btn-link" $onclick="adminResumeDraft()">{#继续编辑原草稿#}</button><button type="button" class="btn btn-outline-secondary" $onclick="if(await adminDiscard())adminPrepareCustomer()">{#放弃原草稿#}</button></div>
+ <template $if="admin_state.customerDraftId===(Hash.adminId||'new')">
+  <p class="small text-body-secondary mb-4">{#保存之前仅修改草稿；取消编辑可放弃修改。新客户的编号会在保存时生成。#}</p>
+  <div data-changebind-scope .changebind="AdminCustomer"><AutoForm id="adminCustomerForm" columns="2" nobutton $.state.data="admin_state.customerDraft" $.state.schema="adminCustomerFields" $.validator="adminValidateCustomer" $onsubmit="adminSaveCustomer(event)"></AutoForm></div>
+  <div class="d-flex flex-wrap gap-2 border-top pt-3 mt-4"><button type="button" class="btn btn-primary" $disabled="admin_state.saving||!State.changes.AdminCustomer" $onclick="adminCustomerForm.submit()"><i class="bi bi-check-lg me-1" aria-hidden="true"></i>{#保存客户#}</button><button type="button" class="btn btn-outline-secondary" $disabled="admin_state.saving" $onclick="adminGo({adminPage:Hash.adminReturn==='customer-workspace'?'customer-workspace':Hash.adminId?'customer-detail':'customers',adminId:Hash.adminId||null})">{#取消编辑#}</button></div>
+ </template>
+</div>

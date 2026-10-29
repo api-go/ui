@@ -1,5 +1,12 @@
 # Changelog
 
+## Unreleased — 2026-10-29
+
+- 新增后台、移动和桌面系统模板，布局共享业务 View、Hash 导航和保存边界；详情保留为可编辑模板。
+- Nav 支持水平溢出与横纵/rail/bar；AppShell 复用 SplitPane 抽屉和 Resizer，保留宽度与焦点。
+- 同步应用层 UI 设计 SOP、视觉验收及组件协议；静态 dark light meta + data-bs-theme CSS，无动态 meta。
+- State、loader 包和发布版本保持不变；本次仅提交源码与浏览器构建产物。
+
 ## Unreleased — 2026-10-28
 
 - 新增独立 Pagination、轻量 PagedList 与共享 ListDataSource，覆盖筛选、排序、卡片、选择插槽和响应式分页。

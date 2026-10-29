@@ -11,6 +11,7 @@ Advanced Settings
 Advanced mode
 All
 And...
+Application
 Apply
 Are you sure you want to delete field "{field}"?
 Are you sure you want to delete {count} row(s)?
@@ -27,6 +28,7 @@ Clear Selection
 Clear filter
 Close
 Close dialog
+Close list
 Code
 Code tools
 Collapse
@@ -84,6 +86,7 @@ Float
 Format
 Fullscreen
 HTML preview
+Home
 Index
 Integer
 Invalid JSON
@@ -96,10 +99,12 @@ Label On
 Label:Value per line
 Left
 Length
+List navigation
 Loading
 Long Text
 Memo
 More
+More navigation
 Multi Select
 New card
 New column
@@ -141,6 +146,7 @@ Regular expression, e.g. ^[A-Z].+$
 Remove
 Required
 Reset
+Resize sidebar
 Retry
 Reveal
 Reveal protected value
@@ -162,6 +168,7 @@ Selected
 Semantics
 Settings
 Shift-click another node to connect
+Show list
 Single Select
 Sort
 Source
@@ -185,6 +192,7 @@ Time
 Tiny Integer
 Title
 Toggle all rows selection
+Toggle navigation
 Total
 Unable to load data
 Unsigned Big Integer

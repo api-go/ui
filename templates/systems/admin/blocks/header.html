@@ -1,0 +1,9 @@
+<div class="d-flex flex-nowrap align-items-center gap-2 w-100">
+ <strong class="d-flex align-items-center gap-2 flex-shrink-0 text-nowrap"><i class="bi bi-columns-gap text-primary" aria-hidden="true"></i><span class="d-none d-md-inline">{#云间工作台#}</span></strong>
+ <Nav class="flex-fill" $if="adminLayout()==='topnav'" .changebind="*" $.state.list="adminNavItems()" $.state.value="adminNavPage()" $onchange="adminGo({adminPage:event.detail},true)"></Nav>
+ <Nav class="flex-fill" $if="adminLayout()==='mixed'" .changebind="*" $.state.list="adminGroups.map(group=>({type:'button',name:group.id,label:group.label,icon:group.icon}))" $.state.value="adminInfo().group" $onchange="adminGroupGo(event.detail)"></Nav>
+ <span class="flex-fill" $if="adminLayout()==='sidebar'"></span>
+ <select class="form-select w-auto flex-shrink-0" aria-label="{#布局版本#}" $bind="Hash.adminLayout"><option value="sidebar">{#侧栏#}</option><option value="topnav">{#顶部#}</option><option value="mixed">{#混合#}</option></select>
+ <button class="btn btn-link px-1 text-body-secondary flex-shrink-0" type="button" aria-label="{#切换主题#}" $aria-pressed="LocalStorage.adminTemplateDark?'true':'false'" $onclick="LocalStorage.adminTemplateDark=!LocalStorage.adminTemplateDark"><i class="bi bi-circle-half" aria-hidden="true"></i></button>
+ <button class="btn btn-link px-1 text-body-secondary flex-shrink-0" type="button" aria-label="{#返回模板目录#}" $onclick="adminExit()"><i class="bi bi-grid" aria-hidden="true"></i></button>
+</div>

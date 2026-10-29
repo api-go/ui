@@ -1,20 +1,24 @@
 name: Nav
 kind: component
 src: /ui/components/base/Nav.js
-dependencies: [Dialog]
+dependencies: [Dialog, Disposer]
 purpose: Render horizontal or vertical navigation from declarative brand and item data.
 
 attributes:
   vertical:
     type: boolean
+  orientation: 'Initial horizontal (default), vertical, rail or bar. All modes consume the same item data. state.orientation can change it without replacing the Nav.'
+  adaptive: 'Opt in to orientation controlled by an enclosing adaptive AppShell; no duplicate navigation list is required.'
   changebind: 'Use `.changebind="SourceKey"` for local protection or `.changebind="*"` to protect every true State.changes source.'
   homepage: 'Hash destination for the brand; defaults to #.'
   homeurl: 'Full destination for the brand, overriding homepage. Can also be bound through $.homeurl. Existing change protection applies before navigation.'
 
 methods:
+  setOrientation: 'setOrientation(horizontal|vertical|rail|bar); invalid values throw. Preserves selection and item identity.'
   clickHome: 'Navigate to homeurl or homepage after honoring change protection.'
 
 state:
+  orientation: 'horizontal/vertical/rail/bar; defaults from attributes. Horizontal overflows by actual container width; vertical fills its host, rail retains named icons, bar stacks icon/label.'
   brand: "{ image?, icon?, label? }"
   list: Array of navigation item objects; bind with `$.state.list="navItems"`.
   value: Selected item `name`.
@@ -32,7 +36,7 @@ events:
   nav:
     detail: '{ item, name, selected, discarded } or { item, name, selected, open } for vertical dropdown changes. Fires for every accepted button activation, including noselect action items.'
 
-item_shape: "{ type, name?, label?, icon?, items?, bind?, class?, width?, caret?, align?, closemenu? }"
+item_shape: "{ type, name?, label?, icon?, items?, bind?, class?, width?, caret?, align?, closemenu?, disabled? }"
 
 slots:
   tools-end: Controls placed at the right of a fill item, before the following navigation items. Use one fill item when supplying this slot. Slotted controls own their events and navigation guards.
@@ -55,10 +59,14 @@ examples:
     <Nav class="border-end" $.state.brand="navBrand" $.state.list="navItems" $bind="Hash.nav" vertical></Nav>
 
 rules:
+  - 'Transparent surface by default; navigation fills the supplied region and does not impose its own panel background/border.'
+  - 'Horizontal navigation remains one row. Items that do not fit the actual host move into More navigation; groups retain their labels/actions/switches. The same item objects, dirty guards and events are used in all modes. tools-end remains reserved and keyboard-reachable.'
+  - 'Rail hides visible text but retains accessible names/title; bar is intended for a small stable root-destination set. AppShell decides adaptive placement, while Nav renders the shared data.'
+  - 'Horizontal dropdown action buttons use the action label (or name) as their accessible name; decorative icons are aria-hidden and buttons have type=button.'
   - 'Set closemenu:true on a dropdown button that navigates. Its accepted activation closes the containing horizontal menu; immediate preference controls keep their existing menu behavior. Cancelled change protection leaves it open.'
   - 'Horizontal dropdowns accept caret: false for icon-only triggers and align: start for left-aligned menus. Defaults are caret: true and align: end.'
   - 'Horizontal items without an icon keep their text label visible at every breakpoint. Icon-backed items may hide their label on narrow screens and retain an accessible name.'
-  - 'The brand is hidden below the Bootstrap `md` breakpoint so horizontal navigation keeps room for action icons.'
+  - 'Brand is optional and only renders when supplied. It remains a keyboard-accessible guarded Home action; reserve its width before overflowing navigation items.'
   - 'Bind `$bind="Hash.nav"` when the selected navigation item must survive a page refresh.'
   - 'Use `noselect: true` and nav for actions such as Logout, including buttons inside dropdowns: `$onnav="if(event.detail.name===''logout'') logout()"`. Use change only for selected-page state.'
   - 'Use the same `navItems` data for horizontal and vertical navigation when comparing layouts.'

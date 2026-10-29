@@ -9,6 +9,12 @@ testData:
     - { type: fill }
     - { type: button, name: settings, label: Settings }
 cases:
+  - name: icon dropdown actions expose the label without decorative glyphs
+    attributes: { id: subject, "$.state.list": "[{type:'dropdown',name:'menu',label:'Menu',align:'start',items:[{type:'button',name:'records',label:'Records',icon:'list'}]}]" }
+    actions:
+      - click: '#subject [data-bs-toggle]'
+    after:
+      - script: "const button=subject.querySelector('.dropdown-item');return button.getAttribute('type')==='button'&&button.getAttribute('aria-label')==='Records'&&button.querySelector('i').getAttribute('aria-hidden')==='true'"
   - name: navigation closes the menu while preference actions keep it open
     attributes: { id: subject, "$.state.list": "[{type:'dropdown',name:'menu',label:'Menu',items:[{type:'button',name:'theme',label:'Theme',noselect:true},{type:'button',name:'settings',label:'Settings',noselect:true,closemenu:true}]}]" }
     actions:
@@ -99,3 +105,33 @@ cases:
     after:
       - property: { path: subject.state.value, equals: home }
       - event: { name: change, count: 1, last: home }
+
+  - name: horizontal overflow preserves same navigation and closes accepted actions
+    attributes: { id: subject, orientation: horizontal, style: 'width:240px', "$.state.list": "Array.from({length:8},(_,i)=>({type:'button',name:'page'+i,label:'Destination '+i,icon:'box'}))" }
+    before:
+      - script: "await new Promise(resolve=>setTimeout(resolve,80));return true"
+      - script: "return subject.state.overflowIndices.length>0 && subject.scrollWidth<=subject.clientWidth+1"
+      - script: "subject.style.width='1000px';await new Promise(resolve=>setTimeout(resolve,80));subject.style.width='240px';await new Promise(resolve=>setTimeout(resolve,80));const actual=[...subject.querySelectorAll('[data-nav-menu-index]:not([hidden]) .dropdown-item')].map(button=>button.textContent.trim());return JSON.stringify(actual)===JSON.stringify(subject.state.overflowIndices.map(index=>subject.state.list[index].label)) && subject.querySelectorAll('[data-nav-menu-index]').length===8"
+    actions:
+      - click: '#subject [data-nav-more] > button'
+      - script: "[...subject.querySelectorAll('[data-nav-more] .dropdown-item')].at(-1).click();await new Promise(resolve=>setTimeout(resolve,50));return true"
+    after:
+      - property: { path: subject.state.value, equals: page7 }
+      - event: { name: nav, count: 1 }
+      - dom: { selector: '#subject .dropdown-menu.show', count: 0 }
+  - name: one data set switches vertical rail bar and horizontal without changing selection
+    attributes: { id: subject, adaptive: true, "$.state.orientation": "'vertical'", "$.state.value": "'home'", "$.state.list": "[{type:'button',name:'home',label:'Home',icon:'house'},{type:'button',name:'tasks',label:'Tasks',icon:'check'}]" }
+    before:
+      - script: "return subject.vertical && getComputedStyle(subject).backgroundColor==='rgba(0, 0, 0, 0)'"
+    actions:
+      - call: { method: setOrientation, args: [rail] }
+      - wait: 30
+      - script: "return getComputedStyle(subject.querySelector('.nav-link > span')).display==='none' && subject.querySelector('.nav-link').getAttribute('aria-label')==='Home'"
+      - call: { method: setOrientation, args: [bar] }
+      - wait: 30
+      - script: "return getComputedStyle(subject.querySelector('.nav-link')).flexDirection==='column'"
+      - call: { method: setOrientation, args: [horizontal] }
+    after:
+      - property: { path: subject.state.orientation, equals: horizontal }
+      - property: { path: subject.state.value, equals: home }
+      - script: "try{subject.setOrientation('invalid');return false}catch{return true}"

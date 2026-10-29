@@ -7,15 +7,15 @@ The single draft is bound to AutoForm. Schema dividers group fields. Native vali
 ```html
 <!doctype html>
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<script src="../frameworks/State.js"></script>
-<script src="../frameworks/Bootstrap.js"></script>
-<script src="../utilities/Disposer.js"></script>
-<script src="../utilities/UUID.js"></script>
-<script src="../components/base/Pane.js"></script>
-<script src="../components/base/PageHeader.js"></script>
-<script src="../components/base/AppShell.js"></script>
-<script src="../components/base/Toast.js"></script>
-<script src="../components/base/AutoForm.js"></script>
+<script src="/ui/frameworks/State.js"></script>
+<script src="/ui/frameworks/Bootstrap.js"></script>
+<script src="/ui/utilities/Disposer.js"></script>
+<script src="/ui/utilities/UUID.js"></script>
+<script src="/ui/components/base/Pane.js"></script>
+<script src="/ui/components/base/PageHeader.js"></script>
+<script src="/ui/utilities/MouseMover.js"></script><script src="/ui/components/base/Resizer.js"></script><script src="/ui/components/base/SplitPane.js"></script><script src="/ui/components/base/AppShell.js"></script>
+<script src="/ui/components/base/Toast.js"></script>
+<script src="/ui/components/base/AutoForm.js"></script>
 </head><body class="m-0">
 <script>
 const preferenceSchema=[

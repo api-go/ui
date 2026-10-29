@@ -1,55 +1,65 @@
 <!doctype html>
-<html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>前端模板库</title>
+<html lang="zh-CN"><head><meta charset="utf-8"><meta name="color-scheme" content="dark light"><meta name="viewport" content="width=device-width,initial-scale=1"><title>应用模板 · 从完整系统开始</title>
 <script src="../frameworks/State.js"></script><script src="../frameworks/Bootstrap.js"></script>
 <script>
 const templateCatalog=[
   {
-    "id": "customer-workspace",
+    "id": "admin",
     "type": "workspace",
-    "title": "客户工作台",
-    "description": "Hash 筛选与选择、可调整列表、详情标签、本地关注偏好。"
+    "title": "{#云间工作台 · 后台管理#}",
+    "description": "{#三种导航共用客户、订单、导入导出及设置 View。#}",
+    "entry": "systems/admin/index.html",
+    "manifest": "systems/admin/manifest.json",
+    "guide": "systems/admin/README.md",
+    "status": "ready",
+    "layouts": 3,
+    "scenarios": [
+      "{#后台管理#}",
+      "{#客户与订单#}",
+      "{#多步骤导入#}"
+    ],
+    "preview": "systems/admin/assets/preview.png"
   },
   {
-    "id": "settings-console",
-    "type": "workspace",
-    "title": "设置中心",
-    "description": "局部多列表单、共享草稿、跨页保留、显式保存与错误恢复。"
+    "id": "mobile",
+    "type": "mobile",
+    "title": "{#云间随行 · 移动应用#}",
+    "description": "{#同一导航数据自动呈现为底栏、图标侧栏或完整侧栏；共用后台业务 View。#}",
+    "entry": "systems/mobile/index.html",
+    "manifest": "systems/mobile/manifest.json",
+    "guide": "systems/mobile/README.md",
+    "status": "ready",
+    "layouts": 1,
+    "scenarios": [
+      "{#移动业务#}",
+      "{#搜索与筛选#}",
+      "{#详情与表单#}"
+    ],
+    "preview": "systems/mobile/assets/preview.png"
   },
   {
-    "id": "content-catalog",
-    "type": "document",
-    "title": "内容精选",
-    "description": "自然滚动、响应式资源卡片、可分享筛选与详情、本地收藏。"
-  },
-  {
-    "id": "note-studio",
-    "type": "application",
-    "title": "写作工作室",
-    "description": "Markdown 编辑与预览、Hash 视图、跨笔记保留草稿、统一保存。"
-  },
-  {
-    "id": "records-table",
-    "type": "workspace",
-    "title": "分页数据列表",
-    "description": "内部滚动、多条件筛选、可选表头、列表/卡片共用数据源，底部选择操作与独立 Bootstrap 分页。"
+    "id": "desktop",
+    "type": "interactive",
+    "title": "{#云间写作 · 桌面工作台#}",
+    "description": "{#资源列表、编辑与预览共用工作区；窄屏列表抽屉，多份草稿统一保存。#}",
+    "entry": "systems/desktop/index.html",
+    "manifest": "systems/desktop/manifest.json",
+    "guide": "systems/desktop/README.md",
+    "status": "ready",
+    "layouts": 1,
+    "scenarios": [
+      "{#多面板#}",
+      "{#编辑与预览#}",
+      "{#多草稿保存#}"
+    ],
+    "preview": "systems/desktop/assets/preview.png"
   }
 ]
-const templateKinds=[{id:'all',label:'全部模板'},{id:'workspace',label:'管理工作台'},{id:'application',label:'交互应用'},{id:'document',label:'自然滚动页面'}]
-Bootstrap.config({bindDarkMode:[LocalStorage,'templateDark']})
-</script></head>
-<body class="m-0 bg-body text-body">
-<main class="container py-5">
- <header class="d-flex flex-wrap align-items-start justify-content-between gap-3 mb-4">
-  <div><span class="badge text-bg-primary mb-3">AI First</span><h1 class="display-6 fw-semibold">从完整模板开始</h1><p class="lead text-body-secondary mb-2">先选择交互结构，再替换业务数据。</p><p class="text-body-secondary mb-0">模板没有自定义 CSS 或内联样式，使用 Bootstrap、公共组件、Hash 与声明式数据绑定。</p></div>
- </header>
- <div class="d-flex flex-wrap gap-2 mb-4" aria-label="模板类型"><button class="btn" $each="templateKinds" as="kind" $class="(Hash.templateKind||'all')===kind.id?'btn-primary':'btn-outline-secondary'" $aria-pressed="(Hash.templateKind||'all')===kind.id?'true':'false'" $onclick="Hash.go({templateKind:kind.id})" $text="kind.label"></button></div>
- <div class="row g-4">
-  <article class="col-12 col-xl-6" $each="templateCatalog.filter(item=>!Hash.templateKind||Hash.templateKind==='all'||item.type===Hash.templateKind)" as="entry" key="id">
-   <div class="border rounded overflow-hidden h-100">
-    <div class="ratio ratio-16x9 bg-body-tertiary"><iframe loading="lazy" $src="entry.id+'.html'" $title="entry.title+'预览'" class="border-0"></iframe></div>
-    <div class="p-4 border-top"><h2 class="h4" $text="entry.title"></h2><p class="text-body-secondary" $text="entry.description"></p><div class="d-flex flex-wrap gap-2"><a class="btn btn-primary" $href="entry.id+'.html'">打开完整模板</a><a class="btn btn-outline-secondary" $href="entry.id+'.html'" download>下载 HTML 源码</a></div></div>
-   </div>
-  </article>
- </div>
- <section class="border rounded bg-body-tertiary p-4 mt-5"><h2 class="h5">使用方式</h2><ol class="mb-0"><li>打开模板，验证它是否符合页面的交互类型。</li><li>下载 HTML，保留布局结构、Hash 字段和单一草稿所有权，替换名称、schema 与数据来源。</li><li>示例本地保存只能用于浏览器偏好。接入服务端数据时，替换保存适配器，等待服务端确认后再清除 dirty 状态。</li><li>运行宽窄屏、主题、刷新、前进后退、错误恢复和持久化验收。</li></ol></section>
+function matchingTemplates(){const query=(typeof Hash.templateSearch==='string'?Hash.templateSearch:'').trim().toLowerCase();return templateCatalog.filter(entry=>(!Hash.templateType||entry.type===Hash.templateType)&&(!query||(entry.title+' '+entry.description+' '+entry.scenarios.join(' ')).toLowerCase().includes(query)))}
+</script></head><body class="m-0 bg-body-tertiary">
+<main class="container py-4 py-md-5">
+<header class="mb-4"><span class="badge bg-primary-subtle text-primary-emphasis mb-3">{#应用模板#}</span><h1 class="display-6 fw-semibold">{#从一套能操作的系统开始#}</h1><p class="lead text-body-secondary">{#按场景选择，进入独立系统，体验布局与业务交互。#}</p><a href="README.md">{#AI 取用指南：选择系统 → 布局 → View#}</a></header>
+<section class="mb-4" aria-label="{#查找模板#}"><div class="row g-3 align-items-end"><div class="col-12 col-md-8"><label class="form-label" for="catalogSearch">{#场景或关键词#}</label><input class="form-control" id="catalogSearch" type="search" placeholder="{#例如：导入、移动、编辑、多面板#}" $bind="Hash.templateSearch"></div><div class="col-12 col-md-4"><label class="form-label" for="catalogType">{#应用类型#}</label><select class="form-select" id="catalogType" $.value="Hash.templateType||''" $onchange="Hash.go({templateType:event.target.value||null})"><option value="">{#全部#}</option><option value="workspace">{#后台管理#}</option><option value="mobile">{#移动应用#}</option><option value="interactive">{#桌面工作台#}</option></select></div></div></section>
+<section aria-labelledby="readyHeading"><h2 id="readyHeading" class="h5 mb-3">{#可用系统#} <span class="text-body-secondary fw-normal" $text="matchingTemplates().length"></span></h2><div class="row g-4"><article class="col-12 col-lg-6 col-xxl-4" $each="matchingTemplates()" as="entry" key="id"><div class="card h-100"><a $href="entry.entry" tabindex="-1" aria-hidden="true"><div class="ratio ratio-16x9 border-bottom bg-body-tertiary"><img class="w-100 h-100 object-fit-contain" $src="entry.preview" alt="" loading="lazy" width="640" height="400"></div></a><div class="card-body d-flex flex-column"><h3 class="h4" $text="entry.title"></h3><p class="text-body-secondary" $text="entry.description"></p><p class="small text-body-secondary" $text="entry.layouts+' {#种布局#} · '+entry.scenarios.join(' / ')"></p><div class="mt-auto d-flex flex-wrap gap-2"><a class="btn btn-primary" $href="entry.entry">{#进入系统#}<i class="bi bi-arrow-right ms-1" aria-hidden="true"></i></a><a class="btn btn-outline-secondary" $href="entry.guide">{#取用说明#}</a><a class="btn btn-link" $href="entry.manifest">{#源文件清单#}</a></div></div></div></article></div><div class="p-4 border rounded bg-body" $if="!matchingTemplates().length"><p>{#没有匹配的模板，请换个关键词或应用类型。#}</p><button type="button" class="btn btn-outline-secondary" $onclick="Hash.go({templateSearch:null,templateType:null})">{#查看全部#}</button></div></section>
+<section class="mt-5"><h2 class="h5">{#尚待覆盖#}</h2><p class="text-body-secondary">{#内容阅读、展示网站、商品与交易系统仍在计划中，不作为已发布入口。#}</p><p class="small text-body-secondary mb-0">{#当前系统使用虚构数据和本机存储，无生产认证、上传服务或支付。预览通过同源 HTTP(S) 加载 View。#}</p></section>
 </main></body></html>

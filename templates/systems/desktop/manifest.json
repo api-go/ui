@@ -1,0 +1,104 @@
+{
+  "id": "desktop",
+  "title": "云间写作",
+  "type": "interactive",
+  "entry": "index.html",
+  "state": "app.js",
+  "layouts": [
+    {
+      "id": "explorer",
+      "label": "资源侧栏",
+      "file": "layouts/explorer.html"
+    }
+  ],
+  "views": [
+    {
+      "id": "resources",
+      "file": "views/resources.html",
+      "interactions": [
+        "搜索",
+        "键盘选择",
+        "Hash恢复"
+      ]
+    },
+    {
+      "id": "editor",
+      "file": "views/editor.html",
+      "interactions": [
+        "多份草稿",
+        "编辑/分屏/预览",
+        "统一保存/撤销"
+      ]
+    },
+    {
+      "id": "tasks",
+      "file": "views/tasks.html",
+      "interactions": [
+        "新增待办",
+        "完成勾选",
+        "统一保存"
+      ]
+    },
+    {
+      "id": "history",
+      "file": "views/history.html",
+      "interactions": [
+        "快照选择",
+        "载入草稿",
+        "确认保存"
+      ]
+    },
+    {
+      "id": "guide",
+      "file": "views/guide.html",
+      "interactions": [
+        "源码指引",
+        "失败重试演示"
+      ]
+    }
+  ],
+  "sharedBlocks": [
+    "blocks/header.html",
+    "blocks/content.html"
+  ],
+  "dependencies": [
+    "State",
+    "Bootstrap",
+    "HTTP",
+    "UUID",
+    "View",
+    "Disposer",
+    "VirtualScroll",
+    "MouseMover",
+    "Editor",
+    "CodeMirror",
+    "Markdown",
+    "Modal",
+    "Dialog",
+    "Toast",
+    "AutoForm",
+    "List",
+    "Resizer",
+    "SplitPane",
+    "Pane",
+    "AppShell",
+    "PageHeader",
+    "CodeEditor"
+  ],
+  "routeState": {
+    "desktopPage": "编辑/待办/历史/说明",
+    "desktopNote": "笔记资源",
+    "desktopPane": "窄屏面板",
+    "desktopMode": "编辑/分屏/预览",
+    "desktopSearch": "资源搜索",
+    "desktopRevision": "历史快照ID"
+  },
+  "preferences": {
+    "desktopResourceWidth": "分栏宽度",
+    "desktopDensity": "密度",
+    "desktopLink": "链接外观",
+    "desktopDark": "深色模式"
+  },
+  "dataBoundary": "草稿为内存；保存全部笔记与待办到LocalStorage.desktopTemplateData，保留10次快照。无文件系统或服务端文档模拟。",
+  "composition": "资源侧栏与正文组成一个工作台，窄屏列表图标打开抽屉；不再单列专注布局。"
+}

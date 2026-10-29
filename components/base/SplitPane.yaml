@@ -1,19 +1,24 @@
 name: SplitPane
 kind: component
 src: /ui/components/base/SplitPane.js
-dependencies: [Resizer, Disposer]
-purpose: Resizable sidebar/main composition with bounded scrolling regions and a retained single-pane narrow mode.
+dependencies: [Resizer, Disposer, UUID]
+purpose: Resizable sidebar/main composition with bounded scrolling and a retained Bootstrap offcanvas drawer on narrow hosts.
 attributes:
   min: 'Minimum desktop sidebar width in pixels; default 160.'
   max: 'Maximum desktop sidebar width in pixels; default 560; never below min.'
   main-min: 'Reserved main width in pixels; default 240.'
+  breakpoint: 'Positive narrow threshold in pixels, default768; also respects min+main-min+9.'
+  notoggle: 'Hide the built-in narrow list icon when the parent provides a toggle using show/toggle.'
 binding:
   behavior: 'A positive finite number sets preferred desktop sidebar width. Bind to a stable LocalStorage field to persist preference. User resize emits change; narrow mode and container shrink do not overwrite the preference.'
 state:
   width: 'Preferred desktop sidebar width, default 280. Rendered width is clamped to min, max and available width.'
-  pane: 'sidebar (default) or main. Controls the visible pane only in narrow mode. Host may derive it from route selection.'
+  pane: 'main (default) or sidebar. On narrow hosts sidebar opens the drawer over the retained main content; main closes it. Host may bind a route.'
+  sidebarenabled: 'Boolean, default true. False hides sidebar/resizer and gives all space to main without unmounting either region.'
+  resizable: 'Boolean, default true. False hides the desktop resizer without changing the preferred width.'
   narrow: 'Read-only boolean. True when container width is below max(768,min+main-min+9).'
 methods:
+  toggle: 'Toggle narrow drawer through show(sidebar/main).'
   show: 'show("sidebar" or "main") changes the narrow pane and emits panechange. Other values throw without changing selection.'
 events:
   change: 'Final desktop sidebar width in pixels, for two-way binding.'
@@ -24,7 +29,7 @@ slots:
 rules:
   - Includes Resizer automatically. Never put a second Resizer beside the sidebar.
   - Desktop width is clamped to preserve main-min. When both panes cannot fit, switch to narrow mode.
-  - Narrow mode hides one region and the resizer, retains both DOM trees, and offers Browse/Detail controls.
+  - Narrow mode keeps main visible, hides the resizer and offers one named list icon. Bootstrap offcanvas owns backdrop, Escape and focus trapping; a close control remains outside the replaceable sidebar slot. Closing updates pane and returns focus. No Browse/Detail tab row.
   - Host owns navigation guards. Use route binding for state.pane if switching resources must restore a particular pane.
   - Each region should contain Pane or another bounded component. It does not scroll the document.
   - Missing or invalid positive numeric attributes fall back to defaults.

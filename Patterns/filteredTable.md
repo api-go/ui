@@ -7,12 +7,12 @@ The toolbar remains fixed; Pane owns vertical scrolling and table-responsive own
 ```html
 <!doctype html>
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<script src="../frameworks/State.js"></script>
-<script src="../frameworks/Bootstrap.js"></script>
-<script src="../utilities/Disposer.js"></script>
-<script src="../components/base/Pane.js"></script>
-<script src="../components/base/PageHeader.js"></script>
-<script src="../components/base/AppShell.js"></script>
+<script src="/ui/frameworks/State.js"></script>
+<script src="/ui/frameworks/Bootstrap.js"></script>
+<script src="/ui/utilities/Disposer.js"></script>
+<script src="/ui/components/base/Pane.js"></script>
+<script src="/ui/components/base/PageHeader.js"></script>
+<script src="/ui/utilities/UUID.js"></script><script src="/ui/utilities/MouseMover.js"></script><script src="/ui/components/base/Resizer.js"></script><script src="/ui/components/base/SplitPane.js"></script><script src="/ui/components/base/AppShell.js"></script>
 </head><body class="m-0">
 <script>
 const orders_state=NewState({rows:Array.from({length:120},(_,i)=>({id:i,name:'Order '+i,amount:i*12.5}))})

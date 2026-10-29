@@ -1,0 +1,4 @@
+<AppShell id="adminShell" viewport $bind="LocalStorage.adminNavigationWidth" $.state.navwidth="LocalStorage.adminNavigationWidth||240" $onload="document.title='{#云间工作台 · 后台管理模板#}'">
+ <View slot="header" class="w-100" file="../blocks/header.html" $onerror="adminViewFailure(event)" $onready="adminViewReady(event)"></View>
+ <View slot="content" class="d-flex flex-column flex-fill overflow-hidden" file="../blocks/content.html" $onerror="adminViewFailure(event)" $onready="adminViewReady(event)"></View>
+</AppShell>

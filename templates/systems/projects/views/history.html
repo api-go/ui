@@ -1,0 +1,17 @@
+<Pane scroll="auto">
+<PageHeader slot="header" heading="{#活动记录#}" $.state.description="''">
+<template slot="actions">
+</template>
+</PageHeader>
+<div slot="content" class="p-3 p-md-4">
+<ol class="list-group list-group-flush">
+<li class="list-group-item px-0" $each="projects_state.data.history" as="entry" key="id">
+<strong $text="entry.name">
+</strong>
+<span class="d-block small text-body-secondary mt-1" $text="templateDate(entry.time)">
+</span>
+</li>
+</ol>
+<p class="text-body-secondary p-3" $if="!projects_state.data.history.length">{#保存任务或看板后，这里会出现记录。#}</p>
+</div>
+</Pane>

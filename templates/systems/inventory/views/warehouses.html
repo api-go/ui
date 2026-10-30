@@ -1,0 +1,32 @@
+<Pane scroll="auto">
+<PageHeader slot="header" heading="{#仓库#}" $.state.description="''">
+<template slot="actions">
+</template>
+</PageHeader>
+<div slot="content" class="p-3 p-md-4">
+<div class="table-responsive">
+<table class="table align-middle text-nowrap">
+<thead>
+<tr>
+<th scope="col">{#仓库#}</th>
+<th scope="col">{#负责人#}</th>
+<th scope="col">{#城市#}</th>
+<th scope="col">{#在库数量#}</th>
+</tr>
+</thead>
+<tbody>
+<tr $each="inventory_state.data.warehouses" as="row" key="id">
+<td class="" $text="row.name">
+</td>
+<td class="" $text="row.manager">
+</td>
+<td class="" $text="row.city">
+</td>
+<td class="text-end" $text="inventory_state.data.products.reduce((n,p)=>n+inventoryQty(p.id,row.id),0)">
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+</Pane>

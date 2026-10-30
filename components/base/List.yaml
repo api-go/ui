@@ -70,6 +70,8 @@ methods:
   reload: "reload({focus?}): discard remote windows and reload, optionally around a stable item ID. Returns a Promise."
   reveal: "reveal(index): load and scroll a remote absolute row index into view without changing selection. Returns a Promise."
   expandItem: "expandItem(id): expand one tree node after its children have been added to state.list."
+  collapseItem: "collapseItem(id): collapse one tree node without collapsing its siblings; no-op outside a collapsible tree."
+  isExpanded: "isExpanded(id): read whether one collapsible tree node is currently expanded."
   collapseAll: "Collapse every parent node when mode=tree and collapsible is enabled."
   expandAll: "Expand every parent node when mode=tree and collapsible is enabled."
   isAllCollapsed: "Return whether every expandable tree node is collapsed."
@@ -101,6 +103,7 @@ slots:
   group-actions: Render at the right side of every group row.
 
 rules:
+  - 'For initial mixed-case state keys, use $.state="{selectedItem:...}" to preserve JavaScript key casing, or $bind for selection. HTML attribute property paths are lowercased by the browser.'
   - The List host owns overflow-auto scrolling. Place it in a bounded region, such as Pane scroll=none, so the host receives available height. List never owns sidebar resizing; use SplitPane for that composition.
   - Tree mode uses pointer selection and expansion only; arrow navigation is intentionally unsupported. Without auto-select, item rows have no selectable hover or selected styling.
   - An empty summary retains its DOM and flexible spacer so trailing actions remain right-aligned.

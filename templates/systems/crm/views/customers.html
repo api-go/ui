@@ -1,0 +1,25 @@
+<Pane scroll="none">
+<PageHeader slot="header" heading="{#客户#}" $.state.description="''">
+<template slot="actions">
+<button type="button" class="btn btn-primary" $onclick="crmGo('customer-edit')" >
+<i class="bi bi-plus-lg me-1" aria-hidden="true">
+</i>{#新增客户#}</button>
+</template>
+</PageHeader>
+<div slot="content" class="d-flex flex-column overflow-hidden">
+<PagedList id="crm_stateList" searchable sortable  height="100%" $.source="crm_state.customers" $.state.columns="[{name:'name',label:'{#客户#}',class:'col-7'},{name:'contact',label:'{#联系人#}',class:'col-5'}]" $.state.sortoptions="[{value:'name',label:'{#名称#}'},{value:'-name',label:'{#名称倒序#}'}]">
+<template slot="item">
+<div class="row g-2">
+<div class="col-7">
+<button type="button" class="btn btn-link p-0 text-start" $text="item.name" $onclick="crmGo('customer',item.id)">
+</button>
+<span class="small d-block text-body-secondary" $text="item.industry">
+</span>
+</div>
+<div class="col-5" $text="item.contact">
+</div>
+</div>
+</template>
+</PagedList>
+</div>
+</Pane>

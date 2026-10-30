@@ -1,0 +1,63 @@
+<Pane scroll="auto">
+<PageHeader slot="header" heading="{#山野生活#}" $.state.description="'{#为日常挑选实用好物。#}'">
+<template slot="actions">
+<button type="button" class="btn btn-outline-primary" $onclick="commerceGo('cart')" >
+<i class="bi bi-bag me-1" aria-hidden="true">
+</i>{#购物车#}</button>
+</template>
+</PageHeader>
+<div slot="content" class="p-3 p-md-4">
+<form class="row g-2 mb-4 align-items-end" $onsubmit="event.preventDefault();Hash.go({commerceSearch:commerce_state.searchDraft||null})">
+<div class="col-8 col-md-7">
+<label class="d-block">
+<span class="form-label">{#搜索商品#}</span>
+<input class="form-control" type="search" $bind="commerce_state.searchDraft" placeholder="{#商品名称或介绍#}">
+</label>
+</div>
+<div class="col-4 col-md-2">
+<button type="submit" class="btn btn-primary w-100" aria-label="{#搜索#}">
+<i class="bi bi-search" aria-hidden="true">
+</i>
+<span class="d-none d-sm-inline ms-1">{#搜索#}</span>
+</button>
+</div>
+<div class="col-12 col-md-3">
+<label class="d-block">
+<span class="form-label">{#分类#}</span>
+<select aria-label="{#分类#}" class="form-select" $.value="Hash.commerceCategory||''" $onchange="Hash.go({commerceCategory:event.target.value||null})">
+<option value="">{#全部分类#}</option>
+<option value="日用">{#日用#}</option>
+<option value="文具">{#文具#}</option>
+<option value="家居">{#家居#}</option>
+</select>
+</label>
+</div>
+</form>
+<div class="row g-3">
+<article class="col-6 col-lg-4 col-xxl-3" $each="commerceProducts()" as="product" key="id">
+<div class="card h-100">
+<button type="button" class="btn rounded-0 bg-primary-subtle text-primary-emphasis p-4" $onclick="commerceGo('product',product.id)" $aria-label="product.name">
+<i class="display-3" $class="'bi bi-'+product.icon" aria-hidden="true">
+</i>
+</button>
+<div class="card-body d-flex flex-column">
+<span class="small text-body-secondary" $text="product.category">
+</span>
+<h2 class="h6 mt-1">
+<button class="btn btn-link p-0 text-start" $text="product.name" $onclick="commerceGo('product',product.id)">
+</button>
+</h2>
+<strong class="mt-auto" $text="templateMoney(product.price)">
+</strong>
+<button class="btn btn-outline-primary mt-3" type="button" $aria-label="'{#加入购物车#} '+product.name" $disabled="product.stock===0" $onclick="commerceAdd(product.id)">
+<i class="bi bi-bag-plus" aria-hidden="true">
+</i>
+<span class="d-none d-sm-inline ms-1">{#加入购物车#}</span>
+</button>
+</div>
+</div>
+</article>
+</div>
+<p class="text-body-secondary p-3" $if="!commerceProducts().length">{#没有匹配商品，换个关键词或分类。#}</p>
+</div>
+</Pane>

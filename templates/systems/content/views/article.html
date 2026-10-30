@@ -1,0 +1,32 @@
+<Pane scroll="none">
+<PageHeader slot="header" heading="{#阅读文档#}" $.state.description="''">
+<template slot="actions">
+<button type="button" class="btn btn-outline-primary" $onclick="contentGo('editor',Hash.contentId)" $if="contentArticle()">{#编辑文档#}</button>
+</template>
+</PageHeader>
+<div slot="content" class="d-flex flex-column overflow-hidden">
+<template $if="contentArticle()">
+<div class="px-3 px-md-4 pt-3 flex-shrink-0">
+<div class="d-flex flex-wrap align-items-center gap-2 mb-2">
+<span class="badge bg-secondary-subtle text-secondary-emphasis" $text="contentArticle()?.status">
+</span>
+<span class="small text-body-secondary" $text="contentArticle()?.category+' · '+contentArticle()?.author">
+</span>
+</div>
+<h2 class="h3" $text="contentArticle()?.name">
+</h2>
+</div>
+<CodeEditor class="flex-fill" readonly lang="markdown" mode="preview" $.value="contentArticle()?.content||''" $onerror="content_state.error='{#预览加载失败，请重试打开文档。#}'">
+</CodeEditor>
+<div class="px-3 px-md-4 py-3 border-top d-flex flex-wrap gap-2 flex-shrink-0">
+<button type="button" class="btn btn-outline-secondary" $onclick="contentCollect()" $aria-pressed="content_state.data.collections.includes(Hash.contentId)?'true':'false'">
+<i class="bi bi-bookmark me-1" aria-hidden="true">
+</i>{#收藏或取消收藏#}</button>
+<button type="button" class="btn btn-primary" $onclick="contentStatus('已发布')" $if="contentArticle()?.status==='草稿'">{#发布#}</button>
+<button type="button" class="btn btn-outline-secondary" $onclick="contentStatus('已归档')" $if="contentArticle()?.status==='已发布'">{#归档#}</button>
+<button type="button" class="btn btn-outline-secondary" $onclick="contentStatus('草稿')" $if="contentArticle()?.status==='已归档'">{#恢复草稿#}</button>
+</div>
+</template>
+<div class="alert alert-warning" $if="!(contentArticle())">{#记录不存在，请返回列表选择。#}</div>
+</div>
+</Pane>

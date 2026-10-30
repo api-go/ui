@@ -1,7 +1,9 @@
 name: Modal
 kind: component
 src: /ui/components/base/Modal.js
+dependencies: [Disposer]
 purpose: Present slotted content in a controllable Bootstrap modal.
+focus: 'Native Bootstrap focus trap starts from tabindex=-1 on the modal. Escape during opening queues dismissal; closing restores the connected trigger. Static and dirty guards retain priority.'
 
 attributes:
   static: Prevent Escape and backdrop dismissal in every state.
@@ -10,6 +12,7 @@ attributes:
   max-width: CSS max-width for the modal dialog.
   body-height: CSS height for the modal body.
   body-min-height: CSS min-height for the modal body.
+  body-class: 'Bootstrap classes for body spacing; default p-3. Use p-0 when a nested list/editor already owns its gutters.'
 
 binding:
   behavior: Bind a boolean with $bind to show or hide the modal.
@@ -20,6 +23,7 @@ layout:
 accessibility:
   close: 'The default header dismiss button is named Close dialog, distinct from host-owned footer actions.'
   focus: Hiding releases focus before the modal becomes aria-hidden, makes the hidden modal inert, and restores focus to the element that was active before opening when it remains available.
+  disposal: 'Removing a mounted Modal completes any opening/hiding transition, clears its Bootstrap backdrop/body lock and disposes the instance. No private Bootstrap fields are used.'
 
 state:
   title: Default header title.

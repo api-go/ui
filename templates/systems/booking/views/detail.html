@@ -1,0 +1,51 @@
+<Pane scroll="auto">
+<PageHeader slot="header" heading="{#预约详情#}" $.state.description="''">
+<template slot="actions">
+</template>
+</PageHeader>
+<div slot="content" class="p-3 p-md-4">
+<template $if="bookingAppointment()">
+<h2 class="h3" $text="bookingAppointment()?.name">
+</h2>
+<dl class="row g-3 my-4">
+<div class="col-6 col-lg-3">
+<dt class="small text-body-secondary fw-normal">{#资源#}</dt>
+<dd class="mt-1" $text="bookingResource(bookingAppointment()?.resourceId)?.name">
+</dd>
+</div>
+<div class="col-6 col-lg-3">
+<dt class="small text-body-secondary fw-normal">{#日期#}</dt>
+<dd class="mt-1" $text="bookingAppointment()?.date">
+</dd>
+</div>
+<div class="col-6 col-lg-3">
+<dt class="small text-body-secondary fw-normal">{#时段#}</dt>
+<dd class="mt-1" $text="bookingAppointment()?.start+' – '+bookingAppointment()?.end">
+</dd>
+</div>
+<div class="col-6 col-lg-3">
+<dt class="small text-body-secondary fw-normal">{#状态#}</dt>
+<dd class="mt-1" $text="bookingAppointment()?.status">
+</dd>
+</div>
+<div class="col-6 col-lg-3">
+<dt class="small text-body-secondary fw-normal">{#联系人#}</dt>
+<dd class="mt-1" $text="bookingAppointment()?.owner">
+</dd>
+</div>
+<div class="col-6 col-lg-3">
+<dt class="small text-body-secondary fw-normal">{#人数#}</dt>
+<dd class="mt-1" $text="bookingAppointment()?.people">
+</dd>
+</div>
+</dl>
+<p $text="bookingAppointment()?.notes">
+</p>
+<div class="d-flex flex-wrap gap-2" $if="bookingAppointment()?.status==='已预约'">
+<button type="button" class="btn btn-primary" $onclick="bookingGo('editor',Hash.bookingId)" >{#调整预约#}</button>
+<button type="button" class="btn btn-outline-danger" $onclick="bookingCancel()" >{#取消预约#}</button>
+</div>
+</template>
+<div class="alert alert-warning" $if="!(bookingAppointment())">{#记录不存在，请返回列表选择。#}</div>
+</div>
+</Pane>

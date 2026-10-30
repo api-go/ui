@@ -1,0 +1,21 @@
+<section class="container py-4 py-md-5">
+<h1 class="display-6 fw-semibold mb-3">{#为每天的协作而设计#}</h1>
+<p class="lead text-body-secondary mb-4">{#少一些来回切换，多一些专注推进。#}</p>
+<div class="row g-4">
+<article class="col-12 col-md-6" $each="[{icon:'funnel',title:'{#从线索到成交#}',text:'{#在同一条记录中保留客户、商机阶段与报价，不遗漏下一次跟进。#}'},{icon:'kanban',title:'{#从目标到交付#}',text:'{#看板与任务清单让每个人知道自己负责什么。#}'},{icon:'journal-richtext',title:'{#从文档到知识#}',text:'{#编辑、阅读与归档形成清晰的内容生命周期。#}'},{icon:'phone',title:'{#随时随地处理#}',text:'{#手机与桌面共享业务流程，轻松查看待办与进展。#}'}]" as="feature">
+<div class="border rounded p-4 h-100">
+<i class="fs-2 text-primary" $class="'bi bi-'+feature.icon" aria-hidden="true">
+</i>
+<h2 class="h4 mt-3" $text="feature.title">
+</h2>
+<p class="text-body-secondary mb-0" $text="feature.text">
+</p>
+</div>
+</article>
+</div>
+<div class="text-center mt-5">
+<button type="button" class="btn btn-primary" $onclick="websiteGo('pricing')" >
+<i class="bi bi-arrow-right me-1" aria-hidden="true">
+</i>{#选择适合的方案#}</button>
+</div>
+</section>

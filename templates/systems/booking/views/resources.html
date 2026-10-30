@@ -1,0 +1,32 @@
+<Pane scroll="auto">
+<PageHeader slot="header" heading="{#资源与容量#}" $.state.description="'{#保存时核对容量与时段冲突；真实预约需由业务接口原子确认。#}'">
+<template slot="actions">
+</template>
+</PageHeader>
+<div slot="content" class="p-3 p-md-4">
+<div class="table-responsive">
+<table class="table align-middle text-nowrap">
+<thead>
+<tr>
+<th scope="col">{#资源#}</th>
+<th scope="col">{#位置#}</th>
+<th scope="col">{#容量#}</th>
+<th scope="col">{#设施#}</th>
+</tr>
+</thead>
+<tbody>
+<tr $each="booking_state.data.resources" as="row" key="id">
+<td class="" $text="row.name">
+</td>
+<td class="" $text="row.location">
+</td>
+<td class="" $text="row.capacity+' {#人#}'">
+</td>
+<td class="" $text="row.description">
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+</Pane>

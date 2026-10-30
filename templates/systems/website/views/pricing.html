@@ -1,0 +1,29 @@
+<section class="container py-4 py-md-5">
+<h1 class="display-6 fw-semibold mb-3">{#从适合团队的方案开始#}</h1>
+<p class="lead text-body-secondary mb-4">{#方案清晰，按团队规模选择。#}</p>
+<div class="row g-4">
+<article class="col-12 col-lg-4" $each="[{id:'starter',name:'{#起步版#}',price:0,caption:'{#适合个人探索#}',features:['{#三个协作项目#}','{#基础任务与文档#}','{#社区支持#}']},{id:'team',name:'{#团队版#}',price:990,caption:'{#适合十人协作团队#}',features:['{#十个协作席位#}','{#客户与项目协同#}','{#知识库与分析报表#}']},{id:'business',name:'{#企业版#}',price:null,caption:'{#适合多团队协同#}',features:['{#按组织配置方案#}','{#实施与培训支持#}','{#业务系统对接#}']}]" as="plan" key="id">
+<div class="card h-100" $class="plan.id==='team'?'border-primary':''">
+<div class="card-body p-4 d-flex flex-column">
+<span class="badge bg-primary-subtle text-primary-emphasis align-self-start mb-2" $if="plan.id==='team'">{#推荐#}</span>
+<h2 class="h4" $text="plan.name">
+</h2>
+<p class="text-body-secondary" $text="plan.caption">
+</p>
+<div class="fs-2 my-3" $text="plan.price===null?'{#联系我们#}':templateMoney(plan.price)">
+</div>
+<ul class="list-unstyled mb-4">
+<li class="mb-3" $each="plan.features" as="feature">
+<i class="bi bi-check2 text-success me-2" aria-hidden="true">
+</i>
+<span $text="feature">
+</span>
+</li>
+</ul>
+<button class="btn mt-auto" $class="plan.id==='team'?'btn-primary':'btn-outline-primary'" type="button" $onclick="websiteGo('signup',plan.id)">{#了解此方案#}</button>
+</div>
+</div>
+</article>
+</div>
+<p class="small text-body-secondary mt-4">{#价格为页面演示，不构成实际销售报价，也不会发起订阅或扣费。#}</p>
+</section>

@@ -1,0 +1,60 @@
+<Pane scroll="auto">
+<PageHeader slot="header" heading="{#订单详情#}" $.state.description="''">
+<template slot="actions">
+</template>
+</PageHeader>
+<div slot="content" class="p-3 p-md-4">
+<template $if="commerceOrder()">
+<div class="d-flex flex-wrap gap-3 justify-content-between mb-4">
+<div>
+<h2 class="h4" $text="commerceOrder()?.id">
+</h2>
+<span class="text-body-secondary" $text="templateDate(commerceOrder()?.time)">
+</span>
+</div>
+<span class="badge bg-primary-subtle text-primary-emphasis align-self-start" $text="commerceOrder()?.status">
+</span>
+</div>
+<div class="table-responsive">
+<table class="table align-middle text-nowrap">
+<thead>
+<tr>
+<th scope="col">{#商品#}</th>
+<th scope="col">{#数量#}</th>
+<th scope="col">{#单价#}</th>
+<th scope="col">{#小计#}</th>
+</tr>
+</thead>
+<tbody>
+<tr $each="commerceOrder()?.lines||[]" as="row" key="id">
+<td class="" $text="row.name">
+</td>
+<td class="text-end" $text="row.qty">
+</td>
+<td class="text-end" $text="templateMoney(row.price)">
+</td>
+<td class="text-end" $text="templateMoney(row.price*row.qty)">
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+<p class="text-end fs-3" $text="templateMoney(commerceOrder()?.total)">
+</p>
+<section class="border-top pt-3">
+<h3 class="h6">{#收货信息#}</h3>
+<p $text="commerceOrder()?.address.name+' · '+commerceOrder()?.address.phone">
+</p>
+<p class="text-body-secondary" $text="commerceOrder()?.address.city+commerceOrder()?.address.street">
+</p>
+</section>
+<div class="d-flex flex-wrap gap-2 mt-4">
+<button type="button" class="btn btn-primary" $onclick="commerceStatus('已发货')" $if="commerceOrder()?.status==='待发货'">{#模拟发货#}</button>
+<button type="button" class="btn btn-primary" $onclick="commerceStatus('已完成')" $if="commerceOrder()?.status==='已发货'">{#确认收货#}</button>
+<button type="button" class="btn btn-outline-danger" $onclick="commerceCancel()" $if="commerceOrder()?.status==='待发货'">{#取消订单#}</button>
+<button type="button" class="btn btn-outline-secondary" $onclick="templateDownload('order.json',commerceOrder())" >{#下载订单#}</button>
+</div>
+</template>
+<div class="alert alert-warning" $if="!(commerceOrder())">{#记录不存在，请返回列表选择。#}</div>
+</div>
+</Pane>

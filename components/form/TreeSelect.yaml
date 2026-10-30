@@ -1,0 +1,39 @@
+name: TreeSelect
+kind: component
+src: /ui/components/form/TreeSelect.js
+dependencies: [ResourcePicker, List, Disposer]
+purpose: Hierarchical entity selection with tree or level-by-level cascade presentation, using List and ResourcePicker's confirmation boundary.
+attributes:
+  mode: [tree, cascade]
+  multiple: 'Boolean; independent ID array in tree mode. Cascade is single only.'
+  selectparents: 'Allow parent IDs as independent selections; default leaf-only. Selecting a parent never silently selects descendants.'
+  title: 'Picker trigger/dialog label.'
+  required: 'Require a confirmed selected ID.'
+  disabled: 'Disable opening and clear.'
+properties:
+  items: 'Flat {id,label?,name?,parent?,hasChildren?,disabled?,summary?} array. IDs/parents normalize to strings; duplicate/empty IDs and cycles throw before replacing the current collection.'
+  value: 'Committed string or string array. The full path is derived from nodes and never stored as duplicate identity.'
+  loadchildren: 'Optional async (node,signal)=>direct child array. Omitted parent defaults to node.id. Errors expose Retry; canceled/stale work cannot publish. Set hasChildren on unloaded parents.'
+methods:
+  show: 'Open the confirmation workspace.'
+  cancel: 'Close without publishing a selected value and cancel pending branch work.'
+  choose: 'choose(nodeOrId): toggle only eligible, enabled loaded nodes in the pending transaction.'
+  expand: 'expand(node): load an unloaded branch and expand/navigate it. A branch failure leaves choices intact.'
+  clear: 'Clear committed IDs and publish change.'
+  path: 'path(id): root-to-node records for display; unknown IDs return [].'
+events:
+  change: 'Confirmed selected scalar/array or explicit clear; search/branch navigation does not publish.'
+  cancel: 'Workspace dismissed without committing pending choices.'
+slots:
+  item-extra: 'Additional content beside a tree choice, using item. Required choice control remains component-owned.'
+rules:
+  - 'Tree mode uses existing List tree expansion and indentation. Cascade presents one level and clickable ancestor breadcrumbs; search shows matches with their path. Multiple selection is independent, not an implicit parent/child cascade.'
+  - 'Tab/Space operate native choices; named branch buttons are keyboard reachable. Up/Down/Home/End move focus among visible enabled choice/branch controls; Right opens a branch, Left collapses or returns toward its parent. ResourcePicker retains confirm/cancel and Modal focus restoration.'
+  - 'Local filtering keeps matching ancestors in tree mode. Server authorization and lazy query bounds belong in loadchildren; this does not promise virtualized global-directory search.'
+  - 'Unknown saved IDs remain visible instead of being erased; supply the selected path nodes in items to restore labels. Consumers validate resource availability at the business save boundary.'
+tests: [TreeSelect.test.yaml]
+examples:
+  category: |
+    <TreeSelect mode="cascade" title="{#Category#}" $bind="product_state.draft.categoryId"
+      $.items="categoryNodes"></TreeSelect>
+    <!-- categoryNodes: [{id:'office',label:'Office'},{id:'paper',label:'Paper',parent:'office'}] -->

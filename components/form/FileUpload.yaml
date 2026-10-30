@@ -1,0 +1,38 @@
+name: FileUpload
+kind: component
+src: /ui/components/form/FileUpload.js
+dependencies: [Disposer]
+purpose: Bounded upload queue with host-owned transport and committed attachment binding.
+attributes:
+  accept: Native comma separated MIME patterns/extensions; UI admission only, server must validate.
+  maxfiles: Maximum attachments plus pending jobs; default 10.
+  maxbytes: Maximum bytes per file; default 20971520.
+  concurrency: Parallel jobs, default 2, capped at 6.
+  disabled: Prevent admission/retry/removal; existing jobs may still be canceled.
+properties:
+  value: 'Committed attachment array {id:string,name,size,...}. Rebinding cancels jobs and retains no File objects in the draft.'
+  upload: 'Required async (file,{signal,onProgress}) => attachment. Use existing HTTP.post with FormData and signal. Progress is percent 0..100, only report measured transport progress; omitted progress stays indeterminate. Server owns authorization/storage, results must have unique nonempty string id.'
+methods:
+  enqueue: enqueue(FileList or File[]) validates and queues; returns immediately.
+  cancel: cancel(jobId) aborts/removes pending job; ignores late resolve/progress.
+  retry: retry(jobId) retries a failed job using its retained File.
+  remove: remove(attachmentId) removes reference only; never deletes server resources.
+slots:
+  prompt: Instruction/admission hint above the native picker.
+  attachment: Existing/successful attachment presentation with attachment variable. Host owns preview/download URLs and access.
+events:
+  change: Complete committed attachment array on successful upload or removal; private file change does not leak.
+rules:
+  - Bind directly to the same draft attachments field. Queue is ephemeral; do not persist native File or progress. Rebinding/removal aborts requests and rejects late completions. Failed files retain a Retry action.
+  - Do not fake a server upload with local metadata. Template adapters must label local-only examples explicitly. Native file input reset is component-owned integration allowing reselecting the same file.
+examples:
+  transport_adapter: |
+    // attachmentEndpoint is supplied by the host's authorized resource API.
+    async function uploadAttachment(file, {signal}) {
+      const response = await HTTP.post({url: attachmentEndpoint, data: {file}, signal})
+      if (!response.ok) throw Error('Upload failed')
+      return response.result // {id,name,size,...}, after validating the host response contract
+    }
+    // <FileUpload $.upload="uploadAttachment" $bind="editor_state.draft.attachments"></FileUpload>
+    // HTTP fetch does not expose upload byte progress: leave onProgress unused.
+tests: [FileUpload.test.yaml]

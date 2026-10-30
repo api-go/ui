@@ -1,0 +1,43 @@
+<Pane scroll="none" $onkeydown="if((event.ctrlKey||event.metaKey)&amp;&amp;!event.isComposing&amp;&amp;event.key.toLowerCase()==='s'){event.preventDefault();if(State.changes.Content)contentSave(event)}">
+<PageHeader slot="header" heading="{#编辑文档#}" $.state.description="''">
+<template slot="actions">
+</template>
+</PageHeader>
+<div slot="content" class="d-flex flex-column overflow-hidden">
+<form id="contentEditorForm" class="p-3 px-md-4 border-bottom flex-shrink-0" $onsubmit="contentSave(event)" $oninput="State.changes.Content=true">
+<div class="row g-3">
+<div class="col-12 col-md-6">
+<label class="d-block">
+<span class="form-label">{#文档标题#}</span>
+<input class="form-control" type="text" $bind="content_state.draft.name" required maxlength="100">
+</label>
+</div>
+<div class="col-12 col-md-6">
+<label class="d-block">
+<span class="form-label">{#分类#}</span>
+<select aria-label="{#分类#}" class="form-select" $bind="content_state.draft.category" >
+<option value="团队手册">{#团队手册#}</option>
+<option value="产品研究">{#产品研究#}</option>
+<option value="公告">{#公告#}</option>
+</select>
+</label>
+</div>
+</div>
+</form>
+<CodeEditor id="contentEditor" class="flex-fill" lang="markdown" wrap $bind="content_state.draft.content" $.mode="Hash.contentMode||'split'" $oninput="State.changes.Content=true" $onerror="content_state.error='{#编辑器加载失败，草稿仍保留。#}'">
+</CodeEditor>
+<div class="d-flex gap-2 align-items-center p-3 border-top flex-shrink-0">
+<label class="d-flex align-items-center gap-2 small text-body-secondary">
+<span>{#显示#}</span>
+<select class="form-select w-auto" $.value="Hash.contentMode||'split'" $onchange="Hash.go({contentMode:event.target.value})">
+<option value="source">{#编辑#}</option>
+<option value="split">{#分屏#}</option>
+<option value="preview">{#预览#}</option>
+</select>
+</label>
+<span class="flex-fill">
+</span>
+<button class="btn btn-primary" form="contentEditorForm" type="submit" title="{#保存文档（Ctrl/⌘ S）#}">{#保存文档#}</button>
+</div>
+</div>
+</Pane>

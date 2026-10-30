@@ -11,8 +11,60 @@ testData:
   missing: { items: [] }
   visible: { items: [] }
   density: {items: []}
+  reactive: {items: []}
+  privateEvents: {items: []}
 
 cases:
+  - name: repeat rows validate locate stable errors and reject stale results
+    covers: [attributes.idfield, properties.validator, methods.validate, methods.setErrors, methods.focusField]
+    attributes: {id: subject, layout: vertical, idfield: key}
+    slots:
+      item: '<template><input class="form-control" name="qty" type="number" min="1" required $bind="item.qty"></template>'
+    actions:
+      - script: |
+          subject.value=[NewState({key:'a',qty:2}),NewState({key:'b',qty:3})];
+          await new Promise(r=>setTimeout(r,30));
+          subject.validator=async()=>({b:{qty:'Too many'}});
+          if(await subject.validate())throw Error('Invalid rows accepted');
+          if(document.activeElement!==subject.querySelectorAll('[name=qty]')[1])throw Error('Row error not focused');
+          subject.reorder(1,0);await new Promise(r=>setTimeout(r,30));
+          if(subject.state.errors.b.qty!=='Too many'||!subject.focusField('b','qty'))throw Error('Stable errors lost');
+          let resolve;subject.validator=()=>new Promise(r=>resolve=r);
+          const checking=subject.validate();subject.remove(0);resolve({a:{qty:'Late'}});
+          if(await checking||Object.keys(subject.state.errors).length)throw Error('Late validation published');
+          subject.setErrors({a:{qty:'Check'}});
+      - fill: {selector: '[name=qty]', value: '4'}
+    after:
+      - script: "return !subject.state.errors.a && subject.value[0].qty==4"
+  - name: native and Sortable changes are not public array changes
+    attributes: {id: subject, type: string, "$bind": testData.privateEvents.items}
+    slots:
+      creator: '<input class="private-creator" $bind="this.newItem">'
+    before: []
+    actions:
+      - fill: {selector: .private-creator, value: Retained}
+      - script: "subject.querySelector('.private-creator').dispatchEvent(new Event('change',{bubbles:true})); subject.querySelector('.item-collection-items').dispatchEvent(new CustomEvent('change',{bubbles:true,detail:null}))"
+    after:
+      - property: {path: subject.newItem, equals: Retained}
+      - data: {path: testData.privateEvents.items, equals: []}
+      - event: {name: change, count: 0}
+  - name: newly added object fields update derived bindings before saving
+    attributes: {id: subject, "$bind": testData.reactive.items}
+    slots:
+      item: '<template><input class="row-quantity" type="number" $bind="item.qty"><span class="row-total" $text="Number(item.qty)*Number(item.price)"></span></template>'
+      creator: '<template><input class="new-quantity" type="number" $bind="this.newItem.qty"><input class="new-price" type="number" $bind="this.newItem.price"></template>'
+    before: []
+    actions:
+      - fill: {selector: .new-quantity, value: "2"}
+      - fill: {selector: .new-price, value: "35"}
+      - click: {selector: .item-collection-add}
+      - wait: 50
+      - fill: {selector: .row-quantity, value: "4"}
+      - wait: 50
+    after:
+      - dom: {selector: .row-total, text: "140"}
+      - script: "return Number(testData.reactive.items[0].qty)===4"
+      - event: {name: change, count: 1}
   - name: renders object binding and horizontal layout
     attributes: { id: subject, type: object, layout: horizontal, "$bind": testData.render.objects }
     slots:
@@ -45,9 +97,11 @@ cases:
     actions:
       - fill: { selector: .creator, value: testData.addString.added }
       - click: { selector: '[aria-label="Add"]' }
+      - wait: 50
     after:
       - data: { path: testData.addString.items, equals: [one, two, three] }
       - property: { path: subject.newItem, equals: "" }
+      - dom: { selector: .creator, value: "" }
       - event: { name: change, count: 1, last: [one, two, three] }
 
   - name: object input and output
@@ -59,9 +113,11 @@ cases:
     actions:
       - fill: { selector: .creator, value: testData.addObject.added }
       - click: { selector: '[aria-label="Add"]' }
+      - wait: 50
     after:
       - data: { path: testData.addObject.items, equals: [{ name: Alpha }, { name: Beta }] }
       - dom: { selector: .item-value, texts: [Alpha, Beta] }
+      - dom: { selector: .creator, value: "" }
 
   - name: number input and output
     attributes: { id: subject, type: number, "$bind": testData.addNumber.items }
@@ -72,7 +128,10 @@ cases:
     actions:
       - fill: { selector: .creator, value: testData.addNumber.added }
       - click: { selector: '[aria-label="Add"]' }
-    after: [{ data: { path: testData.addNumber.items, equals: [1, 7] } }]
+      - wait: 50
+    after:
+      - data: { path: testData.addNumber.items, equals: [1, 7] }
+      - dom: { selector: .creator, value: "" }
 
   - name: boolean input and output
     attributes: { id: subject, type: boolean, "$bind": testData.addBoolean.items }
@@ -83,7 +142,10 @@ cases:
     actions:
       - check: { selector: .creator, checked: true }
       - click: { selector: '[aria-label="Add"]' }
-    after: [{ data: { path: testData.addBoolean.items, equals: [true, true] } }]
+      - wait: 50
+    after:
+      - data: { path: testData.addBoolean.items, equals: [true, true] }
+      - script: "return subject.querySelector('.creator').checked===false"
 
   - name: remove writes through binding
     covers: [methods.remove]
@@ -119,6 +181,7 @@ cases:
     after:
       - data: { path: testData.cancelAdd.items, equals: [one, two] }
       - event: { name: beforeadd, count: 1 }
+      - script: "return subject.newItem==='blocked' && subject.querySelector('.creator').value==='blocked'"
 
   - name: creatorsubmit cancellation
     covers: [events.creatorsubmit, methods.submitCreator]
@@ -132,6 +195,7 @@ cases:
     after:
       - data: { path: testData.cancelSubmit.items, equals: [one, two] }
       - event: { name: creatorsubmit, count: 1 }
+      - script: "return subject.newItem==='cancelled' && subject.querySelector('.creator').value==='cancelled'"
 
   - name: missing slots and non-array normalization
     attributes: { id: subject, type: string, "$bind": testData.missing.items }

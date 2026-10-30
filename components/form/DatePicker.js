@@ -4,6 +4,13 @@
 globalThis.Component.register('DatePicker', container => {
         container.addEventListener('change', event => { if (event.target !== container && event.detail === undefined) event.stopImmediatePropagation() })
         container.state = globalThis.NewState({ start: '', end: '' })
+        for (const [name, fallback] of Object.entries({type:'date',min:'',max:'',step:'',label:'{#Start#}',endlabel:'{#End#}',required:false,disabled:false,readonly:false})) {
+                const initial=container[name]??(typeof fallback==='boolean'?container.hasAttribute(name):container.getAttribute(name)??fallback)
+                container.state[name]=initial
+                Object.defineProperty(container,name,{get:()=>container.state[name],set:value=>{if(name==='type'&&!['date','time','datetime-local','month','week'].includes(value))throw Error('DatePicker: unsupported native type');container.state[name]=value},configurable:true})
+        }
+        Object.defineProperty(container,'end',{get:()=>container.state.end,set:value=>{container.state.end=String(value??'')},configurable:true})
+        container.endMin=()=>container.state.start&&(!container.min||container.state.start>container.min)?container.state.start:container.min
         container.sm = container.hasAttribute('sm') || container.closest('AutoForm')?.sm || false
 
         const rangeEnd = () => {
@@ -49,10 +56,10 @@ globalThis.Component.register('DatePicker', container => {
         }
 }, globalThis.Util.makeDom(/*html*/`
 <div class="d-flex align-items-center gap-1 w-100">
-  <input type="date" $class="form-control \${this.sm ? 'form-control-sm' : ''}" $bind="this.state.start" $onchange="this.updateStart(thisNode.value)">
+  <input $type="this.type" $class="form-control \${this.sm ? 'form-control-sm' : ''}" $aria-label="this.label" $min="this.min" $max="this.max" $step="this.step||'any'" $required="this.required" $disabled="this.disabled" $readonly="this.readonly" $bind="this.state.start" $onchange="this.updateStart(thisNode.value)">
   <template $if="this.isRange">
     <span class="text-muted mx-1">-</span>
-    <input type="date" $class="form-control \${this.sm ? 'form-control-sm' : ''}" $bind="this.state.end" $onchange="this.updateEnd(thisNode.value)">
+    <input $type="this.type" $class="form-control \${this.sm ? 'form-control-sm' : ''}" $aria-label="this.endlabel" $min="this.endMin()" $max="this.max" $step="this.step||'any'" $required="this.required" $disabled="this.disabled" $readonly="this.readonly" $bind="this.state.end" $onchange="this.updateEnd(thisNode.value)">
   </template>
 </div>
 `))

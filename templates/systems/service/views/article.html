@@ -1,0 +1,17 @@
+<Pane scroll="auto">
+<PageHeader slot="header" heading="{#知识文章#}" $.state.description="''">
+<template slot="actions">
+</template>
+</PageHeader>
+<div slot="content" class="p-3 p-md-4">
+<article $if="serviceArticle()">
+<span class="text-body-secondary small" $text="serviceArticle()?.category">
+</span>
+<h2 class="h2 my-3" $text="serviceArticle()?.name">
+</h2>
+<p class="lh-lg" $text="serviceArticle()?.content">
+</p>
+</article>
+<div class="alert alert-warning" $if="!(serviceArticle())">{#记录不存在，请返回列表选择。#}</div>
+</div>
+</Pane>

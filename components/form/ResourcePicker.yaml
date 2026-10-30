@@ -1,0 +1,39 @@
+name: ResourcePicker
+kind: component
+src: /ui/components/form/ResourcePicker.js
+dependencies: [Modal, PagedList, Disposer]
+purpose: Confirmed scalar or multiple resource selection across paged searches, without writing to the host before confirmation.
+attributes:
+  multiple: 'Boolean: string array instead of default scalar string. Fixed at mount.'
+  idfield: 'Primitive resource identity field; default id, normalized to string.'
+  labelfield: 'Display field; default name.'
+  title: 'Dialog title and unselected trigger label.'
+  required: 'Require at least one pending resource before confirmation.'
+  disabled: 'Disable opening.'
+properties:
+  value: 'Committed string or string array. $bind receives only confirmed changes.'
+  pending: 'Read-only pending ID array for custom content. Change it only through toggle/remove; it is not a second saved value.'
+  items: 'Local/demo resource array, with optional summary and disabled. Owned source searches and pages this array.'
+  source: 'Optional host-owned ListDataSource; remote paging/filtering/authorization stay in its load adapter. Replacing or removing the picker does not dispose a supplied source.'
+  resolve: 'Optional async (ids,signal)=>resource array, used when opening to restore selected labels across pages. Unavailable IDs remain removable; host validation owns eligibility.'
+  validate: 'Optional async (pendingIds,signal)=>error message or empty. Keeps the dialog and pending draft on failure; does not save the business object.'
+methods:
+  show: 'Open from the committed value; repeated calls while open are ignored.'
+  cancel: 'Discard pending choices and close; Escape, backdrop and close use the same cancel boundary.'
+  confirm: 'Validate then commit, publish change and close; return Promise<boolean>. Duplicate submits, stale validation after cancel and source errors cannot commit.'
+  toggle: 'toggle(item) toggles one pending ID, ignoring disabled items and busy/read-loading states.'
+  remove: 'remove(id) removes a pending ID; committed value remains unchanged.'
+events:
+  change: 'Confirmed selected scalar or fresh ID array. Internal query/check/paging events do not publish change.'
+  cancel: 'Dialog dismissed without confirmation; no host write.'
+  beforeconfirm: 'Cancelable event with the final scalar/array; preventing keeps the pending draft open.'
+slots:
+  item: 'Resource content, using item/rowIndex. Component retains its checkbox and transactional selection.'
+  selection: 'Replace the trigger summary; the trigger button and opening behavior remain component-owned.'
+  content: 'Replace the body browser (for example a tree). The host uses pending/toggle/remove and validation; the component retains its transaction, modal and footer. Default content is PagedList.'
+rules:
+  - 'Modal owns focus, dismissal, bounded body scrolling and mobile width; PagedList owns query/request/paging. Pending selection belongs to ResourcePicker and survives search/page changes until confirm/cancel.'
+  - 'Use root ui-sm/ui-lg/ui-link and Bootstrap theme. No business persistence, authorization, Hash routing or global selection registry lives here.'
+  - 'Only confirmed change can dirty the host. Inputs inside the dialog are marked nonpersistent. Host validation and canonical save remain separate.'
+  - 'Owned local source is disposed on removal. Label and validation work is aborted/invalidated on cancel/removal. Modal cleanup remains Modal-owned.'
+tests: [ResourcePicker.test.yaml]

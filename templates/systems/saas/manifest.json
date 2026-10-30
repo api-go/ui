@@ -1,0 +1,151 @@
+{
+  "id": "saas",
+  "title": "{#云间组织与账户#}",
+  "entry": "index.html",
+  "description": "成员邀请、角色配置、组织设置、账单和操作记录，包含最后一位管理员保护。",
+  "layouts": [
+    {
+      "id": "sidebar",
+      "file": "layouts/sidebar.html"
+    },
+    {
+      "id": "topnav",
+      "file": "layouts/topnav.html"
+    }
+  ],
+  "views": [
+    {
+      "id": "overview",
+      "file": "views/overview.html"
+    },
+    {
+      "id": "members",
+      "file": "views/members.html"
+    },
+    {
+      "id": "roles",
+      "file": "views/roles.html"
+    },
+    {
+      "id": "role-edit",
+      "file": "views/role-edit.html"
+    },
+    {
+      "id": "preferences",
+      "file": "views/preferences.html"
+    },
+    {
+      "id": "billing",
+      "file": "views/billing.html"
+    },
+    {
+      "id": "invoice",
+      "file": "views/invoice.html"
+    },
+    {
+      "id": "audit",
+      "file": "views/audit.html"
+    }
+  ],
+  "routes": [
+    [
+      "overview",
+      "组织概览",
+      "building"
+    ],
+    [
+      "members",
+      "成员",
+      "people"
+    ],
+    [
+      "roles",
+      "角色",
+      "shield-check"
+    ],
+    [
+      "preferences",
+      "组织设置",
+      "gear"
+    ],
+    [
+      "billing",
+      "账单",
+      "credit-card"
+    ],
+    [
+      "audit",
+      "操作记录",
+      "clock-history"
+    ],
+    [
+      "role-edit",
+      "编辑角色",
+      ""
+    ],
+    [
+      "invoice",
+      "账单详情",
+      ""
+    ]
+  ],
+  "shared": [
+    "../../shared/tools.js",
+    "../../shared/blocks/header.html"
+  ],
+  "data": "Explicit browser-local fictional fixtures; no server authorization, stock, payment or transport is claimed",
+  "components": [
+    "AppShell",
+    "Nav",
+    "PageHeader",
+    "Pane",
+    "View"
+  ],
+  "state": {
+    "route": [
+      "saasPage",
+      "saasId",
+      "saasLayout"
+    ],
+    "storage": [
+      "saasTemplateData",
+      "templateDensity",
+      "templateLink",
+      "templateDark",
+      "saasNavigationWidth"
+    ],
+    "draft": "saas_state.draft"
+  },
+  "translations": "Master translation markers; no local dictionary",
+  "scroll": "AppShell viewport; each Pane owns its content scroll; PagedList/Kanban/CodeEditor own bounded work regions",
+  "fixtures": "data/fixtures.js",
+  "scripts": [
+    "../../../frameworks/State.js",
+    "../../../frameworks/Bootstrap.js",
+    "../../../utilities/HTTP.js",
+    "../../../utilities/UUID.js",
+    "../../../utilities/Disposer.js",
+    "../../../utilities/MouseMover.js",
+    "../../../utilities/ListDataSource.js",
+    "../../../libraries/SortableJS.js",
+    "../../../utilities/SortableAPI.js",
+    "../../../components/base/Resizer.js",
+    "../../../components/base/SplitPane.js",
+    "../../../components/base/View.js",
+    "../../../components/base/Modal.js",
+    "../../../components/base/Dialog.js",
+    "../../../components/base/Toast.js",
+    "../../../components/base/AutoForm.js",
+    "../../../components/base/Nav.js",
+    "../../../components/base/AppShell.js",
+    "../../../components/base/Pane.js",
+    "../../../components/base/PageHeader.js",
+    "../../../components/base/RequestState.js",
+    "../../../components/base/Pagination.js",
+    "../../../components/base/ItemCollection.js",
+    "../../../components/data/PagedList.js",
+    "../../shared/tools.js",
+    "data/fixtures.js",
+    "app.js"
+  ]
+}

@@ -1,5 +1,25 @@
+timeout: 20000
 testData: { modal: { open: false } }
 cases:
+  - name: native focus trap and Escape during opening both close cleanly
+    attributes: {id: subject}
+    slots: {body: '<input aria-label="Modal field">'}
+    actions:
+      - script: |
+          subject.show();await new Promise(r=>subject.addEventListener('shown.bs.modal',r,{once:true}));
+          if(document.activeElement!==subject)throw Error('Modal did not receive native focus');
+          subject.hide();await new Promise(r=>subject.addEventListener('hidden.bs.modal',r,{once:true}));
+          subject.show();document.dispatchEvent(new KeyboardEvent('keydown',{key:'Escape',bubbles:true}));
+          await new Promise(r=>subject.addEventListener('hidden.bs.modal',r,{once:true}));
+    after:
+      - script: "return !subject.classList.contains('show')&&!document.querySelector('.modal-backdrop')&&!document.body.classList.contains('modal-open')"
+  - name: removal during opening releases backdrop body lock and Bootstrap instance
+    attributes: {id: subject}
+    slots: {body: '<div>Disposable modal</div>'}
+    actions:
+      - script: "subject.show();subject.remove();await new Promise(r=>setTimeout(r,800));return true"
+    after:
+      - script: "return !document.querySelector('.modal-backdrop')&&!document.body.classList.contains('modal-open')&&bootstrap.Modal.getInstance(subject)===null"
   - name: binding show hide and slots
     covers: [methods.hide]
     attributes: { id: subject, "$bind": testData.modal.open, width: 420px, body-height: 120px }
@@ -18,12 +38,13 @@ cases:
       - data: { path: testData.modal.open, equals: false }
       - event: { name: change, count: 1, last: false }
   - name: title type and complete dimensions
-    attributes: { id: subject, width: 80vw, max-width: 900px, body-height: 200px, body-min-height: 100px, "$.state.title": "'Editor'", "$.state.type": "'warning'" }
+    attributes: { id: subject, width: 80vw, max-width: 900px, body-height: 200px, body-min-height: 100px, body-class: p-0, "$.state.title": "'Editor'", "$.state.type": "'warning'" }
     slots:
       body: <div>Content</div>
     before:
       - dom: { selector: '#subject .modal-title', text: Editor }
       - dom: { selector: '#subject .border-warning', count: 1 }
+      - script: "return getComputedStyle(subject.querySelector('.modal-body')).padding==='0px' && subject.getAttribute('aria-labelledby')===subject.querySelector('.modal-title').id"
       - script: "return subject.querySelector('[data-bs-dismiss=modal]').getAttribute('aria-label')==='Close dialog'"
       - script: "const d=subject.querySelector('.modal-dialog'),b=subject.querySelector('.modal-body'); return d.style.width==='80vw'&&d.style.maxWidth==='900px'&&b.style.height==='200px'&&b.style.minHeight==='100px'"
     actions: []

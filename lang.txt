@@ -10,6 +10,7 @@ Add node
 Advanced Settings
 Advanced mode
 All
+All day
 And...
 Application
 Apply
@@ -20,8 +21,13 @@ Big Integer
 Binary (BLOB)
 Board menu
 Boolean
+Calendar view
 Cancel
 Central topic
+Choose a location
+Choose files
+Choose files or drop them here
+Choose resources
 Clear
 Clear Filter
 Clear Selection
@@ -47,6 +53,7 @@ Database Type
 Date
 Date & Time
 DateTime
+Day
 Decimals
 Default order
 Delete
@@ -69,6 +76,7 @@ Edit card
 Edit column
 Edit edge
 Edit node
+End
 Ends with
 Equals
 Expand left
@@ -79,6 +87,7 @@ Field Name
 Field Type
 Filter
 Filters
+Finish
 Fit graph
 Fit map
 Fixed Text (CHAR)
@@ -87,6 +96,7 @@ Format
 Fullscreen
 HTML preview
 Home
+Image preview
 Index
 Integer
 Invalid JSON
@@ -102,7 +112,9 @@ Length
 List navigation
 Loading
 Long Text
+Maximum file count reached.
 Memo
+Month
 More
 More navigation
 Multi Select
@@ -113,9 +125,12 @@ New node
 New plot point
 New topic
 Next
+Next image
+Next period
 No
 No columns
 No content
+No events
 No icons found
 No items
 No nodes
@@ -126,6 +141,8 @@ None
 Number
 Object (JSON)
 Only
+Open
+Open branch
 Options
 Page settings
 Pagination
@@ -137,15 +154,19 @@ Pretty
 Preview
 Preview mode
 Previous
+Previous image
+Previous period
 Protected value copied
 Protected value revealed; clipboard access was denied
 Protection
+Queued
 Reason
 Reason is required
 Regular expression, e.g. ^[A-Z].+$
 Remove
 Required
 Reset
+Reset zoom
 Resize sidebar
 Retry
 Reveal
@@ -157,11 +178,13 @@ Row {row}: {field} is required
 Save
 Search
 Search Mode
+Search hierarchy
 Search icons...
 Select All Rows
 Select Icon
 Select a result
 Select all / clear
+Select at least one resource.
 Select item
 Select page
 Selected
@@ -170,12 +193,16 @@ Settings
 Shift-click another node to connect
 Show list
 Single Select
+Some files exceed the allowed size or type.
+Some selected results are unavailable. Retry or remove them.
 Sort
 Source
 Split left and right
 Split top and bottom
+Start
 Starting point
 Starts with
+Steps
 Submit
 Suffix (e.g. %)
 Switch
@@ -191,24 +218,43 @@ Thousand Sep
 Time
 Tiny Integer
 Title
+Today
 Toggle all rows selection
 Toggle navigation
 Total
+Unable to confirm selection. Retry.
 Unable to load data
+Unable to load results. Retry.
+Unable to load selected resources.
+Unable to load selected results. Retry.
+Unable to load this branch. Retry.
+Unable to load this image.
+Unable to validate this step. Please retry.
 Unsigned Big Integer
 Unsigned Integer
 Untitled
 Update Time
 Updater
+Upload failed
+Upload progress
+Upload service is not configured.
+Uploading
 Validate
 Validate syntax
 Validating
 Validation Pattern
 Validation Pattern must be a valid regular expression
+Validation failed. Please try again.
+View images
+Wait for this branch to finish loading.
+Week
 Wrap lines
 Yes
+Zoom in
+Zoom out
 child
 e.g. Display Name
+events
 items
 items could not be removed
 new tag name

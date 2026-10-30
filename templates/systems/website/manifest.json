@@ -1,0 +1,133 @@
+{
+  "id": "website",
+  "title": "{#云间协作 · 官网#}",
+  "entry": "index.html",
+  "description": "自然滚动的产品官网、功能、价格、FAQ、联系与登记结果，区别于后台固定工作区。",
+  "layouts": [
+    {
+      "id": "topnav",
+      "file": "layouts/topnav.html"
+    }
+  ],
+  "views": [
+    {
+      "id": "home",
+      "file": "views/home.html"
+    },
+    {
+      "id": "features",
+      "file": "views/features.html"
+    },
+    {
+      "id": "pricing",
+      "file": "views/pricing.html"
+    },
+    {
+      "id": "faq",
+      "file": "views/faq.html"
+    },
+    {
+      "id": "contact",
+      "file": "views/contact.html"
+    },
+    {
+      "id": "signup",
+      "file": "views/signup.html"
+    },
+    {
+      "id": "result",
+      "file": "views/result.html"
+    }
+  ],
+  "routes": [
+    [
+      "home",
+      "首页",
+      "house"
+    ],
+    [
+      "features",
+      "功能",
+      "grid"
+    ],
+    [
+      "pricing",
+      "方案",
+      "tags"
+    ],
+    [
+      "faq",
+      "常见问题",
+      "question-circle"
+    ],
+    [
+      "contact",
+      "联系我们",
+      "chat-dots"
+    ],
+    [
+      "signup",
+      "体验登记",
+      ""
+    ],
+    [
+      "result",
+      "申请记录",
+      ""
+    ]
+  ],
+  "shared": [
+    "../../shared/tools.js",
+    "../../shared/blocks/header.html"
+  ],
+  "data": "Explicit browser-local fictional fixtures; no server authorization, stock, payment or transport is claimed",
+  "components": [
+    "Nav",
+    "View"
+  ],
+  "state": {
+    "route": [
+      "websitePage",
+      "websiteId",
+      "websiteLayout",
+      "websitePlan"
+    ],
+    "storage": [
+      "websiteTemplateData",
+      "templateDensity",
+      "templateLink",
+      "templateDark"
+    ],
+    "draft": "website_state.draft"
+  },
+  "translations": "Master translation markers; no local dictionary",
+  "scroll": "document flow",
+  "scripts": [
+    "../../../frameworks/State.js",
+    "../../../frameworks/Bootstrap.js",
+    "../../../utilities/HTTP.js",
+    "../../../utilities/UUID.js",
+    "../../../utilities/Disposer.js",
+    "../../../utilities/MouseMover.js",
+    "../../../utilities/ListDataSource.js",
+    "../../../libraries/SortableJS.js",
+    "../../../utilities/SortableAPI.js",
+    "../../../components/base/Resizer.js",
+    "../../../components/base/SplitPane.js",
+    "../../../components/base/View.js",
+    "../../../components/base/Modal.js",
+    "../../../components/base/Dialog.js",
+    "../../../components/base/Toast.js",
+    "../../../components/base/AutoForm.js",
+    "../../../components/base/Nav.js",
+    "../../../components/base/AppShell.js",
+    "../../../components/base/Pane.js",
+    "../../../components/base/PageHeader.js",
+    "../../../components/base/RequestState.js",
+    "../../../components/base/Pagination.js",
+    "../../../components/base/ItemCollection.js",
+    "../../../components/data/PagedList.js",
+    "../../shared/tools.js",
+    "app.js"
+  ]
+}

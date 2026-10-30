@@ -1,0 +1,27 @@
+name: ImageViewer
+kind: component
+src: /ui/components/data/ImageViewer.js
+dependencies: [Modal, Disposer]
+purpose: Inspect a group of host-provided images with keyboard navigation, bounded zoom and pan, loading/retry and focus restoration.
+properties:
+  images: 'Array of URL strings or {src,alt}. Host owns URL permission, lifetime and upload/storage. Replacing an empty group closes the viewer.'
+  value: 'Current zero-based index; $bind restores it. Programmatic binding is silent.'
+methods:
+  show: 'show(index?): open a nonempty image group. Repeated opening while already open is ignored.'
+  hide: 'Close through Modal; focus returns to the original trigger.'
+  select: 'select(index): navigate to a valid index and reset zoom/pan/loading. Return false for invalid indices.'
+  next: 'Navigate forward, stopping at the last image.'
+  previous: 'Navigate backward, stopping at zero.'
+  zoom: 'zoom(delta): clamp scale to 1..5; returning to 1 clears pan.'
+  reset: 'Reset scale and pan without reloading.'
+  retry: 'Remount a failed image; host URLs are unchanged.'
+events:
+  change: 'Current numeric index after user/method navigation; preview state is nonpersistent.'
+slots:
+  trigger: 'Content of the opening button. Required button behavior is retained.'
+rules:
+  - 'Left/Right navigate, +/- zoom, 0 resets; Escape uses the native Modal close behavior. Input editing and Ctrl/Meta/Alt shortcuts are ignored.'
+  - 'Zoomed images can be pointer-dragged within bounds; native document scrolling is not used as a second pan owner. Image stage has bounded height, overflow and touch-action; transform is component-owned presentation state.'
+  - 'Use Bootstrap icons/buttons, inherited density/ui-link and light/dark tokens. Modal owns focus/scroll lock/disposal. Only the active opened image is requested.'
+  - 'Loading, image errors and retry remain visible. No automatic download, URL signing or storage API belongs in this component.'
+tests: [ImageViewer.test.yaml]

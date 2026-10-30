@@ -1,0 +1,29 @@
+cases:
+  - name: validated steps retain one draft and publish only navigation
+    covers: [properties.steps, properties.value, properties.validator, methods.go, methods.next, methods.previous, methods.validate, methods.finish, methods.cancel, slots.step, slots.actions, events.change, events.finish, events.cancel]
+    attributes: {id: subject, '$.steps': "[{id:'one',label:'Details'},{id:'two',label:'Review'}]"}
+    slots:
+      step: |
+        <template><input class="form-control" aria-label="Name" required $if="step.id==='one'"><p $if="step.id==='two'">Review draft</p></template>
+      actions: '<span>One draft</span>'
+    actions:
+      - script: "if(await subject.validate())throw Error('Empty required accepted')"
+      - fill: {selector: 'input', value: Ada}
+      - call: {method: next}
+      - wait: 30
+      - call: {method: previous}
+      - script: "if(subject.querySelector('input').value!=='Ada')throw Error('Draft remounted');subject.validator=async()=>''"
+      - call: {method: go, args: [two]}
+      - call: {method: finish}
+      - call: {method: cancel}
+    after:
+      - property: {path: subject.value, equals: two}
+      - event: {name: change, count: 3}
+      - event: {name: finish, count: 1}
+      - event: {name: cancel, count: 1}
+  - name: canceled asynchronous validation never advances
+    attributes: {id: subject, '$.steps': "[{id:'a'},{id:'b'}]"}
+    actions:
+      - script: "let resolve;subject.validator=()=>new Promise(r=>resolve=r);const pending=subject.next();subject.cancel();resolve('');if(await pending)throw Error('Canceled step advanced');subject.value='missing';if(subject.value!=='a')throw Error('Unknown restored route left empty panels')"
+    after:
+      - property: {path: subject.value, equals: a}

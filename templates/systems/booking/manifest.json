@@ -1,0 +1,130 @@
+{
+  "id": "booking",
+  "title": "{#云间预约#}",
+  "entry": "index.html",
+  "description": "会议室与资源预约，日期链接恢复、容量与时段冲突校验、调整和取消。",
+  "layouts": [
+    {
+      "id": "sidebar",
+      "file": "layouts/sidebar.html"
+    },
+    {
+      "id": "topnav",
+      "file": "layouts/topnav.html"
+    }
+  ],
+  "views": [
+    {
+      "id": "calendar",
+      "file": "views/calendar.html"
+    },
+    {
+      "id": "appointments",
+      "file": "views/appointments.html"
+    },
+    {
+      "id": "editor",
+      "file": "views/editor.html"
+    },
+    {
+      "id": "detail",
+      "file": "views/detail.html"
+    },
+    {
+      "id": "resources",
+      "file": "views/resources.html"
+    }
+  ],
+  "routes": [
+    [
+      "calendar",
+      "日程",
+      "calendar3"
+    ],
+    [
+      "appointments",
+      "预约记录",
+      "calendar-check"
+    ],
+    [
+      "resources",
+      "资源",
+      "door-open"
+    ],
+    [
+      "editor",
+      "编辑预约",
+      ""
+    ],
+    [
+      "detail",
+      "预约详情",
+      ""
+    ]
+  ],
+  "shared": [
+    "../../shared/tools.js",
+    "../../shared/blocks/header.html"
+  ],
+  "data": "Explicit browser-local fictional fixtures; no server authorization, stock, payment or transport is claimed",
+  "components": [
+    "AppShell",
+    "Nav",
+    "PageHeader",
+    "Pane",
+    "View",
+    "DatePicker",
+    "Calendar"
+  ],
+  "state": {
+    "route": [
+      "bookingPage",
+      "bookingId",
+      "bookingLayout",
+      "bookingDate",
+      "bookingResource"
+    ],
+    "storage": [
+      "bookingTemplateData",
+      "templateDensity",
+      "templateLink",
+      "templateDark",
+      "bookingNavigationWidth"
+    ],
+    "draft": "booking_state.draft"
+  },
+  "translations": "Master translation markers; no local dictionary",
+  "scroll": "AppShell viewport; each Pane owns its content scroll; PagedList/Kanban/CodeEditor own bounded work regions",
+  "fixtures": "data/fixtures.js",
+  "scripts": [
+    "../../../frameworks/State.js",
+    "../../../frameworks/Bootstrap.js",
+    "../../../utilities/HTTP.js",
+    "../../../utilities/UUID.js",
+    "../../../utilities/Disposer.js",
+    "../../../utilities/MouseMover.js",
+    "../../../utilities/ListDataSource.js",
+    "../../../libraries/SortableJS.js",
+    "../../../utilities/SortableAPI.js",
+    "../../../components/base/Resizer.js",
+    "../../../components/base/SplitPane.js",
+    "../../../components/base/View.js",
+    "../../../components/base/Modal.js",
+    "../../../components/base/Dialog.js",
+    "../../../components/base/Toast.js",
+    "../../../components/base/AutoForm.js",
+    "../../../components/base/Nav.js",
+    "../../../components/base/AppShell.js",
+    "../../../components/base/Pane.js",
+    "../../../components/base/PageHeader.js",
+    "../../../components/base/RequestState.js",
+    "../../../components/base/Pagination.js",
+    "../../../components/base/ItemCollection.js",
+    "../../../components/data/PagedList.js",
+    "../../shared/tools.js",
+    "data/fixtures.js",
+    "app.js",
+    "../../../components/form/DatePicker.js",
+    "../../../components/data/Calendar.js"
+  ]
+}

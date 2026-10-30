@@ -1,0 +1,51 @@
+<Pane scroll="auto">
+<PageHeader slot="header" heading="{#文件与预览#}" $.state.description="''">
+<template slot="actions">
+</template>
+</PageHeader>
+<div slot="content" class="p-3 p-md-4">
+<div class="row g-4">
+<section class="col-12 col-lg-7">
+<label class="d-block mb-3">
+<span class="form-label">{#文件夹#}</span>
+<select aria-label="{#文件夹#}" class="form-select" $.value="Hash.patternsFolder||''" $onchange="Hash.go({patternsFolder:event.target.value||null})">
+<option value="">{#全部#}</option>
+<option value="项目">{#项目#}</option>
+<option value="团队">{#团队#}</option>
+</select>
+</label>
+<div class="table-responsive">
+<table class="table align-middle text-nowrap">
+<thead>
+<tr>
+<th scope="col">{#文件#}</th>
+<th scope="col">{#文件夹#}</th>
+<th scope="col">{#大小#}</th>
+</tr>
+</thead>
+<tbody>
+<tr $each="patterns_state.data.files.filter(x=>!Hash.patternsFolder||x.folder===Hash.patternsFolder)" as="row" key="id">
+<td>
+<button class="btn btn-link p-0 text-start" $text="row.name" $onclick="patternsGo('file',row.id)">
+</button>
+</td>
+<td class="" $text="row.folder">
+</td>
+<td class="" $text="Math.ceil(row.size/1024)+' KB'">
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+</section>
+<section class="col-12 col-lg-5">
+<div class="border rounded p-3">
+<h2 class="h5">{#临时附件#}</h2>
+<p class="small text-body-secondary">{#文件只在本页面临时保留，可下载核对。刷新后清空，不会上传到服务器。#}</p>
+<FileUpload accept=".txt,.pdf,image/*" maxfiles="5" maxbytes="5242880" $.upload="patternsReceiveFile" $bind="patterns_state.attachments" $onchange="patternsReleaseAttachments()"><span slot="prompt">{#每个文件最多 5 MB，支持文本、PDF 和图片。#}</span><template slot="attachment"><a class="text-break" $href="attachment.url" $download="attachment.name" $text="attachment.name"></a></template></FileUpload>
+<div class="mt-3" $if="patterns_state.attachments.some(file=>file.type?.startsWith('image/'))"><ImageViewer $.images="patterns_state.attachments.filter(file=>file.type?.startsWith('image/')).map(file=>({src:file.url,alt:file.name}))"><span slot="trigger">{#预览附件图片#}</span></ImageViewer></div>
+</div>
+</section>
+</div>
+</div>
+</Pane>

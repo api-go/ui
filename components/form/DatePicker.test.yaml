@@ -1,5 +1,43 @@
-testData: { single: '2026-08-28', range: '2026-08-01' }
+testData: { single: '2026-08-28', range: '2026-08-01', end: '2026-08-31' }
 cases:
+  - name: native date constraints preserve invalid range drafts
+    attributes: {id: subject, type: date, range: true, min: '2026-08-01', max: '2026-08-31', required: true, label: From date, endlabel: To date, "$.end": testData.end}
+    actions:
+      - fill: {selector: '#subject input:first-child', value: '2026-08-20', event: change}
+      - script: "const end=subject.querySelectorAll('input')[1];end.value='2026-08-10';end.dispatchEvent(new Event('change',{bubbles:true}));return true"
+      - wait: 30
+    after:
+      - property: {path: subject.end, equals: '2026-08-10'}
+      - script: "const inputs=subject.querySelectorAll('input');return !inputs[1].checkValidity()&&inputs[1].min==='2026-08-20'&&inputs[0].getAttribute('aria-label')==='From date'&&inputs[1].getAttribute('aria-label')==='To date'"
+  - name: native time with minute precision
+    attributes: {id: subject, type: time, step: '900', min: '09:00', max: '18:00'}
+    actions:
+      - fill: {selector: '#subject input', value: '10:15', event: change}
+    after:
+      - property: {path: subject.value, equals: '10:15'}
+      - script: "return subject.querySelector('input').step==='900'&&subject.querySelector('input').checkValidity()"
+  - name: local date time does not convert the wall clock
+    attributes: {id: subject, type: datetime-local}
+    actions:
+      - fill: {selector: '#subject input', value: '2026-10-30T15:45', event: change}
+    after:
+      - property: {path: subject.value, equals: '2026-10-30T15:45'}
+  - name: month native value
+    attributes: {id: subject, type: month}
+    actions:
+      - fill: {selector: '#subject input', value: '2026-10', event: change}
+    after:
+      - property: {path: subject.value, equals: '2026-10'}
+  - name: week native value
+    attributes: {id: subject, type: week}
+    actions:
+      - fill: {selector: '#subject input', value: '2026-W44', event: change}
+    after:
+      - property: {path: subject.value, equals: '2026-W44'}
+  - name: disabled and readonly retain native semantics
+    attributes: {id: subject, disabled: true, readonly: true}
+    before:
+      - script: "const input=subject.querySelector('input');return input.disabled&&input.readOnly"
   - name: small sizing uses Bootstrap form controls
     attributes: { id: subject, sm: true, range: true, "$bind": testData.single }
     slots: {}

@@ -49,5 +49,241 @@
       "{#多草稿保存#}"
     ],
     "preview": "systems/desktop/assets/preview.png"
+  },
+  {
+    "id": "inventory",
+    "type": "workspace",
+    "title": "{#云间进销存#}",
+    "description": "{#采购、销售、调拨、退货与盘点共用明细编辑，过账联动库存和流水。#}",
+    "entry": "systems/inventory/index.html",
+    "manifest": "systems/inventory/manifest.json",
+    "guide": "systems/inventory/README.md",
+    "status": "ready",
+    "layouts": 2,
+    "scenarios": [
+      "{#库存工作台#}",
+      "{#商品档案#}",
+      "{#业务单据#}",
+      "{#库存流水#}",
+      "{#仓库#}",
+      "{#库存报表#}"
+    ],
+    "preview": "systems/inventory/assets/preview.png",
+    "views": 9
+  },
+  {
+    "id": "crm",
+    "type": "workspace",
+    "title": "{#云间客户关系#}",
+    "description": "{#线索转客户、跟进记录、商机阶段与报价，复用同一组详情和编辑 View。#}",
+    "entry": "systems/crm/index.html",
+    "manifest": "systems/crm/manifest.json",
+    "guide": "systems/crm/README.md",
+    "status": "ready",
+    "layouts": 2,
+    "scenarios": [
+      "{#销售工作台#}",
+      "{#线索#}",
+      "{#客户#}",
+      "{#销售漏斗#}",
+      "{#报价#}"
+    ],
+    "preview": "systems/crm/assets/preview.png",
+    "views": 11
+  },
+  {
+    "id": "commerce",
+    "type": "mobile",
+    "title": "{#山野生活 · 商城#}",
+    "description": "{#商品浏览、购物车、地址、订单与商品管理；提交扣减库存，取消订单释放库存。#}",
+    "entry": "systems/commerce/index.html",
+    "manifest": "systems/commerce/manifest.json",
+    "guide": "systems/commerce/README.md",
+    "status": "ready",
+    "layouts": 2,
+    "scenarios": [
+      "{#商品#}",
+      "{#购物车#}",
+      "{#订单#}",
+      "{#地址#}",
+      "{#商品管理#}"
+    ],
+    "preview": "systems/commerce/assets/preview.png",
+    "views": 10
+  },
+  {
+    "id": "office",
+    "type": "workspace",
+    "title": "{#云间协同 · OA#}",
+    "description": "{#请假、报销、采购申请共享流程记录，支持提交、通过、驳回、撤回与重新提交。#}",
+    "entry": "systems/office/index.html",
+    "manifest": "systems/office/manifest.json",
+    "guide": "systems/office/README.md",
+    "status": "ready",
+    "layouts": 2,
+    "scenarios": [
+      "{#待办中心#}",
+      "{#申请记录#}",
+      "{#通讯录#}",
+      "{#费用汇总#}"
+    ],
+    "preview": "systems/office/assets/preview.png",
+    "views": 6
+  },
+  {
+    "id": "service",
+    "type": "workspace",
+    "title": "{#云间服务台#}",
+    "description": "{#工单筛选、指派、优先级、沟通记录和关闭重开，知识文章与工单共用导航。#}",
+    "entry": "systems/service/index.html",
+    "manifest": "systems/service/manifest.json",
+    "guide": "systems/service/README.md",
+    "status": "ready",
+    "layouts": 2,
+    "scenarios": [
+      "{#服务工作台#}",
+      "{#工单#}",
+      "{#知识库#}"
+    ],
+    "preview": "systems/service/assets/preview.png",
+    "views": 6
+  },
+  {
+    "id": "booking",
+    "type": "workspace",
+    "title": "{#云间预约#}",
+    "description": "{#会议室与资源预约，日期链接恢复、容量与时段冲突校验、调整和取消。#}",
+    "entry": "systems/booking/index.html",
+    "manifest": "systems/booking/manifest.json",
+    "guide": "systems/booking/README.md",
+    "status": "ready",
+    "layouts": 2,
+    "scenarios": [
+      "{#日程#}",
+      "{#预约记录#}",
+      "{#资源#}"
+    ],
+    "preview": "systems/booking/assets/preview.png",
+    "views": 5
+  },
+  {
+    "id": "projects",
+    "type": "workspace",
+    "title": "{#云间项目协作#}",
+    "description": "{#列表与看板共用任务，复用 Kanban 的编辑、拖动和保存，并保留负责人、截止日期与活动。#}",
+    "entry": "systems/projects/index.html",
+    "manifest": "systems/projects/manifest.json",
+    "guide": "systems/projects/README.md",
+    "status": "ready",
+    "layouts": 2,
+    "scenarios": [
+      "{#项目概览#}",
+      "{#看板#}",
+      "{#任务#}",
+      "{#团队#}",
+      "{#活动#}"
+    ],
+    "preview": "systems/projects/assets/preview.png",
+    "views": 7
+  },
+  {
+    "id": "content",
+    "type": "workspace",
+    "title": "{#云间知识与内容#}",
+    "description": "{#文档检索、Markdown 编辑预览、收藏、发布归档和素材信息；复用 CodeEditor 而非新造编辑器。#}",
+    "entry": "systems/content/index.html",
+    "manifest": "systems/content/manifest.json",
+    "guide": "systems/content/README.md",
+    "status": "ready",
+    "layouts": 2,
+    "scenarios": [
+      "{#文档#}",
+      "{#收藏#}",
+      "{#发布管理#}",
+      "{#素材#}"
+    ],
+    "preview": "systems/content/assets/preview.png",
+    "views": 6
+  },
+  {
+    "id": "saas",
+    "type": "workspace",
+    "title": "{#云间组织与账户#}",
+    "description": "{#成员邀请、角色配置、组织设置、账单和操作记录，包含最后一位管理员保护。#}",
+    "entry": "systems/saas/index.html",
+    "manifest": "systems/saas/manifest.json",
+    "guide": "systems/saas/README.md",
+    "status": "ready",
+    "layouts": 2,
+    "scenarios": [
+      "{#组织概览#}",
+      "{#成员#}",
+      "{#角色#}",
+      "{#组织设置#}",
+      "{#账单#}",
+      "{#操作记录#}"
+    ],
+    "preview": "systems/saas/assets/preview.png",
+    "views": 8
+  },
+  {
+    "id": "analytics",
+    "type": "workspace",
+    "title": "{#云间经营分析#}",
+    "description": "{#经营指标、销售趋势、渠道与库存分析，统一日期筛选、Hash 恢复及范围导出。#}",
+    "entry": "systems/analytics/index.html",
+    "manifest": "systems/analytics/manifest.json",
+    "guide": "systems/analytics/README.md",
+    "status": "ready",
+    "layouts": 2,
+    "scenarios": [
+      "{#经营概览#}",
+      "{#销售分析#}",
+      "{#库存趋势#}",
+      "{#报表明细#}"
+    ],
+    "preview": "systems/analytics/assets/preview.png",
+    "views": 4
+  },
+  {
+    "id": "website",
+    "type": "website",
+    "title": "{#云间协作 · 官网#}",
+    "description": "{#自然滚动的产品官网、功能、价格、FAQ、联系与登记结果，区别于后台固定工作区。#}",
+    "entry": "systems/website/index.html",
+    "manifest": "systems/website/manifest.json",
+    "guide": "systems/website/README.md",
+    "status": "ready",
+    "layouts": 1,
+    "scenarios": [
+      "{#首页#}",
+      "{#功能#}",
+      "{#方案#}",
+      "{#常见问题#}",
+      "{#联系我们#}"
+    ],
+    "preview": "systems/website/assets/preview.png",
+    "views": 7
+  },
+  {
+    "id": "patterns",
+    "type": "workspace",
+    "title": "{#云间账户与通用页面#}",
+    "description": "{#登录注册恢复与验证码、个人资料、消息、跨内容搜索、文件预览及常见错误状态。#}",
+    "entry": "systems/patterns/index.html",
+    "manifest": "systems/patterns/manifest.json",
+    "guide": "systems/patterns/README.md",
+    "status": "ready",
+    "layouts": 2,
+    "scenarios": [
+      "{#个人资料#}",
+      "{#账户入口#}",
+      "{#消息#}",
+      "{#全局搜索#}",
+      "{#文件#}",
+      "{#页面状态#}"
+    ],
+    "preview": "systems/patterns/assets/preview.png",
+    "views": 10
   }
 ]

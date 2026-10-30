@@ -1,5 +1,7 @@
 # @apigo.cc/ui
 
+未发布的源码更新：15 个可交互模板系统，以及确认式资源/树选择、附件队列、图片预览、分步表单和日历浏览。见[验收记录](templates/COMPONENTS-REVIEW.md)与[下一轮计划](templates/NEXT-ROUND.md)。本次只提交源码，尚未发布 npm；下方 CDN 版本仍为已发布版本。
+
 [English](README.md) | 中文
 
 `@apigo.cc/ui` 是不需要生产构建的原生 JavaScript UI 组件库。页面使用一个 `ui.js` 入口，并且每个页面都显式写出使用的组件：

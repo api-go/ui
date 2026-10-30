@@ -1,0 +1,28 @@
+<Pane scroll="auto">
+<PageHeader slot="header" heading="{#个人资料#}" $.state.description="''">
+<template slot="actions">
+</template>
+</PageHeader>
+<div slot="content" class="p-3 p-md-4">
+<div class="row g-4">
+<aside class="col-12 col-lg-3">
+<div class="border rounded p-4 text-center">
+<i class="bi bi-person-circle display-3 text-primary" aria-hidden="true">
+</i>
+<h2 class="h5 mt-3" $text="patterns_state.data.profile.name">
+</h2>
+<p class="small text-body-secondary mb-0 text-break" $text="patterns_state.data.profile.email">
+</p>
+</div>
+</aside>
+<section class="col-12 col-lg-9">
+<form $onsubmit="patternsSaveProfile(event)" data-changebind-scope .changebind="Patterns">
+<div class="row g-3"><label class="col-12 col-md-6"><span class="form-label">{#姓名#}</span><input class="form-control" type="text" $bind="patterns_state.draft.name" required autocomplete="name"></label><label class="col-12 col-md-6"><span class="form-label">{#电子邮箱#}</span><input class="form-control" type="email" $bind="patterns_state.draft.email" required autocomplete="email"></label></div>
+<label class="d-block mt-3"><span class="form-label">{#简介#}</span><textarea class="form-control" rows="3" maxlength="300" $bind="patterns_state.draft.bio"></textarea></label>
+<label class="d-flex align-items-center gap-2 mt-3"><input type="checkbox" class="form-check-input mt-0" $bind="patterns_state.draft.digest"><span>{#每周摘要偏好#}</span></label><p class="small text-body-secondary mt-2">{#仅保存偏好，不会订阅或发送邮件。#}</p>
+<div class="d-flex gap-2 border-top pt-3 mt-4"><button type="submit" class="btn btn-primary">{#保存#}</button><button type="button" class="btn btn-link" $onclick="patternsGo('onboarding')">{#使用分步向导#}</button></div>
+</form>
+</section>
+</div>
+</div>
+</Pane>

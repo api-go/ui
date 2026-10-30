@@ -1,0 +1,40 @@
+<Pane scroll="auto">
+<PageHeader slot="header" heading="{#消息通知#}" $.state.description="''">
+<template slot="actions">
+<button type="button" class="btn btn-outline-secondary" $onclick="patternsRead()" $disabled="!patterns_state.data.notifications.some(x=>!x.read)">{#全部已读#}</button>
+</template>
+</PageHeader>
+<div slot="content" class="p-3 p-md-4">
+<div class="d-flex flex-wrap gap-2 mb-3">
+<label class="d-flex align-items-center gap-2">
+<input type="checkbox" class="form-check-input mt-0" $checked="Hash.patternsUnread===true" $onchange="Hash.go({patternsUnread:event.target.checked||null})">
+<span>{#只看未读#}</span>
+</label>
+<span class="flex-fill">
+</span>
+<span class="small text-body-secondary" $text="patterns_state.data.notifications.filter(x=>!x.read).length+' {#条未读#}'">
+</span>
+</div>
+<ol class="list-group list-group-flush">
+<li class="list-group-item px-0 py-3" $each="patterns_state.data.notifications.filter(x=>!Hash.patternsUnread||!x.read)" as="notice" key="id">
+<div class="d-flex gap-3">
+<i class="bi bi-bell mt-1" $class="notice.read?'text-body-tertiary':'text-primary'" aria-hidden="true">
+</i>
+<div class="flex-fill">
+<h2 class="h6" $class="notice.read?'text-body-secondary':''" $text="notice.name">
+</h2>
+<p class="text-body-secondary mb-2" $text="notice.content">
+</p>
+<span class="small text-body-tertiary" $text="notice.type+' · '+templateDate(notice.time)">
+</span>
+</div>
+<button class="btn btn-link align-self-start text-body-secondary" type="button" $if="!notice.read" $onclick="patternsRead(notice.id)" $aria-label="'{#标记已读#} '+notice.name">
+<i class="bi bi-check2" aria-hidden="true">
+</i>
+</button>
+</div>
+</li>
+</ol>
+<p class="text-body-secondary p-3" $if="Hash.patternsUnread&&!patterns_state.data.notifications.some(x=>!x.read)">{#没有未读消息。#}</p>
+</div>
+</Pane>

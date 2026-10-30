@@ -1,0 +1,69 @@
+<!doctype html>
+<html lang="zh-CN" class="h-100">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="color-scheme" content="dark light">
+<title>{#山野生活 · 商城#}</title>
+<script src="../../../frameworks/State.js">
+</script>
+<script src="../../../frameworks/Bootstrap.js">
+</script>
+<script src="../../../utilities/HTTP.js">
+</script>
+<script src="../../../utilities/UUID.js">
+</script>
+<script src="../../../utilities/Disposer.js">
+</script>
+<script src="../../../utilities/MouseMover.js">
+</script>
+<script src="../../../utilities/ListDataSource.js">
+</script>
+<script src="../../../libraries/SortableJS.js">
+</script>
+<script src="../../../utilities/SortableAPI.js">
+</script>
+<script src="../../../components/base/Resizer.js">
+</script>
+<script src="../../../components/base/SplitPane.js">
+</script>
+<script src="../../../components/base/View.js">
+</script>
+<script src="../../../components/base/Modal.js">
+</script>
+<script src="../../../components/base/Dialog.js">
+</script>
+<script src="../../../components/base/Toast.js">
+</script>
+<script src="../../../components/base/AutoForm.js">
+</script>
+<script src="../../../components/base/Nav.js">
+</script>
+<script src="../../../components/base/AppShell.js">
+</script>
+<script src="../../../components/base/Pane.js">
+</script>
+<script src="../../../components/base/PageHeader.js">
+</script>
+<script src="../../../components/base/RequestState.js">
+</script>
+<script src="../../../components/base/Pagination.js">
+</script>
+<script src="../../../components/base/ItemCollection.js">
+</script>
+<script src="../../../components/data/PagedList.js">
+</script>
+<script src="../../shared/tools.js">
+</script>
+<script src="data/fixtures.js"></script>
+<script src="app.js">
+</script>
+<script src="../../../components/data/ImageViewer.js"></script>
+</head>
+<body class="m-0 h-100 overflow-hidden" $class="templateAppearance()">
+<View file="layouts/adaptive.html" class="d-flex flex-column h-100 overflow-hidden" $if="templateApp.layout()==='adaptive'" $onerror="templateViewFailure(event)">
+</View>
+<View file="layouts/topnav.html" class="d-flex flex-column h-100 overflow-hidden" $if="templateApp.layout()==='topnav'" $onerror="templateViewFailure(event)">
+</View>
+</body>
+</html>

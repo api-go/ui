@@ -1,0 +1,46 @@
+timeout: 20000
+cases:
+  - name: native file boundary and concurrent jobs obey cancellation
+    attributes: {id: subject, concurrency: '2', maxfiles: '3'}
+    actions:
+      - script: |
+          const requests=[];subject.upload=(file,{signal})=>new Promise((resolve,reject)=>{requests.push({name:file.name,signal,resolve});signal.addEventListener('abort',()=>reject(new DOMException('Aborted','AbortError')))});
+          const transfer=new DataTransfer();for(const name of ['a.txt','b.txt','c.txt'])transfer.items.add(new File(['bytes'],name));
+          const input=subject.querySelector('input');input.files=transfer.files;input.dispatchEvent(new Event('change',{bubbles:true}));
+          await new Promise(r=>setTimeout(r,0));if(requests.length!==2)throw Error('Concurrency not bounded');
+          subject.cancel(subject.state.jobs[0].id);await new Promise(r=>setTimeout(r,0));
+          if(!requests[0].signal.aborted||requests.length!==3)throw Error('Cancellation did not release a slot');
+          requests[1].resolve({id:'b'});requests[2].resolve({id:'c'});await new Promise(r=>setTimeout(r,20));
+    after:
+      - script: "return subject.value.length===2&&!subject.state.jobs.length&&subject.querySelector('input').value===''"
+      - event: {name: change, count: 2}
+  - name: queue failure retry cancellation and bind boundary
+    covers: [attributes.accept, attributes.maxfiles, attributes.maxbytes, attributes.concurrency, properties.value, properties.upload, methods.enqueue, methods.cancel, methods.retry, methods.remove, slots.prompt, slots.attachment, events.change]
+    attributes: {id: subject, accept: '.txt', maxfiles: '3', maxbytes: '100', concurrency: '1'}
+    slots:
+      prompt: '<strong>Text attachments</strong>'
+      attachment: '<span class="attachment-name" $text="attachment.name"></span>'
+    actions:
+      - script: |
+          let attempt=0;subject.value=[{id:'old',name:'old.txt',size:2}];
+          subject.upload=async(file,{signal,onProgress})=>{onProgress(50);await new Promise(r=>setTimeout(r,20));if(!attempt++)throw Error('fixture');return {id:'new',name:file.name,size:file.size}};
+          subject.enqueue([new File(['abc'],'new.txt',{type:'text/plain'})]);await new Promise(r=>setTimeout(r,60));
+          if(subject.state.jobs[0]?.status!=='error')throw Error('Missing failure');
+          subject.retry(subject.state.jobs[0].id);await new Promise(r=>setTimeout(r,60));
+          if(subject.value.length!==2||subject.state.jobs.length)throw Error('Retry did not commit');
+          let resolve;subject.upload=()=>new Promise(r=>resolve=r);subject.enqueue([new File(['x'],'late.txt')]);await new Promise(r=>setTimeout(r,0));
+          subject.cancel(subject.state.jobs[0].id);resolve({id:'late'});await new Promise(r=>setTimeout(r,20));
+          subject.remove('old');
+          subject.enqueue([new File(['x'],'wrong.png')]);
+    after:
+      - script: "return subject.value.length===1&&subject.value[0].id==='new'&&!subject.state.jobs.length&&!!subject.state.error"
+      - dom: {selector: .attachment-name, text: new.txt}
+      - event: {name: change, count: 2}
+  - name: disabled never admits a file
+    covers: [attributes.disabled]
+    attributes: {id: subject, disabled: ''}
+    actions:
+      - script: "subject.upload=async()=>({id:'no'});subject.enqueue([new File(['a'],'a.txt')])"
+    after:
+      - dom: {selector: 'input[type=file]', disabled: true}
+      - property: {path: subject.value, equals: []}

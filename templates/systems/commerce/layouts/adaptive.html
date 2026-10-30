@@ -1,0 +1,15 @@
+<AppShell id="templateShell" viewport navigation="adaptive" $.state.detail="!!templateApp.parent()" $bind="LocalStorage[templateApp.id+'NavigationWidth']">
+<View slot="header" class="w-100" file="../../../shared/blocks/header.html">
+</View>
+<Nav slot="navigation" adaptive class="flex-fill" .changebind="*" $.state.list="templateApp.routes.filter(route=>route.icon).map(route=>({type:'button',name:route.id,label:route.title,icon:route.icon}))" $.state.value="templateApp.active()" $onchange="templateApp.go(event.detail)">
+</Nav>
+<div slot="content" class="d-flex flex-column flex-fill overflow-hidden">
+<div role="alert" class="alert alert-danger m-3" $if="templateApp.state.viewError">
+<span $text="templateApp.state.viewError">
+</span>
+<button class="btn btn-link" type="button" $onclick="templateRetryView()">{#重试#}</button>
+</div>
+<View class="d-flex flex-column flex-fill overflow-hidden" file="../blocks/content.html" $onerror="templateViewFailure(event)">
+</View>
+</div>
+</AppShell>

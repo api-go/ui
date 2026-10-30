@@ -1,0 +1,69 @@
+<Pane scroll="auto">
+<PageHeader slot="header" heading="{#发起申请#}" $.state.description="''">
+<template slot="actions">
+</template>
+</PageHeader>
+<div slot="content" class="p-3 p-md-4">
+<form $onsubmit="officeSave(event)" $oninput="State.changes.Office=true" $onchange="State.changes.Office=true">
+<div class="row g-3">
+<div class="col-12 col-md-6">
+<label class="d-block">
+<span class="form-label">{#申请标题#}</span>
+<input class="form-control" type="text" $bind="office_state.draft.name" required maxlength="100">
+</label>
+</div>
+<div class="col-12 col-md-6">
+<label class="d-block">
+<span class="form-label">{#申请类型#}</span>
+<select aria-label="{#申请类型#}" class="form-select" $bind="office_state.draft.type" >
+<option value="请假">{#请假#}</option>
+<option value="报销">{#报销#}</option>
+<option value="采购">{#采购#}</option>
+</select>
+</label>
+</div>
+<div class="col-12 col-md-6">
+<label class="d-block">
+<span class="form-label">{#申请人#}</span>
+<input class="form-control" type="text" $bind="office_state.draft.applicant" required>
+</label>
+</div>
+<div class="col-12 col-md-6">
+<div class="d-block">
+<span class="form-label">{#部门#}</span>
+<TreeSelect title="{#部门#}" $bind="office_state.draft.department" $.items="[{id:'company',label:'{#云间公司#}'},...['产品部','销售部','财务部','技术部'].map(id=>({id,label:id,parent:'company'}))]"></TreeSelect>
+</div>
+</div>
+<div class="col-12 col-md-6">
+<label class="d-block">
+<span class="form-label">{#开始日期#}</span>
+<input class="form-control" type="date" $bind="office_state.draft.date" required>
+</label>
+</div>
+<div class="col-12 col-md-6">
+<label class="d-block">
+<span class="form-label">{#结束日期#}</span>
+<input class="form-control" type="date" $bind="office_state.draft.endDate" required>
+</label>
+</div>
+<div class="col-12 col-md-6">
+<div $if="office_state.draft.type!=='请假'">
+<label class="d-block">
+<span class="form-label">{#申请金额#}</span>
+<input class="form-control" type="number" $bind="office_state.draft.amount" required min="0.01" step="0.01">
+</label>
+</div>
+</div>
+</div>
+<label class="d-block mt-3">
+<span class="form-label">{#申请事由#}</span>
+<textarea class="form-control" rows="4" required $bind="office_state.draft.reason">
+</textarea>
+</label>
+<div class="d-flex flex-wrap gap-2 border-top pt-3 mt-4">
+<button type="submit" class="btn btn-primary">{#保存草稿#}</button>
+<button type="button" class="btn btn-outline-secondary" $onclick="officeGo('requests')" >{#取消#}</button>
+</div>
+</form>
+</div>
+</Pane>

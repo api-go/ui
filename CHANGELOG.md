@@ -1,5 +1,12 @@
 # Changelog
 
+## Unreleased — 2026-10-30
+
+- 新增交互式场景模板与 ResourcePicker、TreeSelect、FileUpload、ImageViewer、StepForm、Calendar。
+- 增强日期时间及重复明细校验，修复 Modal/Dialog 焦点与取消、List 虚拟窗口及空摘要行为。
+- 同步应用层 UI SOP、覆盖矩阵和下一轮移动交互计划；保留 State 和既有树能力。
+- 本次仅本地 Git 提交，不打 tag、不发布 npm、不推送、不升级独立 loader。
+
 ## Unreleased — 2026-10-29
 
 - 新增后台、移动和桌面系统模板，布局共享业务 View、Hash 导航和保存边界；详情保留为可编辑模板。

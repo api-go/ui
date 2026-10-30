@@ -4,7 +4,33 @@ testData:
   crudBoard: { columns: [{ id: todo, title: Todo, items: [{ id: c1, title: First, content: Work }] }] }
   slotBoard: { columns: [{ id: todo, title: Todo, items: [{ id: c1, title: First, content: Work }] }, { id: empty, title: Empty, items: [] }] }
   extras: { card: [{ name: title, label: Task title, type: text }, { name: priority, label: Priority, type: select, options: [low, high] }] }
+  isolatedBoard: { columns: [{ id: todo, title: Todo, items: [{ id: c1, title: First, content: Work }] }] }
 cases:
+  - name: private native changes do not escape as document changes
+    attributes: { id: subject, "$.state.data": testData.isolatedBoard }
+    slots: {}
+    before: []
+    actions:
+      - script: "subject.querySelector('.kanban-items').dispatchEvent(new CustomEvent('change',{bubbles:true,detail:null})); subject.editCard(subject.state.data.columns[0].items[0],subject.state.data.columns[0])"
+      - wait: 100
+      - fill: { selector: '#subject .kanban-editor input', value: Native changed }
+      - script: "subject.querySelector('.kanban-editor input').dispatchEvent(new Event('change',{bubbles:true})); if(subject.state.data.columns[0].items[0].title!=='First')throw new Error('Private field mutated the document'); subject.commitEdit()"
+    after:
+      - property: { path: "subject.state.data.columns[0].items[0].title", equals: Native changed }
+      - event: { name: change, count: 1 }
+  - name: native card edit action and named toolbar controls
+    attributes: { id: subject, toolbar: true, "$.state.data": testData.crudBoard }
+    slots: {}
+    before:
+      - dom: { selector: '#subject .kanban-save', containsText: Save }
+      - dom: { selector: '#subject button[aria-label="Board menu"]', count: 1 }
+      - dom: { selector: '#subject button[aria-label="Add card"]', count: 1 }
+      - dom: { selector: '#subject .kanban-card button', containsText: First }
+    actions:
+      - click: '#subject .kanban-card button'
+    after:
+      - property: { path: subject.state.editing.kind, equals: card }
+      - script: "return subject.state.editing.draft.title==='First'"
   - name: rendering schemas editing state and events
     covers: [methods.schemas, methods.editCard, methods.commitEdit, methods.cancelEdit, state.editing]
     attributes: { id: subject, "$.state.data": testData.board, "$.state.extraSchemas": testData.extras }

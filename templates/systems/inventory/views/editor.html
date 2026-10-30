@@ -1,0 +1,96 @@
+<Pane scroll="auto">
+<PageHeader slot="header" heading="{#编辑业务单据#}" $.state.description="'{#先保存草稿，再核对过账；盘点数量表示实际盘点值。#}'">
+<template slot="actions">
+</template>
+</PageHeader>
+<div slot="content" class="p-3 p-md-4">
+<form id="inventoryDocumentForm" $onsubmit="inventorySaveDocument(event)" $oninput="if(!event.target.closest('[data-no-changebind]'))State.changes.Inventory=true" $onchange="if(!event.target.closest('[data-no-changebind]'))State.changes.Inventory=true">
+<div class="row g-3">
+<div class="col-12 col-md-6">
+<label class="d-block">
+<span class="form-label">{#单据类型#}</span>
+<select aria-label="{#单据类型#}" class="form-select" $bind="inventory_state.draft.type" >
+<option value="采购入库">{#采购入库#}</option>
+<option value="销售出库">{#销售出库#}</option>
+<option value="调拨">{#调拨#}</option>
+<option value="销售退货">{#销售退货#}</option>
+<option value="盘点">{#盘点#}</option>
+</select>
+</label>
+</div>
+<div class="col-12 col-md-6">
+<label class="d-block">
+<span class="form-label">{#往来单位#}</span>
+<input class="form-control" type="text" $bind="inventory_state.draft.partner" required maxlength="80">
+</label>
+</div>
+<div class="col-12 col-md-6">
+<label class="d-block">
+<span class="form-label">{#仓库#}</span>
+<select aria-label="{#仓库#}" class="form-select" $bind="inventory_state.draft.warehouse" >
+<option value="A">{#中心仓#}</option>
+<option value="B">{#门店仓#}</option>
+</select>
+</label>
+</div>
+<div class="col-12 col-md-6">
+<div $if="inventory_state.draft.type==='调拨'">
+<label class="d-block">
+<span class="form-label">{#调入仓库#}</span>
+<select aria-label="{#调入仓库#}" class="form-select" $bind="inventory_state.draft.target" >
+<option value="A">{#中心仓#}</option>
+<option value="B">{#门店仓#}</option>
+</select>
+</label>
+</div>
+</div>
+</div>
+<section class="border-top mt-4 pt-4">
+<h2 class="h5">{#商品明细#}</h2>
+<div class="mb-3" data-no-changebind><ResourcePicker multiple title="{#从商品库批量添加#}" $.items="inventory_state.data.products" $onchange="inventoryAddProducts(event.detail);thisNode.value=[]"><template slot="item"><div class="d-flex flex-wrap align-items-start gap-2"><div class="flex-fill"><strong class="d-block" $text="item.name"></strong><span class="small text-body-secondary" $text="item.sku+' · '+item.category"></span></div><span class="text-nowrap" $text="templateMoney(item.price)"></span></div></template></ResourcePicker></div>
+<ItemCollection id="inventoryLines" layout="vertical" $bind="inventory_state.draft.lines" $onbeforeadd="inventoryAddLine(event)" $onchange="if(Array.isArray(event.detail))State.changes.Inventory=true">
+<template slot="item">
+<div class="row g-2 align-items-center w-100">
+<div class="col-12 col-md-4">
+<strong $text="item.name">
+</strong>
+</div>
+<label class="col-6 col-md-3">
+<span class="form-label small">{#数量#}</span>
+<input class="form-control" name="qty" type="number" $min="inventory_state.draft.type==='盘点'?0:1" step="1" required $bind="item.qty" aria-label="{#明细数量#}">
+</label>
+<label class="col-6 col-md-3">
+<span class="form-label small">{#单价#}</span>
+<input class="form-control" name="price" type="number" min="0" step="0.01" required $bind="item.price" aria-label="{#明细单价#}">
+</label>
+<div class="col-12 col-md-2 text-md-end" $text="templateMoney(Math.round(Number(item.price)*100)*Number(item.qty)/100)">
+</div>
+</div>
+</template>
+<div slot="creator">
+<div class="d-flex flex-wrap gap-2 align-items-center">
+<select class="form-select w-auto" aria-label="{#添加商品#}" $bind="this.newItem.productId">
+<option value="">{#选择商品#}</option>
+<option $each="inventory_state.data.products" as="product" $value="product.id" $text="product.name">
+</option>
+</select>
+<input class="form-control w-auto" type="number" $min="inventory_state.draft.type==='盘点'?0:1" step="1" aria-label="{#添加数量#}" placeholder="{#数量#}" $bind="this.newItem.qty">
+</div>
+</div>
+</ItemCollection>
+<div class="text-end mt-3">{#合计#} <strong class="fs-4" $text="templateMoney(inventoryTotal())">
+</strong>
+</div>
+</section>
+<label class="d-block mt-4">
+<span class="form-label">{#备注#}</span>
+<textarea class="form-control" rows="3" $bind="inventory_state.draft.notes">
+</textarea>
+</label>
+<div class="d-flex flex-wrap align-items-center gap-2 mt-4 border-top pt-3">
+<button class="btn btn-primary" type="submit" $disabled="inventory_state.saving">{#保存单据#}</button>
+<button type="button" class="btn btn-outline-secondary" $onclick="inventoryGo('documents')" >{#取消#}</button>
+</div>
+</form>
+</div>
+</Pane>

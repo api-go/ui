@@ -2,19 +2,29 @@ name: DatePicker
 kind: component
 src: /ui/components/form/DatePicker.js
 dependencies: [AutoForm]
-purpose: Native date input. In AutoForm, rangeEnd edits a second field as one date range.
+purpose: Native date/time/month/week input with inclusive bounds. In AutoForm, rangeEnd edits a second field as one range.
 
 attributes:
   sm: boolean; use Bootstrap small form-control sizing
   range: boolean; show a standalone end-date input
   rangeend: string; second AutoForm data field; schema setting.rangeEnd takes precedence
+  type: [date, time, datetime-local, month, week]
+  min: 'Native inclusive lower bound in the selected input format.'
+  max: 'Native inclusive upper bound.'
+  step: 'Native step; time/datetime-local values are seconds. Omitted uses any.'
+  required: 'Boolean; both fields are required in range mode.'
+  disabled: Boolean.
+  readonly: Boolean.
+  label: 'Accessible start input name; default Start.'
+  endlabel: 'Accessible end input name; default End.'
 
 properties:
-  value: string; start date, YYYY-MM-DD
+  value: 'Native string for selected type; default date YYYY-MM-DD, time HH:mm, datetime-local YYYY-MM-DDTHH:mm, month YYYY-MM, week YYYY-Www. No UTC conversion.'
+  end: 'Standalone end value; may be controlled through $.end. AutoForm rangeEnd continues to own its second data field.'
 
 state:
-  start: string; start date, YYYY-MM-DD
-  end: string; end date, YYYY-MM-DD when range is enabled
+  start: Native input string for the selected type.
+  end: Native end input string when range is enabled.
 
 events:
   change: detail is the changed date string
@@ -37,6 +47,9 @@ rules:
   - Define page data before DatePicker is parsed.
   - Use range for a standalone visual range; read its state.start and state.end.
   - In AutoForm, declare setting.rangeEnd on the start field; the end field does not need its own schema item.
+  - 'Native input formats remain strings; no UTC conversion or invented timezone rules. datetime-local is local wall time. Same-day time ranges require end >= start; overnight scheduling belongs to the host with dates.'
+  - 'End native min is the later of start and configured min; max/step/required and native validity remain active. Invalid drafts are preserved for correction. Server/business validation remains necessary.'
+  - 'Attributes are also reactive properties for AutoForm setting.type/min/max/step/required/disabled/readonly/label/endlabel. Reuse ui-sm/ui-lg/ui-link; explicit legacy sm remains supported.'
 
 related:
   - ../base/AutoForm.yaml

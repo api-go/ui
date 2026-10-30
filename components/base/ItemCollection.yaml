@@ -1,19 +1,24 @@
 name: ItemCollection
 kind: component
 src: /ui/components/base/ItemCollection.js
-dependencies: [SortableAPI]
+dependencies: [SortableAPI, Disposer]
 purpose: Render a bindable array using item and creator slots, with removal and drag sorting.
 attributes:
   layout: "horizontal | vertical; defaults to horizontal"
   type: "object | string | number | boolean; defaults to object"
+  idfield: "Stable row identity field, default id; required for errors retained across reordering. Scalar rows use current indexes."
 properties:
   value: "The bound array. Non-array assignments normalize to an empty array."
   newItem: "Reactive object or scalar used by the creator slot"
+  validator: "Optional async validator(rowsSnapshot) returns {rowId:{field:message}}. No persistence; stale results discarded."
 methods:
   add: "Validate and append newItem; returns false when beforeadd is canceled, otherwise true."
   submitCreator: "Commit the visible native creator-control values, emit creatorsubmit, then call add() when the event is not canceled."
   remove: "remove(index) removes one item."
   reorder: "reorder(oldIndex, newIndex) moves one item and returns whether the order changed."
+  validate: "await validate() checks existing row AutoForms/native controls and optional validator; false blocks saving. The creator is excluded."
+  setErrors: "setErrors({rowId:{field:message}}) forwards errors to slotted AutoForms or renders focusable native-field errors."
+  focusField: "focusField(rowId, field) uses AutoForm's public API or the named native control; returns success."
 slots:
   item: "Optional template repeated with item and index variables; omitted content leaves the stable item wrapper and remove control."
   creator: "Optional creator controls; bind object fields to this.newItem.xxx or bind a string creator directly to this.newItem."
@@ -27,6 +32,7 @@ examples: |
     <input slot="creator" class="form-control" $bind="this.newItem.name">
   </ItemCollection>
 rules:
+  - RepeatFields is a composition of ItemCollection and AutoForm/native row controls, not a second draft model. Bind row controls directly to item fields. Call validate before the host-owned save; use stable unique row IDs and named native controls for field errors. add/remove/reorder invalidates async validation; field edits clear their own error. A rejected validator displays a safe retry message.
   - Bind with $bind; do not configure $.state.value.
   - Missing slots must not prevent programmatic add, remove, bind, or change behavior.
   - Slotted item content is kept in a dedicated receiver; removal controls remain owned by ItemCollection.
@@ -34,5 +40,8 @@ rules:
   - Creator and Add align through intrinsic flex layout; no fixed button width/height or absolute pixel offsets. Removal occupies an in-flow action region and becomes visible on hover/focus or touch devices.
   - Inherits ui-sm/ui-lg across item, creator and actions. Switching density must retain controls and bound draft values; creator slots should use ordinary Bootstrap controls rather than fixed small classes.
   - Clicking Add commits visible native creator-control values even when browser autofill or programmatic display did not emit input/change first.
+  - After successful add, newItem and its bound visible creator controls reset to empty values. Object field paths are retained with blank scalars, false booleans and empty arrays so text controls never display undefined. Canceled creatorsubmit/beforeadd retains both. newItem is component-owned reactive state exposed through the same public property; consumers do not need to clear native DOM controls themselves.
+  - Object records cloned by add are NewState objects, so item-slot edits notify derived bindings. Existing rows supplied by the caller retain their ownership; initialize mutable supplied records with NewState when their fields drive other bindings. Field edits do not add a second collection change event; that event remains the array add/remove/reorder boundary.
+  - Private native/Sortable change events stay inside the structural root. The public change event targets ItemCollection and carries the complete array. Slotted field-specific handlers still run on their own controls; use their bindings or input events for application field-edit tracking.
 tests:
   - ItemCollection.test.yaml

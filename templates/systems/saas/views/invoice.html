@@ -1,0 +1,53 @@
+<Pane scroll="auto">
+<PageHeader slot="header" heading="{#账单详情#}" $.state.description="''">
+<template slot="actions">
+<button type="button" class="btn btn-outline-secondary" $onclick="templateDownload('invoice.json',saasInvoice())" $if="saasInvoice()">{#下载账单#}</button>
+</template>
+</PageHeader>
+<div slot="content" class="p-3 p-md-4">
+<template $if="saasInvoice()">
+<div class="border rounded p-3 p-md-4">
+<div class="d-flex flex-wrap justify-content-between gap-3">
+<h2 class="h3">{#账单#}</h2>
+<span class="text-body-secondary" $text="saasInvoice()?.id">
+</span>
+</div>
+<p class="text-body-secondary" $text="saas_state.data.organization.name">
+</p>
+<dl class="row g-3 my-4">
+<div class="col-6 col-lg-3">
+<dt class="small text-body-secondary fw-normal">{#日期#}</dt>
+<dd class="mt-1" $text="saasInvoice()?.date">
+</dd>
+</div>
+<div class="col-6 col-lg-3">
+<dt class="small text-body-secondary fw-normal">{#状态#}</dt>
+<dd class="mt-1" $text="saasInvoice()?.status">
+</dd>
+</div>
+</dl>
+<div class="table-responsive">
+<table class="table align-middle text-nowrap">
+<thead>
+<tr>
+<th scope="col">{#项目#}</th>
+<th scope="col">{#金额#}</th>
+</tr>
+</thead>
+<tbody>
+<tr $each="saasInvoice()?[saasInvoice()]:[]" as="row" key="id">
+<td class="" $text="row.name">
+</td>
+<td class="text-end" $text="templateMoney(row.amount)">
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="text-end fs-3" $text="templateMoney(saasInvoice()?.amount)">
+</div>
+</div>
+</template>
+<div class="alert alert-warning" $if="!(saasInvoice())">{#记录不存在，请返回列表选择。#}</div>
+</div>
+</Pane>

@@ -1,0 +1,27 @@
+<Pane scroll="none">
+<PageHeader slot="header" heading="{#商品档案#}" $.state.description="''">
+<template slot="actions">
+<button type="button" class="btn btn-primary" $onclick="inventoryGo('product-edit')" >
+<i class="bi bi-plus-lg me-1" aria-hidden="true">
+</i>{#新增商品#}</button>
+</template>
+</PageHeader>
+<div slot="content" class="d-flex flex-column overflow-hidden">
+<PagedList id="inventory_stateList" searchable sortable  height="100%" $.source="inventory_state.productSource" $.state.columns="[{name:'name',label:'{#商品#}',class:'col-7'},{name:'stock',label:'{#库存#}',class:'col-2',align:'end'},{name:'price',label:'{#单价#}',class:'col-3',align:'end'}]" $.state.sortoptions="[{value:'name',label:'{#名称#}'},{value:'-name',label:'{#名称倒序#}'}]">
+<template slot="item">
+<div class="row align-items-center gx-3">
+<div class="col-7">
+<button type="button" class="btn btn-link p-0 text-start" $text="item.name" $onclick="inventoryGo('product-edit',item.id)">
+</button>
+<span class="d-block small text-body-secondary" $text="item.sku+' · '+item.category">
+</span>
+</div>
+<div class="col-2 text-end" $text="inventoryQty(item.id)">
+</div>
+<div class="col-3 text-end" $text="templateMoney(item.price)">
+</div>
+</div>
+</template>
+</PagedList>
+</div>
+</Pane>

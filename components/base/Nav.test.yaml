@@ -119,6 +119,15 @@ cases:
       - property: { path: subject.state.value, equals: page7 }
       - event: { name: nav, count: 1 }
       - dom: { selector: '#subject .dropdown-menu.show', count: 0 }
+  - name: item Bootstrap utilities survive overflow and keep current emphasis
+    attributes: {id: subject, style: 'width:160px', "$.state.value": "'page3'", "$.state.list": "Array.from({length:4},(_,i)=>({type:'button',name:'page'+i,label:'Destination '+i,class:'bg-transparent text-body-emphasis'}))"}
+    actions: [{wait: 80}]
+    after:
+      - script: "return [...subject.querySelectorAll('.active')].every(node=>getComputedStyle(node).backgroundColor==='rgba(0, 0, 0, 0)' && Number(getComputedStyle(node).fontWeight)>=600) && subject.querySelector('[data-nav-more] .active').classList.contains('bg-transparent')"
+  - name: default vertical selection retains neutral surface instead of Bootstrap primary pills
+    attributes: {id: subject, vertical: true, "$.state.value": "'home'", "$.state.list": "[{type:'button',name:'home',label:'Home'}]"}
+    after:
+      - script: "const active=subject.querySelector('.nav-link.active');const color=getComputedStyle(subject).getPropertyValue('--bs-secondary-rgb').split(',').map(Number);const actual=getComputedStyle(active).backgroundColor.match(/[\\d.]+/g).map(Number);return JSON.stringify(actual)===JSON.stringify([...color,0.18])"
   - name: one data set switches vertical rail bar and horizontal without changing selection
     attributes: { id: subject, adaptive: true, "$.state.orientation": "'vertical'", "$.state.value": "'home'", "$.state.list": "[{type:'button',name:'home',label:'Home',icon:'house'},{type:'button',name:'tasks',label:'Tasks',icon:'check'}]" }
     before:

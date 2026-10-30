@@ -1,0 +1,173 @@
+{
+  "id": "commerce",
+  "title": "{#山野生活 · 商城#}",
+  "entry": "index.html",
+  "description": "商品浏览、购物车、地址、订单与商品管理；提交扣减库存，取消订单释放库存。",
+  "layouts": [
+    {
+      "id": "adaptive",
+      "file": "layouts/adaptive.html"
+    },
+    {
+      "id": "topnav",
+      "file": "layouts/topnav.html"
+    }
+  ],
+  "views": [
+    {
+      "id": "catalog",
+      "file": "views/catalog.html"
+    },
+    {
+      "id": "product",
+      "file": "views/product.html"
+    },
+    {
+      "id": "cart",
+      "file": "views/cart.html"
+    },
+    {
+      "id": "checkout",
+      "file": "views/checkout.html"
+    },
+    {
+      "id": "orders",
+      "file": "views/orders.html"
+    },
+    {
+      "id": "order-detail",
+      "file": "views/order-detail.html"
+    },
+    {
+      "id": "addresses",
+      "file": "views/addresses.html"
+    },
+    {
+      "id": "address-edit",
+      "file": "views/address-edit.html"
+    },
+    {
+      "id": "management",
+      "file": "views/management.html"
+    },
+    {
+      "id": "product-edit",
+      "file": "views/product-edit.html"
+    }
+  ],
+  "routes": [
+    [
+      "catalog",
+      "商品",
+      "shop"
+    ],
+    [
+      "cart",
+      "购物车",
+      "bag"
+    ],
+    [
+      "orders",
+      "订单",
+      "receipt"
+    ],
+    [
+      "addresses",
+      "地址",
+      "geo-alt"
+    ],
+    [
+      "management",
+      "商品管理",
+      "box-seam"
+    ],
+    [
+      "product",
+      "商品详情",
+      ""
+    ],
+    [
+      "checkout",
+      "确认订单",
+      ""
+    ],
+    [
+      "order-detail",
+      "订单详情",
+      ""
+    ],
+    [
+      "address-edit",
+      "编辑地址",
+      ""
+    ],
+    [
+      "product-edit",
+      "编辑商品",
+      ""
+    ]
+  ],
+  "shared": [
+    "../../shared/tools.js",
+    "../../shared/blocks/header.html"
+  ],
+  "data": "Explicit browser-local fictional fixtures; no server authorization, stock, payment or transport is claimed",
+  "components": [
+    "AppShell",
+    "Nav",
+    "PageHeader",
+    "Pane",
+    "View",
+    "ImageViewer"
+  ],
+  "state": {
+    "route": [
+      "commercePage",
+      "commerceId",
+      "commerceLayout",
+      "commerceSearch",
+      "commerceCategory"
+    ],
+    "storage": [
+      "commerceTemplateData",
+      "templateDensity",
+      "templateLink",
+      "templateDark",
+      "commerceNavigationWidth"
+    ],
+    "draft": "commerce_state.draft"
+  },
+  "translations": "Master translation markers; no local dictionary",
+  "scroll": "AppShell viewport; each Pane owns its content scroll; PagedList/Kanban/CodeEditor own bounded work regions",
+  "fixtures": "data/fixtures.js",
+  "scripts": [
+    "../../../frameworks/State.js",
+    "../../../frameworks/Bootstrap.js",
+    "../../../utilities/HTTP.js",
+    "../../../utilities/UUID.js",
+    "../../../utilities/Disposer.js",
+    "../../../utilities/MouseMover.js",
+    "../../../utilities/ListDataSource.js",
+    "../../../libraries/SortableJS.js",
+    "../../../utilities/SortableAPI.js",
+    "../../../components/base/Resizer.js",
+    "../../../components/base/SplitPane.js",
+    "../../../components/base/View.js",
+    "../../../components/base/Modal.js",
+    "../../../components/base/Dialog.js",
+    "../../../components/base/Toast.js",
+    "../../../components/base/AutoForm.js",
+    "../../../components/base/Nav.js",
+    "../../../components/base/AppShell.js",
+    "../../../components/base/Pane.js",
+    "../../../components/base/PageHeader.js",
+    "../../../components/base/RequestState.js",
+    "../../../components/base/Pagination.js",
+    "../../../components/base/ItemCollection.js",
+    "../../../components/data/PagedList.js",
+    "../../shared/tools.js",
+    "data/fixtures.js",
+    "app.js",
+    "../../../components/data/ImageViewer.js"
+  ]
+}

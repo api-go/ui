@@ -1,0 +1,75 @@
+<Pane scroll="auto">
+<PageHeader slot="header" heading="{#库存工作台#}" $.state.description="'{#采购、销售与仓库协作。#}'">
+<template slot="actions">
+<button type="button" class="btn btn-primary" $onclick="inventoryGo('editor')" >
+<i class="bi bi-plus-lg me-1" aria-hidden="true">
+</i>{#创建单据#}</button>
+</template>
+</PageHeader>
+<div slot="content" class="p-3 p-md-4">
+<div class="row g-3 mb-4">
+<div class="col-6 col-xl-3">
+<section class="border rounded p-3 h-100">
+<div class="small text-body-secondary mb-2">{#商品品类#}</div>
+<div class="h3 mb-0" $text="inventory_state.data.products.length">
+</div>
+</section>
+</div>
+<div class="col-6 col-xl-3">
+<section class="border rounded p-3 h-100">
+<div class="small text-body-secondary mb-2">{#总库存#}</div>
+<div class="h3 mb-0" $text="inventory_state.data.products.reduce((n,p)=>n+inventoryQty(p.id),0)">
+</div>
+</section>
+</div>
+<div class="col-6 col-xl-3">
+<section class="border rounded p-3 h-100">
+<div class="small text-body-secondary mb-2">{#待过账单据#}</div>
+<div class="h3 mb-0" $text="inventory_state.data.documents.filter(d=>d.status==='草稿').length">
+</div>
+</section>
+</div>
+<div class="col-6 col-xl-3">
+<section class="border rounded p-3 h-100">
+<div class="small text-body-secondary mb-2">{#库存流水#}</div>
+<div class="h3 mb-0" $text="inventory_state.data.movements.length">
+</div>
+</section>
+</div>
+</div>
+<div class="row g-4">
+<section class="col-12 col-lg-7">
+<h2 class="h5 mb-3">{#库存分布#}</h2>
+<div class="table-responsive">
+<table class="table align-middle text-nowrap">
+<thead>
+<tr>
+<th scope="col">{#商品#}</th>
+<th scope="col">{#中心仓#}</th>
+<th scope="col">{#门店仓#}</th>
+</tr>
+</thead>
+<tbody>
+<tr $each="inventory_state.data.products" as="row" key="id">
+<td class="" $text="row.name">
+</td>
+<td class="text-end" $text="inventoryQty(row.id,'A')">
+</td>
+<td class="text-end" $text="inventoryQty(row.id,'B')">
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+</section>
+<section class="col-12 col-lg-5">
+<div class="border rounded p-3">
+<h2 class="h5">{#从一张单据开始#}</h2>
+<p class="text-body-secondary">{#采购、销售、调拨、退货和盘点共享明细编辑。过账后可在流水中核对每次库存变化。#}</p>
+
+<p class="small text-body-secondary mt-3 mb-0">{#本页使用虚构数据，库存变更只保存在当前浏览器。#}</p>
+</div>
+</section>
+</div>
+</div>
+</Pane>

@@ -1,0 +1,40 @@
+<Pane scroll="auto">
+<PageHeader slot="header" heading="{#商品详情#}" $.state.description="''">
+<template slot="actions">
+</template>
+</PageHeader>
+<div slot="content" class="p-3 p-md-4">
+<template $if="commerceProduct()">
+<div class="row g-4">
+<div class="col-12 col-md-5">
+<div class="bg-primary-subtle rounded text-center p-5 text-primary-emphasis">
+<i class="display-1" $class="'bi bi-'+commerceProduct()?.icon" aria-hidden="true">
+</i>
+</div>
+<div class="mt-3" $if="commerceProduct()?.id==='P1'"><ImageViewer $.images="[{src:'assets/cup-front.svg',alt:'{#随行杯正面示意#}'},{src:'assets/cup-detail.svg',alt:'{#杯盖结构示意#}'}]"><span slot="trigger">{#查看商品示意图#}</span></ImageViewer></div>
+</div>
+<div class="col-12 col-md-7">
+<span class="text-body-secondary" $text="commerceProduct()?.category">
+</span>
+<h2 class="h2 mt-2" $text="commerceProduct()?.name">
+</h2>
+<p class="fs-3 my-4" $text="templateMoney(commerceProduct()?.price)">
+</p>
+<p class="text-body-secondary" $text="commerceProduct()?.description">
+</p>
+<p>
+<span>{#可用库存#}</span> <strong $text="commerceProduct()?.stock">
+</strong>
+</p>
+<div class="d-flex flex-wrap gap-2 mt-4">
+<button type="button" class="btn btn-primary" $onclick="commerceAdd(Hash.commerceId)" $disabled="!commerceProduct()?.active||commerceProduct()?.stock<1">
+<i class="bi bi-bag-plus me-1" aria-hidden="true">
+</i>{#加入购物车#}</button>
+<button type="button" class="btn btn-outline-secondary" $onclick="commerceGo('cart')" >{#查看购物车#}</button>
+</div>
+</div>
+</div>
+</template>
+<div class="alert alert-warning" $if="!(commerceProduct())">{#记录不存在，请返回列表选择。#}</div>
+</div>
+</Pane>

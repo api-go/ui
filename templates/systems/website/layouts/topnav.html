@@ -1,0 +1,24 @@
+<header class="sticky-top bg-body border-bottom">
+<div class="container py-2">
+<View file="../../../shared/blocks/header.html">
+</View>
+</div>
+</header>
+<main><div class="container pt-3" $if="templateDraftElsewhere()"><div class="alert alert-warning d-flex flex-wrap align-items-center gap-2"><span>{#有未保存的草稿#}</span><button class="btn btn-link" type="button" $onclick="Hash.go({websitePage:website_state.editingPage})">{#继续编辑#}</button></div></div>
+<div class="container pt-3" $if="website_state.error">
+<div class="alert alert-danger" role="alert" $text="website_state.error">
+</div>
+</div>
+<View file="../blocks/content.html" $onerror="templateViewFailure(event)">
+</View>
+</main>
+<footer class="border-top bg-body-tertiary">
+<div class="container py-4 d-flex flex-wrap gap-3 align-items-center">
+<strong>{#云间协作#}</strong>
+<span class="small text-body-secondary">{#把团队的下一步放在同一个地方#}</span>
+<span class="flex-fill">
+</span>
+<button class="btn btn-link text-body-secondary" type="button" $onclick="websiteGo('faq')">{#常见问题#}</button>
+<button class="btn btn-link text-body-secondary" type="button" $onclick="websiteGo('contact')">{#联系我们#}</button>
+</div>
+</footer>

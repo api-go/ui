@@ -1,0 +1,25 @@
+<div class="alert alert-danger m-3 flex-shrink-0" role="alert" $if="templateApp.state.error" $text="templateApp.state.error">
+</div>
+<div class="px-3 pt-2 small text-success-emphasis flex-shrink-0" role="status" $if="templateApp.state.notice" $text="templateApp.state.notice">
+</div>
+<div class="px-3 py-2 border-bottom d-flex align-items-center gap-2 small flex-shrink-0 bg-warning-subtle" $if="templateDraftElsewhere()">
+<span>{#有未保存的草稿#}</span>
+<button class="btn btn-link" type="button" $onclick="Hash.go({[templateApp.id+'Page']:templateApp.state.editingPage,[templateApp.id+'Id']:templateApp.state.editingId||null})">{#继续编辑#}</button>
+</div>
+<View file="../views/inbox.html" class="d-flex flex-column flex-fill overflow-hidden" $if="templateApp.page()==='inbox'" $hidden="templateDraftConflict()" $class="templateDraftConflict()?'d-none':''" $onerror="templateViewFailure(event)">
+</View>
+<View file="../views/requests.html" class="d-flex flex-column flex-fill overflow-hidden" $if="templateApp.page()==='requests'" $hidden="templateDraftConflict()" $class="templateDraftConflict()?'d-none':''" $onerror="templateViewFailure(event)">
+</View>
+<View file="../views/editor.html" class="d-flex flex-column flex-fill overflow-hidden" $if="templateApp.page()==='editor'" $hidden="templateDraftConflict()" $class="templateDraftConflict()?'d-none':''" $onerror="templateViewFailure(event)">
+</View>
+<View file="../views/detail.html" class="d-flex flex-column flex-fill overflow-hidden" $if="templateApp.page()==='detail'" $hidden="templateDraftConflict()" $class="templateDraftConflict()?'d-none':''" $onerror="templateViewFailure(event)">
+</View>
+<View file="../views/organization.html" class="d-flex flex-column flex-fill overflow-hidden" $if="templateApp.page()==='organization'" $hidden="templateDraftConflict()" $class="templateDraftConflict()?'d-none':''" $onerror="templateViewFailure(event)">
+</View>
+<View file="../views/expenses.html" class="d-flex flex-column flex-fill overflow-hidden" $if="templateApp.page()==='expenses'" $hidden="templateDraftConflict()" $class="templateDraftConflict()?'d-none':''" $onerror="templateViewFailure(event)">
+</View>
+<div class="p-4" role="alert" $if="!templateApp.routes.some(route=>route.id===templateApp.page())">
+<h1 class="h4">{#页面不存在#}</h1>
+<p>{#此地址不在当前模板页面清单中。#}</p>
+<button type="button" class="btn btn-primary" $onclick="templateApp.go(templateApp.routes[0].id)" >{#返回首页#}</button>
+</div>

@@ -1,0 +1,24 @@
+<Pane scroll="none">
+<PageHeader slot="header" heading="{#项目看板#}" $.state.description="'{#双击编辑，拖动调整，修改后统一保存。#}'">
+<template slot="actions">
+<div class="dropdown"><button type="button" class="btn btn-link text-body-secondary" aria-label="{#看板菜单#}" data-bs-toggle="dropdown" aria-expanded="false"><i class="bi bi-three-dots" aria-hidden="true"></i></button><ul class="dropdown-menu dropdown-menu-end"><li><button class="dropdown-item" type="button" $onclick="projectBoard.runTool('add-column')">{#添加分组#}</button></li></ul></div>
+<button type="button" class="btn btn-primary" $disabled="!State.changes.Projects" $onclick="projectBoard.save()">{#保存看板#}</button>
+</template>
+</PageHeader>
+<div slot="content" class="d-flex flex-column overflow-hidden">
+<Kanban id="projectBoard" class="flex-fill" $.state.data="projects_state.boardDraft" $.state.extraschemas="{card:[{name:'owner',label:'{#负责人#}',type:'select',options:[{'value': '林悦', 'label': '{#林悦#}'}, {'value': '周宁', 'label': '{#周宁#}'}, {'value': '许安', 'label': '{#许安#}'}, {'value': '陈晨', 'label': '{#陈晨#}'}]},{name:'due',label:'{#截止日期#}',type:'date'},{name:'priority',label:'{#优先级#}',type:'select',options:[{'value': '高', 'label': '{#高#}'}, {'value': '普通', 'label': '{#普通#}'}, {'value': '低', 'label': '{#低#}'}]}] }" $onchange="projectsBoardChanged(event)" $onsave="projectsSaveBoard(event)">
+<template slot="card">
+<button type="button" class="btn btn-link p-0 text-body fw-semibold text-start" $onclick="event.stopPropagation();this.editCard(card,column)" $text="card.title">
+</button>
+<p class="small text-body-secondary my-2" $text="card.content">
+</p>
+<div class="d-flex flex-wrap gap-2 align-items-center">
+<span class="badge bg-secondary-subtle text-secondary-emphasis" $text="card.owner">
+</span>
+<span class="small text-body-secondary" $text="card.due">
+</span>
+</div>
+</template>
+</Kanban>
+</div>
+</Pane>

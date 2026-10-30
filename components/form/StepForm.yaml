@@ -1,0 +1,36 @@
+name: StepForm
+kind: component
+src: /ui/components/form/StepForm.js
+dependencies: [Disposer]
+purpose: Accessible retained step panels with validation before advancing and host-owned saving.
+properties:
+  steps: 'Nonempty array of unique {id,label}; changing configuration invalidates pending validation.'
+  value: 'Active step id. Bind to Hash when reload/copy should restore a step. External assignment is silent; missing/unknown ids fall back to the first configured step.'
+  validator: 'Optional async (step,signal)=>error text or empty. Host owns cross-field rules and one shared draft. Native controls/AutoForms in active panel are validated first.'
+methods:
+  go: 'await go(id): backwards directly; forwards only one step after validation; returns boolean.'
+  next: 'await next(): validated forward navigation.'
+  previous: 'await previous(): backward navigation.'
+  validate: 'await validate(): boolean. Input, navigation, cancellation and removal invalidate late results.'
+  finish: 'await finish(): validates last panel and emits finish; never persists or sends an HTTP request.'
+  cancel: 'Cancel pending validation and emit cancel; host decides discard/navigation.'
+slots:
+  step: 'Repeated retained content, with step variable. Use conditional sections for each step.id; bind all controls directly to the same host draft. Hidden panels stay mounted.'
+  actions: Additional host commands beside navigation, e.g. Save draft. One host-owned save boundary.
+events:
+  change: User navigation active step id; external binding restore is silent.
+  finish: 'Cancelable; detail {step}. Host persists the complete draft and handles saving/failure.'
+  cancel: Host-owned discard/back action; component never clears draft.
+rules:
+  - Do not nest an enclosing native form with required hidden panels; StepForm validates active controls through its own next/finish controls. A final host action should validate all business rules before saving. Do not put AutoForm transport inside steps.
+  - Steps are navigation, not a progress claim that data is saved. Loading uses busy disabled controls; errors keep the current panel and draft.
+tests: [StepForm.test.yaml]
+examples:
+  shared_draft: |
+    <StepForm $.steps="[{id:'details',label:'Details'},{id:'review',label:'Review'}]"
+      $bind="Hash.setupStep" $onfinish="saveProfile()" $oncancel="leaveSetup()">
+      <template slot="step">
+        <input $if="step.id==='details'" class="form-control" required $bind="profile_state.draft.name">
+        <p $if="step.id==='review'" $text="profile_state.draft.name"></p>
+      </template>
+    </StepForm>

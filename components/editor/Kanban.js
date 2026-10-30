@@ -18,6 +18,9 @@ globalThis.Component.register('Kanban', container => {
     return data
   }
   container.readonly = container.hasAttribute('readonly')
+	// Native inputs and SortableJS also emit bubbling "change" events. Only the
+	// complete document emitted on the component itself is the public contract.
+	container.addEventListener('change', event => { if (event.target !== container) event.stopImmediatePropagation() })
   globalThis.Editor.connect(container, { type: 'kanban', defaultData: () => ({ columns: [] }), normalize })
 
   const state = container.state
@@ -160,36 +163,36 @@ globalThis.Component.register('Kanban', container => {
   globalThis.DOMDisposer.add(container, () => { clearTimeout(sortableTimer); destroySortables(); modal()?.removeEventListener('keydown', container.onEditorKeydown); document.removeEventListener('keydown', outsideEditorEscape) })
 }, globalThis.Util.makeDom(/*html*/`
 <div class="kanban-root d-flex flex-column h-100 min-h-0 border rounded bg-body overflow-hidden">
-  <div $if="this.hasAttribute('toolbar')" slot-id="toolbar" class="kanban-toolbar d-flex align-items-center gap-2 border-bottom bg-body px-3 py-2">
+  <div $if="this.hasAttribute('toolbar')" slot-id="toolbar" class="kanban-toolbar ui-toolbar d-flex align-items-center border-bottom bg-body px-2 px-sm-3">
     <strong class="text-truncate" $text="this.state.data.title || '{#Kanban#}'"></strong>
     <div $if="!this.readonly" class="dropdown">
-      <button type="button" class="btn  btn-link link-secondary p-1" data-bs-toggle="dropdown" aria-expanded="false" title="{#Board menu#}"><i class="bi bi-three-dots"></i></button>
-      <ul class="dropdown-menu shadow-sm"><li><button type="button" class="dropdown-item" $onclick="this.addColumn()"><i class="bi bi-layout-three-columns me-2"></i>{#Add column#}</button></li></ul>
+      <button type="button" class="btn  btn-link link-secondary p-1" data-bs-toggle="dropdown" aria-expanded="false" title="{#Board menu#}" aria-label="{#Board menu#}"><i aria-hidden="true" class="bi bi-three-dots"></i></button>
+      <ul class="dropdown-menu shadow-sm"><li><button type="button" class="dropdown-item" $onclick="this.addColumn()"><i aria-hidden="true" class="bi bi-layout-three-columns me-2"></i>{#Add column#}</button></li></ul>
     </div>
     <div class="flex-grow-1"></div>
-    <button $if="!this.hasAttribute('nosave')" type="button" class="kanban-save" $class="'btn  '+(this.state.dirty?'btn-primary':'btn-outline-secondary')" $disabled="!this.state.dirty || this.state.saving" $onclick="this.save()"><i class="bi bi-save me-1"></i>{#Save#}</button>
+    <button $if="!this.hasAttribute('nosave')" type="button" class="kanban-save" $class="'btn  '+(this.state.dirty?'btn-primary':'btn-outline-secondary')" $disabled="!this.state.dirty || this.state.saving" $onclick="this.save()"><i aria-hidden="true" class="bi bi-save me-1"></i>{#Save#}</button>
   </div>
-  <div class="kanban-columns d-flex gap-3 flex-grow-1 overflow-auto p-3 align-items-stretch">
+  <div class="kanban-columns d-flex gap-3 flex-grow-1 overflow-auto p-3 align-items-stretch bg-body-tertiary">
     <template $each="this.state.data.columns" as="column" index="columnIndex" key="id">
-      <section class="kanban-column d-flex flex-column flex-shrink-0 rounded-3" $data-column-id="column.id">
+      <section class="kanban-column d-flex flex-column flex-shrink-0 rounded-3 border bg-body-secondary" $data-column-id="column.id">
         <div slot-id="column-header" class="kanban-column-header d-flex align-items-center gap-2 kanban-column-handle px-2 py-2">
-          <i $if="!this.readonly" class="bi bi-grip-vertical text-secondary opacity-50"></i>
+          <i aria-hidden="true" $if="!this.readonly" class="bi bi-grip-vertical text-secondary opacity-50"></i>
           <strong class="text-truncate flex-grow-1 px-1" $text="column.title"></strong><span class="badge rounded-pill text-bg-secondary fw-normal" $text="column.items.length"></span>
-          <button $if="!this.readonly" class="btn  btn-link link-secondary p-1" type="button" title="{#Add card#}" $onclick="event.stopPropagation();this.addCard(column)"><i class="bi bi-plus-lg"></i></button>
+          <button $if="!this.readonly" class="btn  btn-link link-secondary p-1" type="button" title="{#Add card#}" aria-label="{#Add card#}" $onclick="event.stopPropagation();this.addCard(column)"><i aria-hidden="true" class="bi bi-plus-lg"></i></button>
           <div $if="!this.readonly" class="dropdown">
-            <button class="btn  btn-link link-secondary p-1" type="button" data-bs-toggle="dropdown" aria-expanded="false" title="{#Column menu#}" $onclick="event.stopPropagation()"><i class="bi bi-three-dots"></i></button>
+            <button class="btn  btn-link link-secondary p-1" type="button" data-bs-toggle="dropdown" aria-expanded="false" title="{#Column menu#}" aria-label="{#Column menu#}" $onclick="event.stopPropagation()"><i aria-hidden="true" class="bi bi-three-dots"></i></button>
             <ul class="dropdown-menu dropdown-menu-end shadow-sm">
-              <li><button type="button" class="dropdown-item" $onclick="this.editColumn(column)"><i class="bi bi-pencil me-2"></i>{#Edit column#}</button></li>
+              <li><button type="button" class="dropdown-item" $onclick="this.editColumn(column)"><i aria-hidden="true" class="bi bi-pencil me-2"></i>{#Edit column#}</button></li>
               <li><hr class="dropdown-divider"></li>
-              <li><button type="button" class="dropdown-item text-danger" $onclick="this.removeColumn(column)"><i class="bi bi-trash me-2"></i>{#Delete column#}</button></li>
+              <li><button type="button" class="dropdown-item text-danger" $onclick="this.removeColumn(column)"><i aria-hidden="true" class="bi bi-trash me-2"></i>{#Delete column#}</button></li>
             </ul>
           </div>
         </div>
-        <div class="kanban-items flex-grow-1 overflow-auto px-2 pb-2" $data-column-id="column.id">
+        <div class="kanban-items flex-grow-1 overflow-auto position-relative px-2 pb-2" $data-column-id="column.id">
           <template $each="column.items" as="card" index="cardIndex" key="id">
             <article class="kanban-card card border-0 mb-2" $data-card-id="card.id" $ondblclick="this.editCard(card,column)">
               <div slot-id="card" class="card-body px-3 py-2 kanban-card-handle">
-                <div class="d-flex align-items-start gap-2"><div class="flex-grow-1 min-w-0"><div class="fw-semibold text-break" $text="card.title"></div><div $if="card.content" class="kanban-card-content small text-muted mt-1" $text="card.content"></div></div>
+                <div class="d-flex align-items-start gap-2"><div class="flex-grow-1 min-w-0"><button $if="!this.readonly" type="button" class="btn btn-link p-0 text-body fw-semibold text-start text-break" $onclick="event.stopPropagation();this.editCard(card,column)" $text="card.title"></button><div $if="this.readonly" class="fw-semibold text-break" $text="card.title"></div><div $if="card.content" class="kanban-card-content small text-body-secondary mt-1" $text="card.content"></div></div>
                   <div slot-id="card-actions" class="d-flex gap-1"></div>
                 </div>
               </div>
@@ -214,10 +217,8 @@ globalThis.Component.register('Kanban', container => {
   Kanban { display:block; min-height:320px; }
   Kanban .min-h-0 { min-height:0; }
   Kanban .min-w-0 { min-width:0; }
-  Kanban .kanban-columns { background:var(--bs-tertiary-bg); }
-  Kanban .kanban-column { width:300px; min-height:180px; align-self:stretch; background:var(--bs-secondary-bg); border:1px solid var(--bs-border-color-translucent); }
-  Kanban .kanban-column-header { min-height:46px; }
-  Kanban .kanban-items { min-height:72px; position:relative; }
+  Kanban .kanban-column { width:calc(18.75 * var(--ui-control-font,1rem)); min-height:180px; align-self:stretch; }
+  Kanban .kanban-items { min-height:72px; }
   Kanban .kanban-card { background:var(--bs-body-bg); box-shadow:0 1px 2px rgba(0,0,0,.08); transition:box-shadow .15s, transform .15s; }
   Kanban .kanban-card:hover { box-shadow:0 3px 10px rgba(0,0,0,.12); transform:translateY(-1px); }
   Kanban .kanban-card-content { display:-webkit-box; -webkit-box-orient:vertical; -webkit-line-clamp:3; overflow:hidden; }

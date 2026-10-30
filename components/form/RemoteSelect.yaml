@@ -1,22 +1,36 @@
 name: RemoteSelect
 kind: component
 src: /ui/components/form/RemoteSelect.js
-dependencies: [HTTP, Toast, Disposer]
-purpose: Select one scalar value from a bounded server-side search without preloading a large collection.
+dependencies: [Disposer]
+related: [../../utilities/HTTP.yaml]
+purpose: Search and select stable entity IDs from a bounded host-owned query, as a scalar or ID array.
 attributes:
   api: POST endpoint.
   action: Query action name.
+  multiple: 'Boolean, configured at initialization, including AutoForm setting.multiple. False/default binds a string; true binds a unique string array. Choose one mode for a field rather than changing its value type during editing.'
+  required: 'Require at least one selected ID; participates in native form validation.'
+  disabled: 'Disable input, selection, removal and clear.'
 properties:
-  value: Selected scalar value.
+  value: 'Selected string, or string array with multiple. Programmatic/bound changes resolve labels without emitting change.'
   params: Object or function returning request parameters.
   placeholder: Search placeholder.
+  label: 'Accessible input name; defaults to the host aria-label or Search.'
+  load: 'Optional async ({query,values,limit,signal}) => option array. values is nonempty for selected-ID resolution; otherwise search query. Takes precedence over api. Return authorized {value,label,disabled?} or {id,name,disabled?} options. Hosts can adapt existing APIs or bounded local fixtures; no new request service is implied.'
 methods:
   search: Query options using the current text.
   choose: Select one {value,label} or {id,name} option.
   clear: Clear the selection and emit change.
+  remove: 'remove(id): remove one selected ID and emit the same scalar/array value shape.'
 events:
-  change: detail is the selected scalar value.
+  change: 'detail is the selected string, or a new unique string array in multiple mode. Private native changes are isolated.'
 rules:
   - Search is debounced and every response is bounded by the host API.
+  - 'The master component host supplies core HTTP alongside State/Bootstrap. Portable pages load /ui/utilities/HTTP.js once before RemoteSelect when using api. Do not inject a second HTTP script in a host that already supplies it.'
   - A selected ID is resolved back to its display label through the same authorized API.
+  - 'Existing api/action/params POST shape remains {action,...params,query,limit:30}; resolution queries each selected ID. load can resolve IDs in one bounded request. Unavailable IDs remain visible and removable, with an inline retry notice; never silently erase a saved value.'
+  - 'Option arrays are bounded to 30. Disabled options cannot be chosen. This is bounded search, not a virtualized preload of an entire directory. Unknown IDs never grant access.'
+  - 'Single-value typing clears the old selection; a value is committed only by choosing a result. Multiple-value typing retains selected IDs, supports duplicate prevention, named removal and clear. No free-text tags.'
+  - 'ArrowUp/Down, Home/End and Enter navigate/choose enabled results. Escape, Tab, focus leaving and outside pointer close the popup. IME composition does not choose a result. The combobox owns focus and active-descendant; options retain selected state separately from keyboard highlight.'
+  - 'Debounce invalidates pending responses immediately; selected-label resolution has an independent request generation. Abort on superseding/clear/disposal, and ignore late results even when a loader ignores abort. Failed search/resolve retains selected IDs and provides visible retry; no Toast-only errors.'
+  - 'One dropdown owns bounded scrolling. Controls inherit default/ui-sm/ui-lg and ui-link. Use label or aria-label for an accessible name, alongside the visible field label. The host owns dirty/save/permissions and must not read internal DOM.'
 tests: [RemoteSelect.test.yaml]

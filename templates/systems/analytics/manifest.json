@@ -1,0 +1,119 @@
+{
+  "id": "analytics",
+  "title": "{#云间经营分析#}",
+  "entry": "index.html",
+  "description": "经营指标、销售趋势、渠道与库存分析，统一日期筛选、Hash 恢复及范围导出。",
+  "layouts": [
+    {
+      "id": "sidebar",
+      "file": "layouts/sidebar.html"
+    },
+    {
+      "id": "topnav",
+      "file": "layouts/topnav.html"
+    }
+  ],
+  "views": [
+    {
+      "id": "overview",
+      "file": "views/overview.html"
+    },
+    {
+      "id": "sales",
+      "file": "views/sales.html"
+    },
+    {
+      "id": "inventory",
+      "file": "views/inventory.html"
+    },
+    {
+      "id": "report",
+      "file": "views/report.html"
+    }
+  ],
+  "routes": [
+    [
+      "overview",
+      "经营概览",
+      "bar-chart"
+    ],
+    [
+      "sales",
+      "销售分析",
+      "graph-up"
+    ],
+    [
+      "inventory",
+      "库存趋势",
+      "boxes"
+    ],
+    [
+      "report",
+      "报表明细",
+      "table"
+    ]
+  ],
+  "shared": [
+    "../../shared/tools.js",
+    "../../shared/blocks/header.html"
+  ],
+  "data": "Read-only fictional day rows in data/fixtures.js; applied range/channel in Hash; JSON export uses the same range. No business-data write.",
+  "components": [
+    "AppShell",
+    "Chart",
+    "Nav",
+    "PageHeader",
+    "Pane",
+    "View"
+  ],
+  "state": {
+    "route": [
+      "analyticsPage",
+      "analyticsLayout",
+      "analyticsFrom",
+      "analyticsTo",
+      "analyticsChannel"
+    ],
+    "storage": [
+      "templateDensity",
+      "templateLink",
+      "templateDark",
+      "analyticsNavigationWidth"
+    ],
+    "snapshot": "analytics_state.rows"
+  },
+  "translations": "Master translation markers; no local dictionary",
+  "scroll": "AppShell viewport; each Pane owns its content scroll; PagedList/Kanban/CodeEditor own bounded work regions",
+  "fixtures": "data/fixtures.js",
+  "scripts": [
+    "../../../frameworks/State.js",
+    "../../../frameworks/Bootstrap.js",
+    "../../../utilities/HTTP.js",
+    "../../../utilities/UUID.js",
+    "../../../utilities/Disposer.js",
+    "../../../utilities/MouseMover.js",
+    "../../../utilities/ListDataSource.js",
+    "../../../libraries/SortableJS.js",
+    "../../../utilities/SortableAPI.js",
+    "../../../components/base/Resizer.js",
+    "../../../components/base/SplitPane.js",
+    "../../../components/base/View.js",
+    "../../../components/base/Modal.js",
+    "../../../components/base/Dialog.js",
+    "../../../components/base/Toast.js",
+    "../../../components/base/AutoForm.js",
+    "../../../components/base/Nav.js",
+    "../../../components/base/AppShell.js",
+    "../../../components/base/Pane.js",
+    "../../../components/base/PageHeader.js",
+    "../../../components/base/RequestState.js",
+    "../../../components/base/Pagination.js",
+    "../../../components/base/ItemCollection.js",
+    "../../../components/data/PagedList.js",
+    "../../../libraries/ChartJS.js",
+    "../../../components/data/Chart.js",
+    "../../shared/tools.js",
+    "data/fixtures.js",
+    "app.js"
+  ]
+}

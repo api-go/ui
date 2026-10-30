@@ -1,0 +1,38 @@
+<Pane scroll="auto">
+<PageHeader slot="header" heading="{#编辑商品#}" $.state.description="''">
+<template slot="actions">
+</template>
+</PageHeader>
+<div slot="content" class="p-3 p-md-4">
+<form $onsubmit="inventorySaveProduct(event)" $oninput="if(!event.target.closest('[data-no-changebind]'))State.changes.Inventory=true" $onchange="if(!event.target.closest('[data-no-changebind]'))State.changes.Inventory=true">
+<div class="row g-3">
+<div class="col-12 col-md-6">
+<label class="d-block">
+<span class="form-label">{#商品名称#}</span>
+<input class="form-control" type="text" $bind="inventory_state.draft.name" required maxlength="80">
+</label>
+</div>
+<div class="col-12 col-md-6">
+<label class="d-block">
+<span class="form-label">{#SKU编码#}</span>
+<input class="form-control" type="text" $bind="inventory_state.draft.sku" required maxlength="40">
+</label>
+</div>
+<div class="col-12 col-md-6">
+<div class="d-block">
+<span class="form-label">{#分类#}</span>
+<TreeSelect mode="cascade" title="{#分类#}" $bind="inventory_state.draft.category" $.items="[{id:'office',label:'{#办公#}'},{id:'办公用品',label:'{#办公用品#}',parent:'office'},{id:'办公设备',label:'{#办公设备#}',parent:'office'}]"></TreeSelect>
+</div>
+</div>
+<div class="col-12 col-md-6">
+<label class="d-block">
+<span class="form-label">{#参考单价#}</span>
+<input class="form-control" type="number" $bind="inventory_state.draft.price" required min="0" step="0.01">
+</label>
+</div>
+</div>
+<p class="small text-body-secondary mt-3">{#新商品初始库存为零，通过入库单增加库存。已存在商品的库存由单据维护。#}</p>
+<button class="btn btn-primary mt-3" type="submit">{#保存商品#}</button>
+</form>
+</div>
+</Pane>

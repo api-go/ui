@@ -20,7 +20,9 @@ globalThis.Component.register('Dialog', container => {
     event.stopPropagation()
     button.click()
   }
-  container.addEventListener('keydown', onKeydown)
+  // Dialog owns Escape's result; handle it before Bootstrap's static-backdrop
+  // listener can queue a second animation after this dialog has been removed.
+  container.addEventListener('keydown', onKeydown, true)
   container.addEventListener('shown.bs.modal', () => {
     document.querySelectorAll('.modal-backdrop').item(document.querySelectorAll('.modal-backdrop').length - 1)?.classList.add('dialog-backdrop')
     actionButtons().at(-1)?.focus()

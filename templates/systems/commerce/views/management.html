@@ -1,0 +1,40 @@
+<Pane scroll="auto">
+<PageHeader slot="header" heading="{#商品管理#}" $.state.description="'{#本机示例商品维护；真实库存由业务事务接口管理。#}'">
+<template slot="actions">
+<button type="button" class="btn btn-primary" $onclick="commerceGo('product-edit')" >
+<i class="bi bi-plus-lg me-1" aria-hidden="true">
+</i>{#新增商品#}</button>
+</template>
+</PageHeader>
+<div slot="content" class="p-3 p-md-4">
+<div class="table-responsive">
+<table class="table align-middle text-nowrap">
+<thead>
+<tr>
+<th scope="col">{#商品#}</th>
+<th scope="col">{#分类#}</th>
+<th scope="col">{#单价#}</th>
+<th scope="col">{#库存#}</th>
+<th scope="col">{#上架#}</th>
+</tr>
+</thead>
+<tbody>
+<tr $each="commerce_state.data.products" as="row" key="id">
+<td>
+<button class="btn btn-link p-0 text-start" $text="row.name" $onclick="commerceGo('product-edit',row.id)">
+</button>
+</td>
+<td class="" $text="row.category">
+</td>
+<td class="text-end" $text="templateMoney(row.price)">
+</td>
+<td class="text-end" $text="row.stock">
+</td>
+<td class="" $text="row.active?'{#已上架#}':'{#已下架#}'">
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+</Pane>

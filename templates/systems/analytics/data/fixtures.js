@@ -1,0 +1,1 @@
+const analyticsRows=Array.from({length:30},(_,i)=>({id:'D'+i,date:'2026-10-'+String(i+1).padStart(2,'0'),channel:['官网','门店','合作伙伴'][i%3],orders:12+(i*7)%24,revenue:(12+(i*7)%24)*(169+(i%5)*20),customers:6+(i*3)%14,returns:i%4,stock:800-i*9}));

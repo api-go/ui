@@ -1,0 +1,63 @@
+<Pane scroll="auto">
+<PageHeader slot="header" heading="{#库存与单据报表#}" $.state.description="''">
+<template slot="actions">
+<button type="button" class="btn btn-outline-secondary" $onclick="templateDownload('inventory-report.json',inventory_state.data.products.map(p=>({...p,stock:inventoryQty(p.id)})))" >{#导出报表#}</button>
+</template>
+</PageHeader>
+<div slot="content" class="p-3 p-md-4">
+<div class="row g-3 mb-4">
+<div class="col-6 col-xl-3">
+<section class="border rounded p-3 h-100">
+<div class="small text-body-secondary mb-2">{#已过账单据#}</div>
+<div class="h3 mb-0" $text="inventory_state.data.documents.filter(d=>d.status==='已过账').length">
+</div>
+</section>
+</div>
+<div class="col-6 col-xl-3">
+<section class="border rounded p-3 h-100">
+<div class="small text-body-secondary mb-2">{#草稿金额#}</div>
+<div class="h3 mb-0" $text="templateMoney(inventory_state.data.documents.filter(d=>d.status==='草稿').reduce((n,d)=>n+d.total,0))">
+</div>
+</section>
+</div>
+<div class="col-6 col-xl-3">
+<section class="border rounded p-3 h-100">
+<div class="small text-body-secondary mb-2">{#库存参考货值#}</div>
+<div class="h3 mb-0" $text="templateMoney(inventory_state.data.products.reduce((n,p)=>n+inventoryQty(p.id)*p.price,0))">
+</div>
+</section>
+</div>
+<div class="col-6 col-xl-3">
+<section class="border rounded p-3 h-100">
+<div class="small text-body-secondary mb-2">{#商品数量#}</div>
+<div class="h3 mb-0" $text="inventory_state.data.products.length">
+</div>
+</section>
+</div>
+</div>
+<div class="table-responsive">
+<table class="table align-middle text-nowrap">
+<thead>
+<tr>
+<th scope="col">{#商品#}</th>
+<th scope="col">{#SKU#}</th>
+<th scope="col">{#库存#}</th>
+<th scope="col">{#参考货值#}</th>
+</tr>
+</thead>
+<tbody>
+<tr $each="inventory_state.data.products" as="row" key="id">
+<td class="" $text="row.name">
+</td>
+<td class="" $text="row.sku">
+</td>
+<td class="text-end" $text="inventoryQty(row.id)">
+</td>
+<td class="text-end" $text="templateMoney(inventoryQty(row.id)*row.price)">
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+</Pane>

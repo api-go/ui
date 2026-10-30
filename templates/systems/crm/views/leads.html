@@ -1,0 +1,25 @@
+<Pane scroll="none">
+<PageHeader slot="header" heading="{#销售线索#}" $.state.description="''">
+<template slot="actions">
+</template>
+</PageHeader>
+<div slot="content" class="d-flex flex-column overflow-hidden">
+<PagedList id="crm_stateList" searchable sortable  height="100%" $.source="crm_state.leads" $.state.columns="[{name:'name',label:'{#公司与联系人#}',class:'col-7'},{name:'status',label:'{#状态与操作#}',class:'col-5'}]" $.state.sortoptions="[{value:'name',label:'{#名称#}'},{value:'-name',label:'{#名称倒序#}'}]">
+<template slot="item">
+<div class="row g-2 align-items-center">
+<div class="col-7">
+<strong $text="item.name">
+</strong>
+<span class="small d-block text-body-secondary" $text="item.contact+' · '+item.source">
+</span>
+</div>
+<div class="col-5 d-flex flex-wrap align-items-center gap-2">
+<span class="small text-body-secondary" $text="item.status">
+</span>
+<button type="button" class="btn btn-outline-primary" $onclick="crmConvert(item.id)" $if="item.status==='待跟进'">{#转为客户#}</button>
+</div>
+</div>
+</template>
+</PagedList>
+</div>
+</Pane>

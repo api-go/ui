@@ -1,0 +1,29 @@
+<Pane scroll="auto">
+<PageHeader slot="header" heading="{#角色配置#}" $.state.description="''">
+<template slot="actions">
+<button type="button" class="btn btn-primary" $onclick="saasGo('role-edit')" >
+<i class="bi bi-plus-lg me-1" aria-hidden="true">
+</i>{#新增角色#}</button>
+</template>
+</PageHeader>
+<div slot="content" class="p-3 p-md-4">
+<div class="row g-3">
+<article class="col-12 col-lg-4" $each="saas_state.data.roles" as="role" key="id">
+<div class="border rounded p-3 h-100">
+<h2 class="h5" $text="role.name">
+</h2>
+<ul class="list-unstyled">
+<li class="mb-2" $each="role.permissions" as="permission">
+<i class="bi bi-check2 text-success me-2" aria-hidden="true">
+</i>
+<span $text="permission">
+</span>
+</li>
+</ul>
+<button type="button" class="btn btn-outline-secondary" $onclick="saasGo('role-edit',role.id)" >{#编辑配置#}</button>
+</div>
+</article>
+</div>
+<p class="small text-body-secondary mt-4">{#这里是本机角色配置示例，不会改变真实账户权限。#}</p>
+</div>
+</Pane>

@@ -1,0 +1,12 @@
+
+const website_state=NewState({draft:NewState({name:'',email:'',company:'',message:'',plan:'team',consent:false}),error:'',notice:'',viewError:'',data:NewState(templateClone(LocalStorage.websiteTemplateData||{requests:[]})),failNextSave:false});
+function websitePage(){return typeof Hash.websitePage==='string'?Hash.websitePage:'home'}
+function websiteActive(){return websitePage()==='result'?'contact':websitePage()}
+function websiteParent(){return websitePage()==='result'?'contact':''}
+async function websiteGo(page,plan){const changed=!!State.changes.Website;if(!await templateDiscard('Website'))return;if(changed)website_state.draft=NewState({name:'',email:'',company:'',message:'',plan:plan||Hash.websitePlan||'team',consent:false});website_state.error='';Hash.go({websitePage:page,websiteId:null,websitePlan:plan||Hash.websitePlan||null});if(globalThis.templateShell?.state)templateShell.state.navOpen=false}
+async function websiteSubmit(e){e.preventDefault();if(!website_state.draft.consent){website_state.error='{#请确认仅提交虚构示例信息。#}';return}try{if(website_state.failNextSave){website_state.failNextSave=false;throw Error('fixture')}const next=templateClone(website_state.data),id=templateId('REQ');next.requests.unshift({...templateClone(website_state.draft),id,time:new Date().toISOString()});LocalStorage.websiteTemplateData=next;website_state.data=NewState(next);State.changes.Website=false;Hash.go({websitePage:'result',websiteId:id});website_state.error=''}catch{website_state.error='{#本机保存失败，输入保留，请重试。#}'}}
+function websiteResult(){return website_state.data.requests.find(x=>x.id===Hash.websiteId)}
+
+const templateApp={id:'website',title:'{#云间协作 · 官网#}',icon:'house',changeKey:'Website',state:website_state,routes:[{"id": "home", "title": "{#首页#}", "icon": "house"}, {"id": "features", "title": "{#功能#}", "icon": "grid"}, {"id": "pricing", "title": "{#方案#}", "icon": "tags"}, {"id": "faq", "title": "{#常见问题#}", "icon": "question-circle"}, {"id": "contact", "title": "{#联系我们#}", "icon": "chat-dots"}, {"id": "signup", "title": "{#体验登记#}", "icon": ""}, {"id": "result", "title": "{#申请记录#}", "icon": ""}],layouts:["topnav"],page:websitePage,go:websiteGo,layout:()=>templateLayout('website',["topnav"]),active:()=>websiteActive(),parent:()=>websiteParent()};
+
+if(['starter','team','business'].includes(Hash.websitePlan))website_state.draft.plan=Hash.websitePlan;Hash.__watch('websitePlan',()=>{if(!State.changes.Website&&['starter','team','business'].includes(Hash.websitePlan))website_state.draft.plan=Hash.websitePlan});

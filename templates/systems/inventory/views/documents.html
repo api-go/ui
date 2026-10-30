@@ -1,0 +1,29 @@
+<Pane scroll="none">
+<PageHeader slot="header" heading="{#采购与销售单据#}" $.state.description="''">
+<template slot="actions">
+<button type="button" class="btn btn-primary" $onclick="inventoryGo('editor')" >
+<i class="bi bi-plus-lg me-1" aria-hidden="true">
+</i>{#创建单据#}</button>
+</template>
+</PageHeader>
+<div slot="content" class="d-flex flex-column overflow-hidden">
+<PagedList id="inventory_stateList" searchable sortable  height="100%" $.source="inventory_state.source" $.state.columns="[{name:'name',label:'{#单据#}',class:'col-7'},{name:'total',label:'{#金额#}',class:'col-3',align:'end'},{name:'status',label:'{#状态#}',class:'col-2'}]" $.state.sortoptions="[{value:'name',label:'{#名称#}'},{value:'-name',label:'{#名称倒序#}'}]">
+<template slot="item">
+<div class="row align-items-center gx-3">
+<div class="col-7">
+<button type="button" class="btn btn-link p-0 text-start" $text="item.name" $onclick="inventoryGo('detail',item.id)">
+</button>
+<span class="d-block small text-body-secondary" $text="item.id+' · '+item.date">
+</span>
+</div>
+<div class="col-3 text-end" $text="templateMoney(item.total)">
+</div>
+<div class="col-2">
+<span class="badge bg-secondary-subtle text-secondary-emphasis" $text="item.status">
+</span>
+</div>
+</div>
+</template>
+</PagedList>
+</div>
+</Pane>

@@ -1,0 +1,36 @@
+<Pane scroll="auto">
+<PageHeader slot="header" heading="{#资源日程#}" $.state.description="'{#按日期查看各资源的可用时段。#}'">
+<template slot="actions">
+<button type="button" class="btn btn-primary" $onclick="bookingGo('editor')" >
+<i class="bi bi-plus-lg me-1" aria-hidden="true">
+</i>{#创建预约#}</button>
+</template>
+</PageHeader>
+<div slot="content" class="p-3 p-md-4">
+<Calendar class="d-block mb-4" $.value="bookingDate()" $.mode="Hash.bookingCalendarMode||'month'" $.events="booking_state.data.appointments.filter(item=>item.status==='已预约').map(item=>({id:item.id,start:item.date+'T'+item.start,end:item.date+'T'+item.end,title:item.name,summary:bookingResource(item.resourceId)?.name+' · '+item.owner}))" $onchange="Hash.go({bookingDate:event.detail})" $onmodechange="Hash.go({bookingCalendarMode:event.detail})" $oneventclick="bookingGo('detail',event.detail.id)"></Calendar>
+<details class="border-top pt-3"><summary class="fw-semibold mb-3">{#按资源查看#}</summary>
+<div class="row g-3">
+<section class="col-12 col-lg-4" $each="booking_state.data.resources" as="resource" key="id">
+<div class="border rounded p-3 h-100">
+<h2 class="h5" $text="resource.name">
+</h2>
+<p class="small text-body-secondary" $text="resource.location+' · '+resource.capacity+' {#人#}'">
+</p>
+<ol class="list-group list-group-flush">
+<li class="list-group-item px-0" $each="bookingEvents(resource.id)" as="event" key="id">
+<div class="small text-primary mb-1" $text="event.start+' – '+event.end">
+</div>
+<button class="btn btn-link p-0 text-start" $text="event.name" $onclick="bookingGo('detail',event.id)">
+</button>
+<p class="small text-body-secondary mb-0" $text="event.owner">
+</p>
+</li>
+</ol>
+<p class="small text-body-secondary py-3" $if="!bookingEvents(resource.id).length">{#当天暂无预约#}</p>
+<button class="btn btn-outline-primary w-100 mt-3" type="button" $onclick="Hash.go({bookingResource:resource.id});bookingGo('editor')">{#预约此资源#}</button>
+</div>
+</section>
+</div>
+</details>
+</div>
+</Pane>

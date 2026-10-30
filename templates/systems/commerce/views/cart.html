@@ -1,0 +1,47 @@
+<Pane scroll="auto">
+<PageHeader slot="header" heading="{#购物车#}" $.state.description="''">
+<template slot="actions">
+</template>
+</PageHeader>
+<div slot="content" class="p-3 p-md-4">
+<template $if="commerce_state.data.cart.length">
+<ul class="list-group list-group-flush">
+<li class="list-group-item px-0 py-3" $each="commerce_state.data.cart" as="line" key="id">
+<div class="row g-3 align-items-center">
+<div class="col-8 col-md-6">
+<strong $text="commerceProduct(line.productId)?.name">
+</strong>
+<span class="small text-body-secondary d-block mt-1" $text="templateMoney(commerceProduct(line.productId)?.price)">
+</span>
+</div>
+<div class="col-4 col-md-2">
+<input class="form-control" type="number" min="1" step="1" $max="commerceProduct(line.productId)?.stock" $.value="line.qty" $onchange="commerceQty(line.productId,event.target.value)" $aria-label="'{#数量#} '+commerceProduct(line.productId)?.name">
+</div>
+<div class="col-8 col-md-3 text-md-end" $text="templateMoney((commerceProduct(line.productId)?.price||0)*line.qty)">
+</div>
+<div class="col-4 col-md-1 text-end">
+<button type="button" class="btn btn-link text-body-secondary" $onclick="commerceRemove(line.productId)" $aria-label="'{#移除#} '+commerceProduct(line.productId)?.name">
+<i class="bi bi-trash" aria-hidden="true">
+</i>
+</button>
+</div>
+</div>
+</li>
+</ul>
+<div class="d-flex flex-wrap gap-3 justify-content-end align-items-center border-top mt-4 pt-4">
+<span>{#合计#} <strong class="fs-3 ms-2" $text="templateMoney(commerceCartTotal())">
+</strong>
+</span>
+<button type="button" class="btn btn-primary" $onclick="commerceGo('checkout')" >
+<i class="bi bi-arrow-right me-1" aria-hidden="true">
+</i>{#确认订单#}</button>
+</div>
+</template>
+<div class="text-center py-5" $if="!commerce_state.data.cart.length">
+<i class="bi bi-bag display-3 text-body-secondary" aria-hidden="true">
+</i>
+<h2 class="h5 mt-3">{#购物车还是空的#}</h2>
+<button type="button" class="btn btn-outline-primary" $onclick="commerceGo('catalog')" >{#去选商品#}</button>
+</div>
+</div>
+</Pane>

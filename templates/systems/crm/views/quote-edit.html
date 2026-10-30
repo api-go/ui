@@ -1,0 +1,48 @@
+<Pane scroll="auto">
+<PageHeader slot="header" heading="{#创建报价#}" $.state.description="''">
+<template slot="actions">
+</template>
+</PageHeader>
+<div slot="content" class="p-3 p-md-4">
+<form data-changebind-scope .changebind="Crm" $onsubmit="crmSaveQuote(event)">
+<div class="row g-3">
+<div class="col-12 col-md-6">
+<div>
+<span class="form-label">{#客户#}</span>
+<ResourcePicker title="{#选择报价客户#}" required $.items="crm_state.data.customers" $bind="crm_state.draft.customerId"><template slot="item"><strong class="d-block" $text="item.name"></strong><span class="small text-body-secondary" $text="item.contact+' · '+item.industry"></span></template></ResourcePicker>
+</div>
+</div>
+<div class="col-12 col-md-6">
+<label class="d-block">
+<span class="form-label">{#服务或商品#}</span>
+<input class="form-control" type="text" $bind="crm_state.draft.name" required>
+</label>
+</div>
+<div class="col-12 col-md-6">
+<label class="d-block">
+<span class="form-label">{#数量#}</span>
+<input class="form-control" type="number" $bind="crm_state.draft.qty" min="1" step="1" required>
+</label>
+</div>
+<div class="col-12 col-md-6">
+<label class="d-block">
+<span class="form-label">{#单价#}</span>
+<input class="form-control" type="number" $bind="crm_state.draft.price" min="0" step="0.01" required>
+</label>
+</div>
+<div class="col-12 col-md-6">
+<label class="d-block">
+<span class="form-label">{#有效期至#}</span>
+<input class="form-control" type="date" $bind="crm_state.draft.validUntil" required>
+</label>
+</div>
+</div>
+<p class="fs-4 mt-4" $text="templateMoney(Number(crm_state.draft.qty)*Number(crm_state.draft.price))">
+</p>
+<div class="d-flex flex-wrap gap-2 border-top pt-3 mt-4">
+<button type="submit" class="btn btn-primary">{#保存#}</button>
+<button type="button" class="btn btn-outline-secondary" $onclick="crmGo('quotes')" >{#取消#}</button>
+</div>
+</form>
+</div>
+</Pane>

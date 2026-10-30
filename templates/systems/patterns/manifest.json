@@ -1,0 +1,188 @@
+{
+  "id": "patterns",
+  "title": "{#云间账户与通用页面#}",
+  "entry": "index.html",
+  "description": "登录注册恢复与验证码、个人资料、消息、跨内容搜索、文件预览及常见错误状态。",
+  "layouts": [
+    {
+      "id": "sidebar",
+      "file": "layouts/sidebar.html"
+    },
+    {
+      "id": "topnav",
+      "file": "layouts/topnav.html"
+    }
+  ],
+  "views": [
+    {
+      "id": "profile",
+      "file": "views/profile.html"
+    },
+    {
+      "id": "login",
+      "file": "views/login.html"
+    },
+    {
+      "id": "register",
+      "file": "views/register.html"
+    },
+    {
+      "id": "recovery",
+      "file": "views/recovery.html"
+    },
+    {
+      "id": "verify",
+      "file": "views/verify.html"
+    },
+    {
+      "id": "notifications",
+      "file": "views/notifications.html"
+    },
+    {
+      "id": "search",
+      "file": "views/search.html"
+    },
+    {
+      "id": "files",
+      "file": "views/files.html"
+    },
+    {
+      "id": "file",
+      "file": "views/file.html"
+    },
+    {
+      "id": "statuses",
+      "file": "views/statuses.html"
+    },
+    {
+      "id": "onboarding",
+      "file": "views/onboarding.html"
+    }
+  ],
+  "routes": [
+    [
+      "profile",
+      "个人资料",
+      "person-circle"
+    ],
+    [
+      "login",
+      "账户入口",
+      "box-arrow-in-right"
+    ],
+    [
+      "notifications",
+      "消息",
+      "bell"
+    ],
+    [
+      "search",
+      "全局搜索",
+      "search"
+    ],
+    [
+      "files",
+      "文件",
+      "folder2-open"
+    ],
+    [
+      "statuses",
+      "页面状态",
+      "exclamation-circle"
+    ],
+    [
+      "register",
+      "创建账户示例",
+      ""
+    ],
+    [
+      "recovery",
+      "账户恢复",
+      ""
+    ],
+    [
+      "verify",
+      "验证步骤",
+      ""
+    ],
+    [
+      "file",
+      "文件详情",
+      ""
+    ],
+    [
+      "onboarding",
+      "资料设置向导",
+      "list-ol"
+    ]
+  ],
+  "shared": [
+    "../../shared/tools.js",
+    "../../shared/blocks/header.html"
+  ],
+  "data": "Explicit browser-local fictional fixtures; no server authorization, stock, payment or transport is claimed",
+  "components": [
+    "AppShell",
+    "Nav",
+    "PageHeader",
+    "Pane",
+    "View",
+    "ImageViewer",
+    "StepForm",
+    "FileUpload"
+  ],
+  "state": {
+    "route": [
+      "patternsPage",
+      "patternsId",
+      "patternsLayout",
+      "patternsSearch",
+      "patternsUnread",
+      "patternsFolder",
+      "patternsStatus"
+    ],
+    "storage": [
+      "patternsTemplateData",
+      "templateDensity",
+      "templateLink",
+      "templateDark",
+      "patternsNavigationWidth"
+    ],
+    "draft": "patterns_state.draft"
+  },
+  "translations": "Master translation markers; no local dictionary",
+  "scroll": "AppShell viewport; each Pane owns its content scroll; PagedList/Kanban/CodeEditor own bounded work regions",
+  "fixtures": "data/fixtures.js",
+  "scripts": [
+    "../../../frameworks/State.js",
+    "../../../frameworks/Bootstrap.js",
+    "../../../utilities/HTTP.js",
+    "../../../utilities/UUID.js",
+    "../../../utilities/Disposer.js",
+    "../../../utilities/MouseMover.js",
+    "../../../utilities/ListDataSource.js",
+    "../../../libraries/SortableJS.js",
+    "../../../utilities/SortableAPI.js",
+    "../../../components/base/Resizer.js",
+    "../../../components/base/SplitPane.js",
+    "../../../components/base/View.js",
+    "../../../components/base/Modal.js",
+    "../../../components/base/Dialog.js",
+    "../../../components/base/Toast.js",
+    "../../../components/base/AutoForm.js",
+    "../../../components/base/Nav.js",
+    "../../../components/base/AppShell.js",
+    "../../../components/base/Pane.js",
+    "../../../components/base/PageHeader.js",
+    "../../../components/base/RequestState.js",
+    "../../../components/base/Pagination.js",
+    "../../../components/base/ItemCollection.js",
+    "../../../components/data/PagedList.js",
+    "../../shared/tools.js",
+    "data/fixtures.js",
+    "app.js",
+    "../../../components/data/ImageViewer.js",
+    "../../../components/form/StepForm.js",
+    "../../../components/form/FileUpload.js"
+  ]
+}

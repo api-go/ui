@@ -1,0 +1,35 @@
+<Pane scroll="auto">
+<PageHeader slot="header" heading="{#发布管理#}" $.state.description="''">
+<template slot="actions">
+<button type="button" class="btn btn-outline-secondary" $onclick="templateDownload('content.json',content_state.data.articles)" >{#下载内容包#}</button>
+</template>
+</PageHeader>
+<div slot="content" class="p-3 p-md-4">
+<div class="table-responsive">
+<table class="table align-middle text-nowrap">
+<thead>
+<tr>
+<th scope="col">{#文档#}</th>
+<th scope="col">{#分类#}</th>
+<th scope="col">{#状态#}</th>
+<th scope="col">{#更新时间#}</th>
+</tr>
+</thead>
+<tbody>
+<tr $each="content_state.data.articles" as="row" key="id">
+<td>
+<button class="btn btn-link p-0 text-start" $text="row.name" $onclick="contentGo('article',row.id)">
+</button>
+</td>
+<td class="" $text="row.category">
+</td>
+<td class="" $text="row.status">
+</td>
+<td class="" $text="templateDate(row.time)">
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+</Pane>

@@ -1,5 +1,5 @@
 timeout: 10000
-dependencies: [API, DatePicker, ColorPicker, IconPicker, TagsInput]
+dependencies: [API, DatePicker, ColorPicker, IconPicker, TagsInput, RemoteSelect]
 testData:
   profile: { name: Ada, password: secret, email: ada@example.test, age: 36, birthday: 1815-12-10, appointment: "1843-07-01T09:00", role: admin, alerts: true, plan: pro, active: true, bio: First programmer., periodStart: 1843-07-01, periodEnd: 1843-07-31, periodZone: UTC, periodPrecision: 15, color: "#0d6efd", icon: star, tags: [math] }
   allSchema:
@@ -42,6 +42,17 @@ testData:
     - { name: customValue, label: Explicit label, type: text, setting: { id: autoform-explicit-label-fixture } }
     - { name: conditionalValue, label: Conditional label, type: textarea, if: this.data.show, setting: { id: autoform-conditional-label-fixture } }
 cases:
+  - name: entity selection composes scalar and array values through custom settings
+    attributes: {id: subject, columns: '2'}
+    actions:
+      - script: |
+          const load=async({query,values})=>[{id:'u1',name:'Ada'},{id:'u2',name:'Grace'}].filter(row=>values.length?values.includes(row.id):row.name.includes(query));
+          subject.state.data=NewState({owner:'u1',members:['u2']});subject.state.schema=[{name:'owner',label:'Owner',type:'RemoteSelect',setting:{load,label:'Owner'}},{name:'members',label:'Members',type:'RemoteSelect',setting:{load,label:'Members',multiple:true}}];await new Promise(r=>setTimeout(r,80));return true
+      - script: "const controls=subject.querySelectorAll('RemoteSelect');return controls.length===2&&controls[0].querySelector('input').value==='Ada'&&controls[1].textContent.includes('Grace')"
+      - script: "subject.querySelectorAll('RemoteSelect')[0].choose({id:'u2',name:'Grace'});subject.querySelectorAll('RemoteSelect')[1].choose({id:'u1',name:'Ada'});await new Promise(r=>setTimeout(r,50));return true"
+    after:
+      - property: {path: subject.data.owner, equals: u2}
+      - property: {path: subject.data.members, equals: [u2, u1]}
   - name: labels target default and explicit control ids after conditional remounts
     attributes: { id: subject, "$.state.data": testData.labelData, "$.state.schema": testData.labelSchema }
     actions:

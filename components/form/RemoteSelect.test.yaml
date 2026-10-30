@@ -1,42 +1,155 @@
 component: RemoteSelect
 source: /ui/components/form/RemoteSelect.js
-testData: {value: ''}
+testData:
+  value: ''
+  initial: b
+  multi: [a, b]
+init:
+  - |
+      globalThis.lookupFixture=async({query,values})=>[{id:'a',name:'Alpha'},{id:'b',name:'Beta'},{id:'c',name:'Unavailable',disabled:true}].filter(row=>values.length?values.includes(row.id):row.name.toLowerCase().includes(query.toLowerCase()))
 cases:
   - name: choose and clear a bounded option
     covers: [methods.choose, properties.value]
-    attributes:
-      id: subject
-      "$bind": testData.value
+    attributes: {id: subject, "$bind": testData.value}
     actions:
       - call: {method: choose, args: [{id: node-1, name: 函数}]}
+      - wait: 30
     after:
       - data: {path: testData.value, equals: node-1}
-      - property: {path: subject.state.query, equals: 函数}
+      - dom: {selector: '#subject input', value: 函数}
       - event: {name: change, count: 1, last: node-1}
   - name: clear selected value
     covers: [methods.clear]
-    attributes:
-      id: subject
-      "$bind": testData.value
+    attributes: {id: subject}
     actions:
-      - script: "subject.value='node-1'; return true"
+      - call: {method: choose, args: [{id: node-1, name: 函数}]}
+      - call: {method: clear, args: []}
+      - wait: 30
+    after:
+      - property: {path: subject.value, equals: ''}
+      - dom: {selector: '#subject input', value: ''}
+      - event: {name: change, count: 2, last: ''}
+  - name: selected ID resolves its label without change
+    covers: [properties.load, properties.label]
+    attributes: {id: subject, "$bind": testData.initial, "$.load": lookupFixture, label: Responsible person}
+    actions: [{wait: 30}]
+    after:
+      - dom: {selector: '#subject input', value: Beta}
+      - script: "return subject.querySelector('input').getAttribute('aria-label')==='Responsible person'"
+      - event: {name: change, count: 0}
+  - name: multiple values resolve remove deduplicate and clear
+    covers: [attributes.multiple, methods.remove]
+    attributes: {id: subject, multiple: true, "$bind": testData.multi, "$.load": lookupFixture}
+    actions:
+      - wait: 30
+      - call: {method: remove, args: [missing]}
+      - call: {method: choose, args: [{id: a, name: Alpha}]}
+      - call: {method: remove, args: [a]}
+      - wait: 30
+    after:
+      - data: {path: testData.multi, equals: [b]}
+      - dom: {selector: '#subject', containsText: Beta}
+      - event: {name: change, count: 1, last: [b]}
+  - name: required disabled values and options retain their semantics
+    covers: [attributes.required, attributes.disabled]
+    attributes: {id: subject, required: true, disabled: true}
+    before:
+      - script: "return subject.querySelector('input').disabled"
+    actions:
+      - call: {method: choose, args: [{id: a, name: Alpha}]}
+      - script: "subject.removeAttribute('disabled');subject.disabled=false;return true"
+      - call: {method: choose, args: [{id: c, name: Unavailable, disabled: true}]}
+    after:
+      - property: {path: subject.value, equals: ''}
+      - script: "return !subject.querySelector('input').checkValidity()"
+      - event: {name: change, count: 0}
+  - name: bounded remote search preserves existing request shape
+    covers: [attributes.api, attributes.action, properties.params, properties.placeholder, methods.search]
+    attributes: {id: subject, api: /fixture/lookup, action: searchNodes, placeholder: Find a node}
+    actions:
+      - script: |
+          const original=HTTP.post;try{HTTP.post=async options=>{testData.request=options.data;return {ok:true,result:{ok:true,list:[{id:'n',name:'Node'}]}}};subject.params=()=>({scope:'graph'});await subject.search('algebra')}finally{HTTP.post=original}return true
+    after:
+      - property: {path: subject.placeholder, equals: Find a node}
+      - data: {path: testData.request, equals: {action: searchNodes, scope: graph, query: algebra, limit: 30}}
+      - property: {path: 'subject.state.options[0].name', equals: Node}
+  - name: keyboard skips disabled results chooses and closes
+    attributes: {id: subject, "$.load": lookupFixture}
+    actions:
+      - script: "subject.open();await new Promise(r=>setTimeout(r,30));subject.keydown(new KeyboardEvent('keydown',{key:'End'}));subject.keydown(new KeyboardEvent('keydown',{key:'Enter'}));return true"
+      - wait: 30
+    after:
+      - property: {path: subject.value, equals: b}
+      - dom: {selector: '#subject input', value: Beta}
+      - property: {path: subject.state.open, equals: false}
+      - event: {name: change, count: 1, last: b}
+  - name: typing invalidates old responses before debounce
+    attributes: {id: subject}
+    actions:
+      - script: |
+          let finish;subject.load=()=>new Promise(resolve=>finish=resolve);const pending=subject.search('old');subject.schedule('new');finish([{id:'old',name:'Old'}]);await pending;subject.close();return true
+    after:
+      - property: {path: subject.state.options, equals: []}
+      - property: {path: subject.state.query, equals: new}
+  - name: clear invalidates label resolution and ignores late reply
+    attributes: {id: subject}
+    actions:
+      - script: "let finish;subject.load=()=>new Promise(resolve=>finish=resolve);subject.value='a';subject.clear();finish([{id:'a',name:'Alpha'}]);await new Promise(r=>setTimeout(r,30));return true"
+    after:
+      - property: {path: subject.value, equals: ''}
+      - dom: {selector: '#subject input', value: ''}
+  - name: failed search has persistent retry and keeps multiple selections
+    attributes: {id: subject, multiple: true}
+    actions:
+      - call: {method: choose, args: [{id: a, name: Alpha}]}
+      - script: "subject.load=async()=>{throw Error('fixture')};await subject.search('Beta');return true"
+      - wait: 30
+      - script: "return !!subject.querySelector('[role=alert]') && subject.value[0]==='a'"
+      - script: "subject.load=lookupFixture;await subject.retry();return true"
+      - wait: 30
+    after:
+      - property: {path: subject.state.error, equals: ''}
+      - property: {path: subject.value, equals: [a]}
+  - name: unavailable selected IDs remain removable and resolve retry works
+    attributes: {id: subject}
+    actions:
+      - script: "subject.load=async()=>[];subject.value='a';await new Promise(r=>setTimeout(r,30));return subject.value==='a'&&!!subject.state.error"
+      - script: "subject.load=lookupFixture;await subject.retry();return true"
+      - wait: 30
+    after:
+      - dom: {selector: '#subject input', value: Alpha}
+      - event: {name: change, count: 0}
+  - name: native changes do not publish selected IDs
+    attributes: {id: subject}
+    actions:
+      - dispatch: {target: '#subject input', event: change}
+    after:
+      - event: {name: change, count: 0}
+  - name: real typed query clears after multiple choose and array clear
+    attributes: {id: subject, multiple: true, "$.load": lookupFixture}
+    actions:
+      - fill: {selector: '#subject input', value: Alpha}
+      - wait: 250
+      - click: '#subject [role=option]'
+      - wait: 30
+      - script: "return subject.querySelector('input').value==='' && JSON.stringify(subject.value)==='[\"a\"]'"
       - call: {method: clear, args: []}
     after:
-      - data: {path: testData.value, equals: ''}
-      - property: {path: subject.state.value, equals: ''}
-      - event: {name: change, count: 1, last: ''}
-  - name: bounded remote search configuration
-    covers: [attributes.api, attributes.action, properties.params, properties.placeholder, methods.search]
-    attributes:
-      id: subject
-      api: /admin/ui-check-fixture-missing
-      action: searchNodes
-      placeholder: Find a node
-    before:
-      - property: {path: subject.placeholder, equals: Find a node}
+      - property: {path: subject.value, equals: []}
+      - event: {name: change, count: 2, last: []}
+  - name: IME composition never chooses and Escape closes without changing values
+    attributes: {id: subject, "$.load": lookupFixture}
     actions:
-      - script: "subject.params={scope:'graph'}; return true"
-      - call: {method: search, args: [algebra]}
+      - script: "subject.open();await new Promise(r=>setTimeout(r,30));subject.keydown(new KeyboardEvent('keydown',{key:'Enter',isComposing:true}));return subject.value===''&&subject.state.open"
+      - script: "subject.keydown(new KeyboardEvent('keydown',{key:'Escape'}));return true"
     after:
-      - property: {path: subject.params.scope, equals: graph}
-      - property: {path: subject.state.loading, equals: false}
+      - property: {path: subject.state.open, equals: false}
+      - event: {name: change, count: 0}
+  - name: option limit and out of order requests retain only the latest response
+    attributes: {id: subject}
+    actions:
+      - script: |
+          const pending=[];subject.load=()=>new Promise(resolve=>pending.push(resolve));const a=subject.search('old'),b=subject.search('new');pending[1](Array.from({length:45},(_,i)=>({id:'new'+i,name:'Result '+i})));await b;pending[0]([{id:'old',name:'Old'}]);await a;return true
+    after:
+      - property: {path: subject.state.options.length, equals: 30}
+      - property: {path: 'subject.state.options[0].id', equals: new0}

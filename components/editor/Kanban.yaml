@@ -80,6 +80,10 @@ rules:
   - Unknown data fields are preserved even when they are not present in an editing schema.
   - No endpoint is implicit and there is no global Editor.api.
   - Double-click a card to edit it. Drag cards within or between columns and drag column headers to reorder columns.
+  - The default editable card title is a native button and supports keyboard activation. A custom card slot owns its equivalent accessible edit action; readonly titles are plain text. Decorative icons are excluded from accessible names.
+  - The default toolbar inherits ui-toolbar spacing, density, ui-link and theme. Column background, borders and positioning use Bootstrap utilities; only board geometry and drag-specific behavior use scoped CSS.
+  - Column width follows the shared control-font token so density and enlarged text retain usable card/header space; the board owns horizontal scrolling.
+  - Native input and Sortable change events stay inside the structural root. The public change event targets Kanban and always carries the full document; editing an uncommitted modal field does not publish a document change.
   - Add card is a frequent action in each column header. The board menu adds columns; column menus only edit or delete; card deletion is only exposed in the edit form.
   - Save is disabled until data changes. Empty-column slot content is an overlay, not a sortable child, so an incoming card starts at the top without a phantom placeholder.
   - Destructive card and column operations use the shared danger-styled Dialog confirmation.

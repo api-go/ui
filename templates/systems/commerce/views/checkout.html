@@ -1,0 +1,44 @@
+<Pane scroll="auto">
+<PageHeader slot="header" heading="{#确认订单#}" $.state.description="''">
+<template slot="actions">
+</template>
+</PageHeader>
+<div slot="content" class="p-3 p-md-4">
+<form $if="commerce_state.data.cart.length" $onsubmit="commercePlace(event)">
+<div class="row g-4">
+<section class="col-12 col-lg-7">
+<h2 class="h5 mb-3">{#收货地址#}</h2>
+<label class="border rounded p-3 d-flex align-items-start gap-3 mb-3" $each="commerce_state.data.addresses" as="address" key="id">
+<input class="form-check-input flex-shrink-0 mt-1" type="radio" name="checkoutAddress" $value="address.id" $bind="commerce_state.addressId">
+<span>
+<strong $text="address.name+' · '+address.phone">
+</strong>
+<span class="d-block text-body-secondary mt-1" $text="address.city+address.street">
+</span>
+</span>
+</label>
+<button type="button" class="btn btn-outline-secondary" $onclick="commerceGo('addresses')" >{#管理地址#}</button>
+</section>
+<section class="col-12 col-lg-5">
+<div class="border rounded p-3">
+<h2 class="h5">{#订单摘要#}</h2>
+<p class="d-flex justify-content-between" $each="commerce_state.data.cart" as="line" key="id">
+<span $text="commerceProduct(line.productId)?.name+' × '+line.qty">
+</span>
+<span $text="templateMoney((commerceProduct(line.productId)?.price||0)*line.qty)">
+</span>
+</p>
+<div class="border-top pt-3 d-flex justify-content-between">
+<span>{#合计#}</span>
+<strong $text="templateMoney(commerceCartTotal())">
+</strong>
+</div>
+<button class="btn btn-primary w-100 mt-4" type="submit" $disabled="!commerce_state.data.addresses.length">{#创建示例订单#}</button>
+<p class="small text-body-secondary mt-3 mb-0">{#不会付款、发送通知或创建真实订单。#}</p>
+</div>
+</section>
+</div>
+</form>
+<p class="text-body-secondary p-3" $if="!commerce_state.data.cart.length">{#购物车为空，请返回商品列表。#}</p>
+</div>
+</Pane>

@@ -1,0 +1,26 @@
+<Pane scroll="auto">
+<PageHeader slot="header" heading="{#编辑角色#}" $.state.description="''">
+<template slot="actions">
+</template>
+</PageHeader>
+<div slot="content" class="p-3 p-md-4">
+<form $onsubmit="saasSaveRole(event)" $oninput="State.changes.Saas=true" $onchange="State.changes.Saas=true">
+<label class="d-block">
+<span class="form-label">{#角色名称#}</span>
+<input class="form-control" type="text" $bind="saas_state.draft.name" required maxlength="40">
+</label>
+<fieldset class="mt-4">
+<legend class="h6">{#能力配置#}</legend>
+<label class="d-flex gap-2 align-items-center mb-3" $each="[{'value': '查看项目', 'label': '{#查看项目#}'}, {'value': '编辑项目', 'label': '{#编辑项目#}'}, {'value': '管理成员', 'label': '{#管理成员#}'}, {'value': '查看账单', 'label': '{#查看账单#}'}]" as="permission">
+<input type="checkbox" class="form-check-input mt-0" $checked="saas_state.draft.permissions?.includes(permission.value)" $onchange="saasPermission(permission.value,event.target.checked)">
+<span $text="permission.label">
+</span>
+</label>
+</fieldset>
+<div class="d-flex flex-wrap gap-2 border-top pt-3 mt-4">
+<button type="submit" class="btn btn-primary">{#保存#}</button>
+<button type="button" class="btn btn-outline-secondary" $onclick="saasGo('roles')" >{#取消#}</button>
+</div>
+</form>
+</div>
+</Pane>

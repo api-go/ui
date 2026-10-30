@@ -1,0 +1,141 @@
+{
+  "id": "content",
+  "title": "{#云间知识与内容#}",
+  "entry": "index.html",
+  "description": "文档检索、Markdown 编辑预览、收藏、发布归档和素材信息；复用 CodeEditor 而非新造编辑器。",
+  "layouts": [
+    {
+      "id": "sidebar",
+      "file": "layouts/sidebar.html"
+    },
+    {
+      "id": "topnav",
+      "file": "layouts/topnav.html"
+    }
+  ],
+  "views": [
+    {
+      "id": "library",
+      "file": "views/library.html"
+    },
+    {
+      "id": "article",
+      "file": "views/article.html"
+    },
+    {
+      "id": "editor",
+      "file": "views/editor.html"
+    },
+    {
+      "id": "collections",
+      "file": "views/collections.html"
+    },
+    {
+      "id": "publishing",
+      "file": "views/publishing.html"
+    },
+    {
+      "id": "assets",
+      "file": "views/assets.html"
+    }
+  ],
+  "routes": [
+    [
+      "library",
+      "文档",
+      "journal-text"
+    ],
+    [
+      "collections",
+      "收藏",
+      "bookmark"
+    ],
+    [
+      "publishing",
+      "发布管理",
+      "send"
+    ],
+    [
+      "assets",
+      "素材",
+      "folder2-open"
+    ],
+    [
+      "article",
+      "阅读文档",
+      ""
+    ],
+    [
+      "editor",
+      "编辑文档",
+      ""
+    ]
+  ],
+  "shared": [
+    "../../shared/tools.js",
+    "../../shared/blocks/header.html"
+  ],
+  "data": "Explicit browser-local fictional fixtures; no server authorization, stock, payment or transport is claimed",
+  "components": [
+    "AppShell",
+    "CodeEditor",
+    "Nav",
+    "PageHeader",
+    "PagedList",
+    "Pane",
+    "View"
+  ],
+  "state": {
+    "route": [
+      "contentPage",
+      "contentId",
+      "contentLayout",
+      "contentQuery",
+      "contentMode"
+    ],
+    "storage": [
+      "contentTemplateData",
+      "templateDensity",
+      "templateLink",
+      "templateDark",
+      "contentNavigationWidth"
+    ],
+    "draft": "content_state.draft"
+  },
+  "translations": "Master translation markers; no local dictionary",
+  "scroll": "AppShell viewport; each Pane owns its content scroll; PagedList/Kanban/CodeEditor own bounded work regions",
+  "fixtures": "data/fixtures.js",
+  "scripts": [
+    "../../../frameworks/State.js",
+    "../../../frameworks/Bootstrap.js",
+    "../../../utilities/HTTP.js",
+    "../../../utilities/UUID.js",
+    "../../../utilities/Disposer.js",
+    "../../../utilities/MouseMover.js",
+    "../../../utilities/ListDataSource.js",
+    "../../../libraries/SortableJS.js",
+    "../../../utilities/SortableAPI.js",
+    "../../../components/base/Resizer.js",
+    "../../../components/base/SplitPane.js",
+    "../../../components/base/View.js",
+    "../../../components/base/Modal.js",
+    "../../../components/base/Dialog.js",
+    "../../../components/base/Toast.js",
+    "../../../components/base/AutoForm.js",
+    "../../../components/base/Nav.js",
+    "../../../components/base/AppShell.js",
+    "../../../components/base/Pane.js",
+    "../../../components/base/PageHeader.js",
+    "../../../components/base/RequestState.js",
+    "../../../components/base/Pagination.js",
+    "../../../components/base/ItemCollection.js",
+    "../../../components/data/PagedList.js",
+    "../../../utilities/Editor.js",
+    "../../../libraries/CodeMirror.js",
+    "../../../libraries/Markdown.js",
+    "../../../components/editor/CodeEditor.js",
+    "../../shared/tools.js",
+    "data/fixtures.js",
+    "app.js"
+  ]
+}

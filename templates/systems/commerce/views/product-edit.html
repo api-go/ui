@@ -1,0 +1,51 @@
+<Pane scroll="auto">
+<PageHeader slot="header" heading="{#编辑商品#}" $.state.description="''">
+<template slot="actions">
+</template>
+</PageHeader>
+<div slot="content" class="p-3 p-md-4">
+<form $onsubmit="commerceSaveProduct(event)" $oninput="State.changes.Commerce=true" $onchange="State.changes.Commerce=true">
+<div class="row g-3">
+<div class="col-12 col-md-6">
+<label class="d-block">
+<span class="form-label">{#商品名称#}</span>
+<input class="form-control" type="text" $bind="commerce_state.draft.name" required>
+</label>
+</div>
+<div class="col-12 col-md-6">
+<label class="d-block">
+<span class="form-label">{#分类#}</span>
+<select aria-label="{#分类#}" class="form-select" $bind="commerce_state.draft.category" >
+<option value="日用">{#日用#}</option>
+<option value="文具">{#文具#}</option>
+<option value="家居">{#家居#}</option>
+</select>
+</label>
+</div>
+<div class="col-12 col-md-6">
+<label class="d-block">
+<span class="form-label">{#单价#}</span>
+<input class="form-control" type="number" $bind="commerce_state.draft.price" required min="0" step="0.01">
+</label>
+</div>
+<div class="col-12 col-md-6">
+<label class="d-block">
+<span class="form-label">{#可用库存#}</span>
+<input class="form-control" type="number" $bind="commerce_state.draft.stock" required min="0" step="1">
+</label>
+</div>
+</div>
+<label class="d-block mt-3">
+<span class="form-label">{#商品介绍#}</span>
+<textarea rows="4" class="form-control" $bind="commerce_state.draft.description">
+</textarea>
+</label>
+<label class="d-flex gap-2 align-items-center mt-3">
+<input class="form-check-input mt-0" type="checkbox" $bind="commerce_state.draft.active">{#上架#}</label>
+<div class="d-flex flex-wrap gap-2 border-top pt-3 mt-4">
+<button type="submit" class="btn btn-primary">{#保存#}</button>
+<button type="button" class="btn btn-outline-secondary" $onclick="commerceGo('management')" >{#取消#}</button>
+</div>
+</form>
+</div>
+</Pane>

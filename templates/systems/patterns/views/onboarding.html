@@ -1,0 +1,37 @@
+<Pane scroll="auto">
+<PageHeader slot="header" heading="{#资料设置向导#}" $.state.description="''">
+<template slot="actions">
+</template>
+</PageHeader>
+<div slot="content" class="p-3 p-md-4">
+<div class="row g-4">
+<aside class="col-12 col-lg-3">
+<div class="border rounded p-4 text-center">
+<i class="bi bi-person-circle display-3 text-primary" aria-hidden="true">
+</i>
+<h2 class="h5 mt-3" $text="patterns_state.data.profile.name">
+</h2>
+<p class="small text-body-secondary mb-0 text-break" $text="patterns_state.data.profile.email">
+</p>
+</div>
+</aside>
+<section class="col-12 col-lg-9">
+<div data-changebind-scope .changebind="Patterns">
+<StepForm id="patternsProfileSteps" $bind="Hash.patternsStep" $.steps="[{id:'identity',label:'{#基本资料#}'},{id:'preferences',label:'{#偏好#}'},{id:'review',label:'{#核对并保存#}'}]" $onfinish="patternsSaveProfile(event)" $oncancel="patternsGo('notifications')">
+<template slot="step">
+<div $if="step.id==='identity'" class="row g-3">
+<label class="col-12 col-md-6"><span class="form-label">{#姓名#}</span><input class="form-control" type="text" $bind="patterns_state.draft.name" required autocomplete="name"></label>
+<label class="col-12 col-md-6"><span class="form-label">{#电子邮箱#}</span><input class="form-control" type="email" $bind="patterns_state.draft.email" required autocomplete="email"></label>
+</div>
+<div $if="step.id==='preferences'">
+<label class="d-block"><span class="form-label">{#简介#}</span><textarea class="form-control" rows="3" maxlength="300" $bind="patterns_state.draft.bio"></textarea></label>
+<label class="d-flex align-items-center gap-2 mt-3"><input type="checkbox" class="form-check-input mt-0" $bind="patterns_state.draft.digest"><span>{#每周摘要偏好#}</span></label><p class="small text-body-secondary mt-2">{#仅保存偏好，不会订阅或发送邮件。#}</p>
+</div>
+<dl class="row" $if="step.id==='review'"><dt class="col-4">{#姓名#}</dt><dd class="col-8" $text="patterns_state.draft.name"></dd><dt class="col-4">{#电子邮箱#}</dt><dd class="col-8 text-break" $text="patterns_state.draft.email"></dd><dt class="col-4">{#简介#}</dt><dd class="col-8 text-break" $text="patterns_state.draft.bio||'—'"></dd></dl>
+</template>
+</StepForm>
+</div>
+</section>
+</div>
+</div>
+</Pane>

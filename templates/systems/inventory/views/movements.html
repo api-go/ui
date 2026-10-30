@@ -1,0 +1,39 @@
+<Pane scroll="auto">
+<PageHeader slot="header" heading="{#库存流水#}" $.state.description="''">
+<template slot="actions">
+<button type="button" class="btn btn-outline-secondary" $onclick="templateDownload('movements.json',inventory_state.data.movements)" >{#下载流水#}</button>
+</template>
+</PageHeader>
+<div slot="content" class="p-3 p-md-4">
+<div class="table-responsive">
+<table class="table align-middle text-nowrap">
+<thead>
+<tr>
+<th scope="col">{#商品#}</th>
+<th scope="col">{#类型#}</th>
+<th scope="col">{#仓库#}</th>
+<th scope="col">{#变动#}</th>
+<th scope="col">{#来源单据#}</th>
+</tr>
+</thead>
+<tbody>
+<tr $each="inventory_state.data.movements" as="row" key="id">
+<td class="" $text="row.name">
+</td>
+<td class="" $text="row.type">
+</td>
+<td class="" $text="inventoryWarehouse(row.warehouse)">
+</td>
+<td class="text-end" $text="(row.delta>0?'+':'')+row.delta">
+</td>
+<td>
+<button class="btn btn-link p-0" $text="row.documentId" $onclick="inventoryGo('detail',row.documentId)">
+</button>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+<p class="text-body-secondary" $if="!inventory_state.data.movements.length">{#尚无库存变动，完成一张单据过账后查看。#}</p>
+</div>
+</Pane>

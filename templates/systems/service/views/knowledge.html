@@ -1,0 +1,29 @@
+<Pane scroll="auto">
+<PageHeader slot="header" heading="{#知识库#}" $.state.description="''">
+<template slot="actions">
+</template>
+</PageHeader>
+<div slot="content" class="p-3 p-md-4">
+<div class="input-group mb-4">
+<input class="form-control" type="search" aria-label="{#搜索知识#}" placeholder="{#搜索标题或内容#}" $.value="Hash.serviceSearch||''" $oninput="Hash.go({serviceSearch:event.target.value||null})">
+<span class="input-group-text">
+<i class="bi bi-search" aria-hidden="true">
+</i>
+</span>
+</div>
+<div class="row g-3">
+<article class="col-12 col-md-6" $each="service_state.data.articles.filter(x=>!Hash.serviceSearch||(x.name+x.content).includes(Hash.serviceSearch))" as="article" key="id">
+<div class="border rounded p-3 h-100">
+<span class="small text-body-secondary" $text="article.category">
+</span>
+<h2 class="h5 mt-2">
+<button class="btn btn-link p-0 text-start" $text="article.name" $onclick="serviceGo('article',article.id)">
+</button>
+</h2>
+<p class="text-body-secondary mb-0" $text="article.content.slice(0,55)+'…'">
+</p>
+</div>
+</article>
+</div>
+</div>
+</Pane>

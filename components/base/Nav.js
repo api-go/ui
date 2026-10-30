@@ -171,7 +171,7 @@ globalThis.Component.register('Nav', container => {
        <div class="dropdown-menu dropdown-menu-end p-2 bg-body shadow">
         <template $each="this.overflowMenu()" as="overflowEntry" key="key"><div $data-nav-menu-index="overflowEntry.index" $.hidden="!this.isOverflow(overflowEntry.index)">
          <div $if="overflowEntry.item.type==='label'" class="dropdown-header" $text="overflowEntry.item.label"></div>
-         <button $if="overflowEntry.item.type==='button'" type="button" class="dropdown-item" $class="this.state.value===overflowEntry.item.name?'active':''" $disabled="overflowEntry.item.disabled" $aria-label="overflowEntry.item.label||overflowEntry.item.name" $aria-current="this.state.value===overflowEntry.item.name?'page':'false'" $onclick="this.click(overflowEntry.item,false,event)"><i aria-hidden="true" $if="overflowEntry.item.icon" $class="'bi bi-'+overflowEntry.item.icon+' me-2'"></i><span $text="overflowEntry.item.label||overflowEntry.item.name"></span></button>
+         <button $if="overflowEntry.item.type==='button'" type="button" class="dropdown-item" $class="(this.state.value===overflowEntry.item.name?'active ':'')+(overflowEntry.item.class||'')" $disabled="overflowEntry.item.disabled" $aria-label="overflowEntry.item.label||overflowEntry.item.name" $aria-current="this.state.value===overflowEntry.item.name?'page':'false'" $onclick="this.click(overflowEntry.item,false,event)"><i aria-hidden="true" $if="overflowEntry.item.icon" $class="'bi bi-'+overflowEntry.item.icon+' me-2'"></i><span $text="overflowEntry.item.label||overflowEntry.item.name"></span></button>
          <label $if="overflowEntry.item.type==='switch'" class="dropdown-item d-flex align-items-center gap-2"><input class="form-check-input mt-0" type="checkbox" $bind="overflowEntry.item.bind[overflowEntry.item.name]"><span $text="overflowEntry.item.label"></span></label>
         </div></template>
        </div>
@@ -193,9 +193,9 @@ globalThis.Component.register('Nav', container => {
     Nav.nav-bar .nav-link > span {font-size:.8em;}
     Nav.nav-bar [data-nav-more] {display:none;}
     Nav .nav-link {white-space:nowrap;color:var(--bs-body-color);}
-    Nav .nav-link.active, Nav .dropdown-item.active {
-		background: rgba(var(--bs-secondary-rgb), .18) !important;
-		color: inherit !important;
+    Nav .nav-link.active, Nav .nav-pills .nav-link.active, Nav .dropdown-item.active {
+		background: rgba(var(--bs-secondary-rgb), .18);
+		color: inherit;
 		font-weight: 600;
 	}
 	Nav .nav-link { display:flex;align-items:center;gap:var(--ui-gap,.5rem);border-radius: .5rem; font-size:var(--ui-item-font,1rem);padding:var(--ui-item-y,.5rem) var(--ui-item-x,1rem); }

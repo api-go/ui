@@ -1,0 +1,40 @@
+<Pane scroll="auto">
+<PageHeader slot="header" heading="{#任务列表#}" $.state.description="''">
+<template slot="actions">
+<button type="button" class="btn btn-primary" $onclick="projectsGo('editor')" >
+<i class="bi bi-plus-lg me-1" aria-hidden="true">
+</i>{#新增任务#}</button>
+</template>
+</PageHeader>
+<div slot="content" class="p-3 p-md-4">
+<div class="table-responsive">
+<table class="table align-middle text-nowrap">
+<thead>
+<tr>
+<th scope="col">{#任务#}</th>
+<th scope="col">{#负责人#}</th>
+<th scope="col">{#优先级#}</th>
+<th scope="col">{#截止日期#}</th>
+<th scope="col">{#阶段#}</th>
+</tr>
+</thead>
+<tbody>
+<tr $each="projectsTasks()" as="row" key="id">
+<td>
+<button class="btn btn-link p-0 text-start" $text="row.title" $onclick="projectsGo('detail',row.id)">
+</button>
+</td>
+<td class="" $text="row.owner">
+</td>
+<td class="" $text="row.priority">
+</td>
+<td class="" $text="row.due">
+</td>
+<td class="" $text="row.stage">
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+</Pane>

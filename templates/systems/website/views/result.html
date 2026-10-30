@@ -1,0 +1,33 @@
+<section class="container py-4 py-md-5">
+<h1 class="display-6 fw-semibold mb-3">{#申请记录#}</h1>
+<div class="border rounded p-4" $if="websiteResult()">
+<i class="bi bi-check-circle fs-1 text-success" aria-hidden="true">
+</i>
+<h2 class="h4 mt-3">{#演示申请已保存#}</h2>
+<p class="text-body-secondary">{#你可以刷新或复制链接回来查看。本机示例不会发送邮件。#}</p>
+<dl class="row g-3 my-4">
+<div class="col-6 col-lg-3">
+<dt class="small text-body-secondary fw-normal">{#记录号#}</dt>
+<dd class="mt-1" $text="websiteResult()?.id">
+</dd>
+</div>
+<div class="col-6 col-lg-3">
+<dt class="small text-body-secondary fw-normal">{#姓名#}</dt>
+<dd class="mt-1" $text="websiteResult()?.name">
+</dd>
+</div>
+<div class="col-6 col-lg-3">
+<dt class="small text-body-secondary fw-normal">{#团队#}</dt>
+<dd class="mt-1" $text="websiteResult()?.company">
+</dd>
+</div>
+<div class="col-6 col-lg-3">
+<dt class="small text-body-secondary fw-normal">{#时间#}</dt>
+<dd class="mt-1" $text="templateDate(websiteResult()?.time)">
+</dd>
+</div>
+</dl>
+<button type="button" class="btn btn-outline-primary" $onclick="websiteGo('home')" >{#返回首页#}</button>
+</div>
+<div class="alert alert-warning" $if="!(websiteResult())">{#此申请不在当前浏览器中，请重新填写演示申请。#}</div>
+</section>

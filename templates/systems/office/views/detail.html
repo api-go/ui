@@ -1,0 +1,68 @@
+<Pane scroll="auto">
+<PageHeader slot="header" heading="{#申请详情#}" $.state.description="''">
+<template slot="actions">
+</template>
+</PageHeader>
+<div slot="content" class="p-3 p-md-4">
+<template $if="officeRequest()">
+<div class="d-flex flex-wrap gap-3 justify-content-between">
+<h2 class="h3" $text="officeRequest()?.name">
+</h2>
+<span class="badge bg-primary-subtle text-primary-emphasis align-self-start" $text="officeRequest()?.status">
+</span>
+</div>
+<dl class="row g-3 my-4">
+<div class="col-6 col-lg-3">
+<dt class="small text-body-secondary fw-normal">{#申请人#}</dt>
+<dd class="mt-1" $text="officeRequest()?.applicant">
+</dd>
+</div>
+<div class="col-6 col-lg-3">
+<dt class="small text-body-secondary fw-normal">{#部门#}</dt>
+<dd class="mt-1" $text="officeRequest()?.department">
+</dd>
+</div>
+<div class="col-6 col-lg-3">
+<dt class="small text-body-secondary fw-normal">{#日期#}</dt>
+<dd class="mt-1" $text="officeRequest()?.date+' ~ '+officeRequest()?.endDate">
+</dd>
+</div>
+<div class="col-6 col-lg-3">
+<dt class="small text-body-secondary fw-normal">{#金额#}</dt>
+<dd class="mt-1" $text="templateMoney(officeRequest()?.amount)">
+</dd>
+</div>
+</dl>
+<p class="text-break" $text="officeRequest()?.reason">
+</p>
+<div class="d-flex flex-wrap gap-2 mt-4" $if="['草稿','已驳回','已撤回'].includes(officeRequest()?.status)">
+<button type="button" class="btn btn-primary" $onclick="officeTransition('submit')" >{#提交审批#}</button>
+<button type="button" class="btn btn-outline-secondary" $onclick="officeGo('editor',Hash.officeId)" >{#编辑申请#}</button>
+</div>
+<section class="border-top pt-4 mt-4" $if="officeRequest()?.status==='待审批'">
+<h3 class="h5">{#审批意见#}</h3>
+<textarea class="form-control mb-3" rows="2" aria-label="{#审批意见#}" $bind="office_state.comment">
+</textarea>
+<div class="d-flex flex-wrap gap-2">
+<button type="button" class="btn btn-primary" $onclick="officeTransition('approve')" >{#通过#}</button>
+<button type="button" class="btn btn-outline-danger" $onclick="officeTransition('reject')" >{#驳回#}</button>
+<button type="button" class="btn btn-link text-body-secondary" $onclick="officeTransition('withdraw')" >{#撤回#}</button>
+</div>
+</section>
+<section class="border-top pt-4 mt-4">
+<h3 class="h5">{#流程记录#}</h3>
+<ol class="list-group list-group-flush">
+<li class="list-group-item px-0" $each="officeRequest()?.history||[]" as="step" key="id">
+<strong $text="step.action">
+</strong>
+<span class="small text-body-secondary ms-2" $text="step.actor+' · '+templateDate(step.time)">
+</span>
+<p class="mb-0 mt-1" $text="step.comment">
+</p>
+</li>
+</ol>
+</section>
+</template>
+<div class="alert alert-warning" $if="!(officeRequest())">{#记录不存在，请返回列表选择。#}</div>
+</div>
+</Pane>

@@ -1,0 +1,39 @@
+<Pane scroll="auto">
+<PageHeader slot="header" heading="{#任务详情#}" $.state.description="''">
+<template slot="actions">
+<button type="button" class="btn btn-outline-primary" $onclick="projectsGo('editor',Hash.projectsId)" $if="projectsTask()">{#编辑任务#}</button>
+</template>
+</PageHeader>
+<div slot="content" class="p-3 p-md-4">
+<template $if="projectsTask()">
+<h2 class="h3" $text="projectsTask()?.title">
+</h2>
+<dl class="row g-3 my-4">
+<div class="col-6 col-lg-3">
+<dt class="small text-body-secondary fw-normal">{#负责人#}</dt>
+<dd class="mt-1" $text="projectsTask()?.owner">
+</dd>
+</div>
+<div class="col-6 col-lg-3">
+<dt class="small text-body-secondary fw-normal">{#截止日期#}</dt>
+<dd class="mt-1" $text="projectsTask()?.due">
+</dd>
+</div>
+<div class="col-6 col-lg-3">
+<dt class="small text-body-secondary fw-normal">{#阶段#}</dt>
+<dd class="mt-1" $text="projectsTask()?.stage">
+</dd>
+</div>
+<div class="col-6 col-lg-3">
+<dt class="small text-body-secondary fw-normal">{#优先级#}</dt>
+<dd class="mt-1" $text="projectsTask()?.priority">
+</dd>
+</div>
+</dl>
+<div class="mb-4"><h3 class="h6 text-body-secondary">{#协作成员#}</h3><div class="d-flex flex-wrap gap-2"><span class="border rounded px-2 py-1" $each="projectsTask()?.collaborators||[]" as="memberId" $text="projects_state.data.members.find(member=>member.id===memberId)?.name||memberId"></span><span class="text-body-secondary" $if="!projectsTask()?.collaborators?.length">{#尚未选择协作成员#}</span></div></div>
+<p class="text-break" $text="projectsTask()?.content">
+</p>
+</template>
+<div class="alert alert-warning" $if="!(projectsTask())">{#记录不存在，请返回列表选择。#}</div>
+</div>
+</Pane>

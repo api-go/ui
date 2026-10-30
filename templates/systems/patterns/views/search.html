@@ -1,0 +1,32 @@
+<Pane scroll="auto">
+<PageHeader slot="header" heading="{#全局搜索#}" $.state.description="''">
+<template slot="actions">
+</template>
+</PageHeader>
+<div slot="content" class="p-3 p-md-4">
+<form class="input-group mb-4" $onsubmit="event.preventDefault();Hash.go({patternsSearch:patterns_state.search.trim()||null})">
+<input type="search" class="form-control" placeholder="{#搜索文件与消息#}" aria-label="{#全局关键词#}" $bind="patterns_state.search">
+<button type="submit" class="btn btn-primary" aria-label="{#搜索#}">
+<i class="bi bi-search" aria-hidden="true">
+</i>
+<span class="d-none d-sm-inline ms-1">{#搜索#}</span>
+</button>
+</form>
+<p class="small text-body-secondary" $if="Hash.patternsSearch" $text="patternsSearchResults().length+' {#条结果#}'">
+</p>
+<ul class="list-group list-group-flush">
+<li class="list-group-item px-0 py-3" $each="patternsSearchResults()" as="result" key="id">
+<span class="badge bg-secondary-subtle text-secondary-emphasis mb-2" $text="result.category">
+</span>
+<h2 class="h5">
+<button class="btn btn-link p-0 text-start" $text="result.name" $onclick="patternsGo(result.kind==='file'?'file':'notifications',result.kind==='file'?result.id:null)">
+</button>
+</h2>
+<p class="text-body-secondary mb-0" $text="result.excerpt">
+</p>
+</li>
+</ul>
+<p class="text-body-secondary p-3" $if="!Hash.patternsSearch">{#输入关键词搜索，例如“项目”或“团队”。#}</p>
+<p class="text-body-secondary p-3" $if="Hash.patternsSearch&&!patternsSearchResults().length">{#没有匹配结果，换个关键词试试。#}</p>
+</div>
+</Pane>

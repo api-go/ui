@@ -1,0 +1,65 @@
+<Pane scroll="auto">
+<PageHeader slot="header" heading="{#工单详情#}" $.state.description="''">
+<template slot="actions">
+</template>
+</PageHeader>
+<div slot="content" class="p-3 p-md-4">
+<template $if="serviceTicket()">
+<div class="row g-4">
+<section class="col-12 col-lg-8">
+<h2 class="h3" $text="serviceTicket()?.name">
+</h2>
+<p class="text-body-secondary" $text="serviceTicket()?.customer+' · '+serviceTicket()?.id">
+</p>
+<p class="text-break" $text="serviceTicket()?.description">
+</p>
+<h3 class="h5 border-top pt-4 mt-4">{#沟通记录#}</h3>
+<ol class="list-group list-group-flush">
+<li class="list-group-item px-0" $each="serviceTicket()?.messages||[]" as="message" key="id">
+<div class="small text-body-secondary mb-2" $text="message.role+' · '+templateDate(message.time)">
+</div>
+<p class="mb-0 text-break" $text="message.text">
+</p>
+</li>
+</ol>
+<form class="mt-4" $if="serviceTicket()?.status!=='已关闭'" $onsubmit="serviceReply(event)">
+<label class="d-block">
+<span class="form-label">{#回复客户#}</span>
+<textarea class="form-control" rows="3" required $bind="service_state.reply">
+</textarea>
+</label>
+<button class="btn btn-primary mt-3" type="submit">{#记录回复#}</button>
+<p class="small text-body-secondary mt-2">{#此演示不会向客户发送消息。#}</p>
+</form>
+</section>
+<aside class="col-12 col-lg-4">
+<div class="border rounded p-3">
+<label class="d-block mb-3">
+<span class="form-label">{#状态#}</span>
+<select aria-label="{#状态#}" class="form-select" $.value="serviceTicket()?.status" $onchange="serviceUpdate('status',event.target.value).then(()=>event.target.value=serviceTicket()?.status)">
+<option $each="[{'value': '待分配', 'label': '{#待分配#}'}, {'value': '处理中', 'label': '{#处理中#}'}, {'value': '待客户回复', 'label': '{#待客户回复#}'}, {'value': '已解决', 'label': '{#已解决#}'}, {'value': '已关闭', 'label': '{#已关闭#}'}]" as="status" $value="status.value" $text="status.label"></option>
+</select>
+</label>
+<label class="d-block mb-3">
+<span class="form-label">{#负责人#}</span>
+<select aria-label="{#负责人#}" class="form-select" $.value="serviceTicket()?.assignee" $onchange="serviceUpdate('assignee',event.target.value).then(()=>event.target.value=serviceTicket()?.assignee)">
+<option value="林悦">{#林悦#}</option>
+<option value="周宁">{#周宁#}</option>
+<option value="陈晨">{#陈晨#}</option>
+</select>
+</label>
+<label class="d-block">
+<span class="form-label">{#优先级#}</span>
+<select aria-label="{#优先级#}" class="form-select" $.value="serviceTicket()?.priority" $onchange="serviceUpdate('priority',event.target.value).then(()=>event.target.value=serviceTicket()?.priority)">
+<option value="高">{#高#}</option>
+<option value="普通">{#普通#}</option>
+<option value="低">{#低#}</option>
+</select>
+</label>
+</div>
+</aside>
+</div>
+</template>
+<div class="alert alert-warning" $if="!(serviceTicket())">{#记录不存在，请返回列表选择。#}</div>
+</div>
+</Pane>

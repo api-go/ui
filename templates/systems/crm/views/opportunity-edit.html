@@ -1,0 +1,62 @@
+<Pane scroll="auto">
+<PageHeader slot="header" heading="{#编辑商机#}" $.state.description="''">
+<template slot="actions">
+</template>
+</PageHeader>
+<div slot="content" class="p-3 p-md-4">
+<form data-changebind-scope .changebind="Crm" $onsubmit="crmSaveOpportunity(event)">
+<div class="row g-3">
+<div class="col-12 col-md-6">
+<label class="d-block">
+<span class="form-label">{#商机名称#}</span>
+<input class="form-control" type="text" $bind="crm_state.draft.name" required>
+</label>
+</div>
+<div class="col-12 col-md-6">
+<label class="d-block">
+<span class="form-label">{#客户#}</span>
+<RemoteSelect label="{#客户#}" placeholder="{#搜索客户名称#}" required $.load="crmCustomerLookup" $bind="crm_state.draft.customerId"></RemoteSelect>
+</label>
+</div>
+<div class="col-12 col-md-6">
+<label class="d-block">
+<span class="form-label">{#预计金额#}</span>
+<input class="form-control" type="number" $bind="crm_state.draft.amount" required min="0" step="0.01">
+</label>
+</div>
+<div class="col-12 col-md-6">
+<label class="d-block">
+<span class="form-label">{#预计成交#}</span>
+<input class="form-control" type="date" $bind="crm_state.draft.date" required>
+</label>
+</div>
+<div class="col-12 col-md-6">
+<label class="d-block">
+<span class="form-label">{#负责人#}</span>
+<input class="form-control" type="text" $bind="crm_state.draft.owner" >
+</label>
+</div>
+<div class="col-12 col-md-6">
+<label class="d-block">
+<span class="form-label">{#阶段#}</span>
+<select aria-label="{#阶段#}" class="form-select" $bind="crm_state.draft.stage" >
+<option value="需求确认">{#需求确认#}</option>
+<option value="方案报价">{#方案报价#}</option>
+<option value="赢单">{#赢单#}</option>
+<option value="丢单">{#丢单#}</option>
+</select>
+</label>
+</div>
+</div>
+<label class="d-block mt-3">
+<span class="form-label">{#备注#}</span>
+<textarea class="form-control" rows="3" $bind="crm_state.draft.notes">
+</textarea>
+</label>
+<div class="d-flex flex-wrap gap-2 border-top pt-3 mt-4">
+<button type="submit" class="btn btn-primary">{#保存#}</button>
+<button type="button" class="btn btn-outline-secondary" $onclick="crmGo('pipeline')" >{#取消#}</button>
+</div>
+</form>
+</div>
+</Pane>

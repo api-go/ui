@@ -21,6 +21,20 @@ init:
       for (let i=1; i<=20; i++) testData.tree.push({id:`child-${i}`,label:`Child ${i}`,summary:'Tree child',parent:'root'})
       for (let i=1; i<=1000; i++) testData.virtual.push({id:i,label:`Virtual user ${i}`,summary:`Row ${i}`})
 cases:
+  - name: declarative initial selection preserves case through object state binding
+    attributes: {id: subject, auto-select: true, '$.state': "{selectedItem:'a',list:[{id:'a',label:'Initial A'},{id:'b',label:'B'}]}"}
+    after:
+      - property: {path: subject.state.selectedItem, equals: a}
+      - dom: {selector: '.list-group-item.text-primary', containsText: Initial A}
+  - name: collapse one tree parent without changing siblings
+    attributes: {id: subject, mode: tree, collapsible: true, "$.state.list": "[{id:'a',label:'A',parent:''},{id:'a1',label:'A1',parent:'a'},{id:'b',label:'B',parent:''},{id:'b1',label:'B1',parent:'b'}]"}
+    actions:
+      - call: {method: collapseItem, args: [a]}
+      - call: {method: isExpanded, args: [a], saveAs: expanded}
+      - wait: 30
+    after:
+      - script: "return !subject.textContent.includes('A1')&&subject.textContent.includes('B1')"
+      - data: {path: expanded, equals: false}
   - name: default expansion depth shows three levels and preserves user expansion
     covers: [attributes.default-expand-depth, methods.expandAll, methods.collapseAll]
     attributes: { id: subject, mode: tree, collapsible: true, default-expand-depth: 3 }
@@ -423,7 +437,7 @@ cases:
 
   - name: reveal selected ancestors on refresh
     covers: [attributes.reveal-selected]
-    attributes: { id: subject, mode: tree, collapsible: true, reveal-selected: true, default-expand-depth: 1, "$.state.list": "[{id:'a',label:'A'},{id:'b',parent:'a',label:'B'},{id:'c',parent:'b',label:'C'}]", "$.state.selectedItem": "'c'" }
+    attributes: { id: subject, mode: tree, collapsible: true, reveal-selected: true, default-expand-depth: 1, "$.state": "{list:[{id:'a',label:'A'},{id:'b',parent:'a',label:'B'},{id:'c',parent:'b',label:'C'}],selectedItem:'c'}" }
     before:
       - dom: { selector: '#subject .list-group-item', count: 3 }
     actions:

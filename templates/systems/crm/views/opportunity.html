@@ -1,0 +1,44 @@
+<Pane scroll="auto">
+<PageHeader slot="header" heading="{#商机详情#}" $.state.description="''">
+<template slot="actions">
+<button type="button" class="btn btn-outline-secondary" $onclick="crmGo('opportunity-edit',Hash.crmId)" $if="crmOpportunity()">{#编辑商机#}</button>
+</template>
+</PageHeader>
+<div slot="content" class="p-3 p-md-4">
+<template $if="crmOpportunity()">
+<h2 class="h3" $text="crmOpportunity()?.name">
+</h2>
+<dl class="row g-3 my-3">
+<div class="col-6 col-lg-3">
+<dt class="small text-body-secondary fw-normal">{#客户#}</dt>
+<dd class="mt-1" $text="crmCustomer(crmOpportunity()?.customerId)?.name">
+</dd>
+</div>
+<div class="col-6 col-lg-3">
+<dt class="small text-body-secondary fw-normal">{#预计金额#}</dt>
+<dd class="mt-1" $text="templateMoney(crmOpportunity()?.amount)">
+</dd>
+</div>
+<div class="col-6 col-lg-3">
+<dt class="small text-body-secondary fw-normal">{#预计成交#}</dt>
+<dd class="mt-1" $text="crmOpportunity()?.date">
+</dd>
+</div>
+<div class="col-6 col-lg-3">
+<dt class="small text-body-secondary fw-normal">{#负责人#}</dt>
+<dd class="mt-1" $text="crmOpportunity()?.owner">
+</dd>
+</div>
+</dl>
+<label class="d-block mb-4">
+<span class="form-label">{#业务阶段#}</span>
+<select aria-label="{#业务阶段#}" class="form-select" $.value="crmOpportunity()?.stage" $onchange="crmStage(event.target.value)">
+<option $each="[{'value': '需求确认', 'label': '{#需求确认#}'}, {'value': '方案报价', 'label': '{#方案报价#}'}, {'value': '赢单', 'label': '{#赢单#}'}, {'value': '丢单', 'label': '{#丢单#}'}]" as="stage" $value="stage.value" $text="stage.label"></option>
+</select>
+</label>
+<p $text="crmOpportunity()?.notes">
+</p>
+</template>
+<div class="alert alert-warning" $if="!(crmOpportunity())">{#记录不存在，请返回列表选择。#}</div>
+</div>
+</Pane>

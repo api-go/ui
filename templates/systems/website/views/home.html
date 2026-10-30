@@ -1,0 +1,48 @@
+<section class="bg-primary-subtle">
+<div class="container py-5">
+<div class="row gx-4 gy-5 align-items-center">
+<div class="col-12 col-lg-7">
+<span class="badge bg-primary text-white mb-3">{#让协作回归清晰#}</span>
+<h1 class="display-4 fw-semibold mb-4">{#把团队的下一步，放在同一个地方。#}</h1>
+<p class="lead text-body-secondary mb-4">{#从客户沟通、项目推进到知识沉淀，云间帮助小团队把想法变成可见的进展。#}</p>
+<div class="d-flex flex-wrap gap-3">
+<button type="button" class="btn btn-primary" $onclick="websiteGo('contact')" >
+<i class="bi bi-arrow-right me-1" aria-hidden="true">
+</i>{#预约产品演示#}</button>
+<button type="button" class="btn btn-outline-primary" $onclick="websiteGo('features')" >{#了解产品#}</button>
+</div>
+<p class="small text-body-secondary mt-3 mb-0">{#无需填写支付信息 · 支持手机与桌面#}</p>
+</div>
+<div class="col-12 col-lg-5">
+<div class="bg-body border rounded-4 shadow-sm p-4">
+<div class="d-flex align-items-center justify-content-between mb-4">
+<strong>{#团队本周#}</strong>
+<span class="badge bg-success-subtle text-success-emphasis">{#进行顺利#}</span>
+</div>
+<div class="d-flex gap-3 py-3 border-top" $each="[{icon:'check-circle',title:'{#客户方案已确认#}',text:'{#销售与交付共享同一份目标#}'},{icon:'kanban',title:'{#产品迭代进行中#}',text:'{#每个任务有负责人和截止日期#}'},{icon:'journal-text',title:'{#团队知识持续积累#}',text:'{#把经验写下来，下次更快开始#}'}]" as="item">
+<i class="fs-4 text-primary" $class="'bi bi-'+item.icon" aria-hidden="true">
+</i>
+<div>
+<strong $text="item.title">
+</strong>
+<p class="small text-body-secondary mb-0 mt-1" $text="item.text">
+</p>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</section>
+<section class="container py-5">
+<div class="row g-4">
+<article class="col-12 col-md-4" $each="[{icon:'people',title:'{#客户关系更连贯#}',text:'{#线索、商机和跟进记录串起完整客户旅程。#}'},{icon:'list-check',title:'{#项目进展更透明#}',text:'{#用列表与看板看清每一项承诺。#}'},{icon:'book',title:'{#经验不再散落#}',text:'{#文档与知识成为团队持续复用的资产。#}'}]" as="feature">
+<i class="fs-2 text-primary" $class="'bi bi-'+feature.icon" aria-hidden="true">
+</i>
+<h2 class="h4 mt-3" $text="feature.title">
+</h2>
+<p class="text-body-secondary" $text="feature.text">
+</p>
+</article>
+</div>
+</section>

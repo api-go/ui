@@ -1,0 +1,28 @@
+<Pane scroll="auto">
+<PageHeader slot="header" heading="{#验证步骤#}" $.state.description="''">
+<template slot="actions">
+</template>
+</PageHeader>
+<div slot="content" class="p-3 p-md-4">
+<div class="row justify-content-center">
+<section class="col-12 col-md-8 col-lg-6 col-xl-5">
+<div class="border rounded p-4">
+<i class="bi bi-cloud fs-1 text-primary" aria-hidden="true">
+</i>
+<h2 class="h3 mt-3 mb-4">{#验证你的邮箱#}</h2>
+<p class="text-body-secondary" $text="patterns_state.authNotice||'{#这是可直接打开的验证页示例。#}'">
+</p>
+<p class="small text-body-secondary">{#本机示例验证码：123456，不会发送短信或邮件。#}</p>
+<form $onsubmit="patternsVerify(event)">
+<label class="d-block">
+<span class="form-label">{#六位验证码#}</span>
+<input class="form-control" type="text" $bind="patterns_state.code" required inputmode="numeric" pattern="[0-9]{6}" maxlength="6" autocomplete="off">
+</label>
+<button class="btn btn-primary w-100 mt-4" type="submit">{#验证示例代码#}</button>
+</form>
+
+</div>
+</section>
+</div>
+</div>
+</Pane>

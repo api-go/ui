@@ -209,12 +209,13 @@ globalThis.Component.register('List', container => {
 
 	const revealSelected = () => {
 		if (!container.hasAttribute('reveal-selected') || container.mode !== 'tree') return
+		globalThis.Util.updateDefaults(container, defaultSets)
 		const map = new Map((container.state.list || []).map(item => [item[container.idfield],item]))
 		let item = map.get(container.state.selectedItem); const seen = new Set()
 		while (item) { const id = item[container.parentfield]; if (!id || seen.has(id)) break; seen.add(id); container.collapsed[id] = false; item = map.get(id) }
 	}
 	container.state.__watch('list', () => { revealSelected(); updateFlatList() })
-	container.state.__watch('selectedItem', () => { revealSelected(); updateFlatList() })
+	container.state.__watch('selectedItem', () => { if (container.mode === 'tree') { revealSelected(); updateFlatList() } })
 	container.state.__watch('expandmatches', updateFlatList)
 	container.state.__watch('filter', updateFlatList)
 	container.state.__watch('order', updateFlatList)
@@ -393,6 +394,8 @@ globalThis.Component.register('List', container => {
 		container.dispatchEvent(new CustomEvent('groupclick', { bubbles: false, detail: { item, selected, index } }))
 	}
 	container.expandItem = id => { if (container.mode === 'tree' && container.collapsible) { container.collapsed[id] = false; updateFlatList() } }
+	container.collapseItem = id => { if (container.mode === 'tree' && container.collapsible) { container.collapsed[id] = true; updateFlatList() } }
+	container.isExpanded = id => container.mode === 'tree' && container.collapsible && container.collapsed[id] === false
 	container.toggleCollapse = item => {
 		if (!container.collapsible || !item._hasChildren) return
 		const id = item[container.idfield]
@@ -523,5 +526,5 @@ globalThis.Component.register('List', container => {
 </div>
 `), globalThis.Util.makeDom(`<style>
 List .list-group-item {font-size:var(--ui-item-font,1rem);padding:var(--ui-item-y,.5rem) var(--ui-item-x,1rem);}
-List .list-primary-text{min-width:0;max-width:none;flex:1 1 0}List .list-summary-text{min-width:0;max-width:40%;flex:0 0 auto}List .list-summary-text:empty{display:none}List .list-group-item:not(:has(.list-summary-text:not(:empty))) .list-primary-text{max-width:100%}List .list-group-item.list-drop-target{outline:2px solid var(--bs-primary);outline-offset:-2px;background:rgba(var(--bs-primary-rgb),.12)!important}
+List .list-primary-text{min-width:0;max-width:none;flex:1 1 0}List .list-summary-text{min-width:0;max-width:40%;flex:0 0 auto}List .list-summary-text:empty{display:block;max-width:none;flex:1 1 0}List .list-group-item:not(:has(.list-summary-text:not(:empty))) .list-primary-text{max-width:100%;flex:0 1 auto}List .list-group-item.list-drop-target{outline:2px solid var(--bs-primary);outline-offset:-2px;background:rgba(var(--bs-primary-rgb),.12)!important}
 </style>`))

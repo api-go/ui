@@ -1,0 +1,25 @@
+<Pane scroll="auto">
+<PageHeader slot="header" heading="{#账户恢复示例#}" $.state.description="''">
+<template slot="actions">
+</template>
+</PageHeader>
+<div slot="content" class="p-3 p-md-4">
+<div class="row justify-content-center">
+<section class="col-12 col-md-8 col-lg-6 col-xl-5">
+<div class="border rounded p-4">
+<i class="bi bi-cloud fs-1 text-primary" aria-hidden="true">
+</i>
+<h2 class="h3 mt-3 mb-4">{#找回访问方式#}</h2>
+<p class="text-body-secondary">{#填写虚构邮箱，体验恢复后的验证码页面。不会发送真实邮件。#}</p>
+<form $onsubmit="patternsAuth(event,'recovery')">
+<label class="d-block">
+<span class="form-label">{#电子邮箱#}</span>
+<input class="form-control" type="email" $bind="patterns_state.email" required autocomplete="off">
+</label>
+<button class="btn btn-primary w-100 mt-4" type="submit">{#演示恢复步骤#}</button>
+</form>
+</div>
+</section>
+</div>
+</div>
+</Pane>

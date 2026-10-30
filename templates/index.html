@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="zh-CN"><head><meta charset="utf-8"><meta name="color-scheme" content="dark light"><meta name="viewport" content="width=device-width,initial-scale=1"><title>应用模板 · 从完整系统开始</title>
+<html lang="zh-CN"><head><meta charset="utf-8"><meta name="color-scheme" content="dark light"><meta name="viewport" content="width=device-width,initial-scale=1"><title>{#应用模板 · 从完整系统开始#}</title>
 <script src="../frameworks/State.js"></script><script src="../frameworks/Bootstrap.js"></script>
 <script>
 const templateCatalog=[
@@ -53,13 +53,249 @@ const templateCatalog=[
       "{#多草稿保存#}"
     ],
     "preview": "systems/desktop/assets/preview.png"
+  },
+  {
+    "id": "inventory",
+    "type": "workspace",
+    "title": "{#云间进销存#}",
+    "description": "{#采购、销售、调拨、退货与盘点共用明细编辑，过账联动库存和流水。#}",
+    "entry": "systems/inventory/index.html",
+    "manifest": "systems/inventory/manifest.json",
+    "guide": "systems/inventory/README.md",
+    "status": "ready",
+    "layouts": 2,
+    "scenarios": [
+      "{#库存工作台#}",
+      "{#商品档案#}",
+      "{#业务单据#}",
+      "{#库存流水#}",
+      "{#仓库#}",
+      "{#库存报表#}"
+    ],
+    "preview": "systems/inventory/assets/preview.png",
+    "views": 9
+  },
+  {
+    "id": "crm",
+    "type": "workspace",
+    "title": "{#云间客户关系#}",
+    "description": "{#线索转客户、跟进记录、商机阶段与报价，复用同一组详情和编辑 View。#}",
+    "entry": "systems/crm/index.html",
+    "manifest": "systems/crm/manifest.json",
+    "guide": "systems/crm/README.md",
+    "status": "ready",
+    "layouts": 2,
+    "scenarios": [
+      "{#销售工作台#}",
+      "{#线索#}",
+      "{#客户#}",
+      "{#销售漏斗#}",
+      "{#报价#}"
+    ],
+    "preview": "systems/crm/assets/preview.png",
+    "views": 11
+  },
+  {
+    "id": "commerce",
+    "type": "mobile",
+    "title": "{#山野生活 · 商城#}",
+    "description": "{#商品浏览、购物车、地址、订单与商品管理；提交扣减库存，取消订单释放库存。#}",
+    "entry": "systems/commerce/index.html",
+    "manifest": "systems/commerce/manifest.json",
+    "guide": "systems/commerce/README.md",
+    "status": "ready",
+    "layouts": 2,
+    "scenarios": [
+      "{#商品#}",
+      "{#购物车#}",
+      "{#订单#}",
+      "{#地址#}",
+      "{#商品管理#}"
+    ],
+    "preview": "systems/commerce/assets/preview.png",
+    "views": 10
+  },
+  {
+    "id": "office",
+    "type": "workspace",
+    "title": "{#云间协同 · OA#}",
+    "description": "{#请假、报销、采购申请共享流程记录，支持提交、通过、驳回、撤回与重新提交。#}",
+    "entry": "systems/office/index.html",
+    "manifest": "systems/office/manifest.json",
+    "guide": "systems/office/README.md",
+    "status": "ready",
+    "layouts": 2,
+    "scenarios": [
+      "{#待办中心#}",
+      "{#申请记录#}",
+      "{#通讯录#}",
+      "{#费用汇总#}"
+    ],
+    "preview": "systems/office/assets/preview.png",
+    "views": 6
+  },
+  {
+    "id": "service",
+    "type": "workspace",
+    "title": "{#云间服务台#}",
+    "description": "{#工单筛选、指派、优先级、沟通记录和关闭重开，知识文章与工单共用导航。#}",
+    "entry": "systems/service/index.html",
+    "manifest": "systems/service/manifest.json",
+    "guide": "systems/service/README.md",
+    "status": "ready",
+    "layouts": 2,
+    "scenarios": [
+      "{#服务工作台#}",
+      "{#工单#}",
+      "{#知识库#}"
+    ],
+    "preview": "systems/service/assets/preview.png",
+    "views": 6
+  },
+  {
+    "id": "booking",
+    "type": "workspace",
+    "title": "{#云间预约#}",
+    "description": "{#会议室与资源预约，日期链接恢复、容量与时段冲突校验、调整和取消。#}",
+    "entry": "systems/booking/index.html",
+    "manifest": "systems/booking/manifest.json",
+    "guide": "systems/booking/README.md",
+    "status": "ready",
+    "layouts": 2,
+    "scenarios": [
+      "{#日程#}",
+      "{#预约记录#}",
+      "{#资源#}"
+    ],
+    "preview": "systems/booking/assets/preview.png",
+    "views": 5
+  },
+  {
+    "id": "projects",
+    "type": "workspace",
+    "title": "{#云间项目协作#}",
+    "description": "{#列表与看板共用任务，复用 Kanban 的编辑、拖动和保存，并保留负责人、截止日期与活动。#}",
+    "entry": "systems/projects/index.html",
+    "manifest": "systems/projects/manifest.json",
+    "guide": "systems/projects/README.md",
+    "status": "ready",
+    "layouts": 2,
+    "scenarios": [
+      "{#项目概览#}",
+      "{#看板#}",
+      "{#任务#}",
+      "{#团队#}",
+      "{#活动#}"
+    ],
+    "preview": "systems/projects/assets/preview.png",
+    "views": 7
+  },
+  {
+    "id": "content",
+    "type": "workspace",
+    "title": "{#云间知识与内容#}",
+    "description": "{#文档检索、Markdown 编辑预览、收藏、发布归档和素材信息；复用 CodeEditor 而非新造编辑器。#}",
+    "entry": "systems/content/index.html",
+    "manifest": "systems/content/manifest.json",
+    "guide": "systems/content/README.md",
+    "status": "ready",
+    "layouts": 2,
+    "scenarios": [
+      "{#文档#}",
+      "{#收藏#}",
+      "{#发布管理#}",
+      "{#素材#}"
+    ],
+    "preview": "systems/content/assets/preview.png",
+    "views": 6
+  },
+  {
+    "id": "saas",
+    "type": "workspace",
+    "title": "{#云间组织与账户#}",
+    "description": "{#成员邀请、角色配置、组织设置、账单和操作记录，包含最后一位管理员保护。#}",
+    "entry": "systems/saas/index.html",
+    "manifest": "systems/saas/manifest.json",
+    "guide": "systems/saas/README.md",
+    "status": "ready",
+    "layouts": 2,
+    "scenarios": [
+      "{#组织概览#}",
+      "{#成员#}",
+      "{#角色#}",
+      "{#组织设置#}",
+      "{#账单#}",
+      "{#操作记录#}"
+    ],
+    "preview": "systems/saas/assets/preview.png",
+    "views": 8
+  },
+  {
+    "id": "analytics",
+    "type": "workspace",
+    "title": "{#云间经营分析#}",
+    "description": "{#经营指标、销售趋势、渠道与库存分析，统一日期筛选、Hash 恢复及范围导出。#}",
+    "entry": "systems/analytics/index.html",
+    "manifest": "systems/analytics/manifest.json",
+    "guide": "systems/analytics/README.md",
+    "status": "ready",
+    "layouts": 2,
+    "scenarios": [
+      "{#经营概览#}",
+      "{#销售分析#}",
+      "{#库存趋势#}",
+      "{#报表明细#}"
+    ],
+    "preview": "systems/analytics/assets/preview.png",
+    "views": 4
+  },
+  {
+    "id": "website",
+    "type": "website",
+    "title": "{#云间协作 · 官网#}",
+    "description": "{#自然滚动的产品官网、功能、价格、FAQ、联系与登记结果，区别于后台固定工作区。#}",
+    "entry": "systems/website/index.html",
+    "manifest": "systems/website/manifest.json",
+    "guide": "systems/website/README.md",
+    "status": "ready",
+    "layouts": 1,
+    "scenarios": [
+      "{#首页#}",
+      "{#功能#}",
+      "{#方案#}",
+      "{#常见问题#}",
+      "{#联系我们#}"
+    ],
+    "preview": "systems/website/assets/preview.png",
+    "views": 7
+  },
+  {
+    "id": "patterns",
+    "type": "workspace",
+    "title": "{#云间账户与通用页面#}",
+    "description": "{#登录注册恢复与验证码、个人资料、消息、跨内容搜索、文件预览及常见错误状态。#}",
+    "entry": "systems/patterns/index.html",
+    "manifest": "systems/patterns/manifest.json",
+    "guide": "systems/patterns/README.md",
+    "status": "ready",
+    "layouts": 2,
+    "scenarios": [
+      "{#个人资料#}",
+      "{#账户入口#}",
+      "{#消息#}",
+      "{#全局搜索#}",
+      "{#文件#}",
+      "{#页面状态#}"
+    ],
+    "preview": "systems/patterns/assets/preview.png",
+    "views": 10
   }
 ]
 function matchingTemplates(){const query=(typeof Hash.templateSearch==='string'?Hash.templateSearch:'').trim().toLowerCase();return templateCatalog.filter(entry=>(!Hash.templateType||entry.type===Hash.templateType)&&(!query||(entry.title+' '+entry.description+' '+entry.scenarios.join(' ')).toLowerCase().includes(query)))}
 </script></head><body class="m-0 bg-body-tertiary">
 <main class="container py-4 py-md-5">
 <header class="mb-4"><span class="badge bg-primary-subtle text-primary-emphasis mb-3">{#应用模板#}</span><h1 class="display-6 fw-semibold">{#从一套能操作的系统开始#}</h1><p class="lead text-body-secondary">{#按场景选择，进入独立系统，体验布局与业务交互。#}</p><a href="README.md">{#AI 取用指南：选择系统 → 布局 → View#}</a></header>
-<section class="mb-4" aria-label="{#查找模板#}"><div class="row g-3 align-items-end"><div class="col-12 col-md-8"><label class="form-label" for="catalogSearch">{#场景或关键词#}</label><input class="form-control" id="catalogSearch" type="search" placeholder="{#例如：导入、移动、编辑、多面板#}" $bind="Hash.templateSearch"></div><div class="col-12 col-md-4"><label class="form-label" for="catalogType">{#应用类型#}</label><select class="form-select" id="catalogType" $.value="Hash.templateType||''" $onchange="Hash.go({templateType:event.target.value||null})"><option value="">{#全部#}</option><option value="workspace">{#后台管理#}</option><option value="mobile">{#移动应用#}</option><option value="interactive">{#桌面工作台#}</option></select></div></div></section>
+<section class="mb-4" aria-label="{#查找模板#}"><div class="row g-3 align-items-end"><div class="col-12 col-md-8"><label class="form-label" for="catalogSearch">{#场景或关键词#}</label><input class="form-control" id="catalogSearch" type="search" placeholder="{#例如：导入、移动、编辑、多面板#}" $bind="Hash.templateSearch"></div><div class="col-12 col-md-4"><label class="form-label" for="catalogType">{#应用类型#}</label><select class="form-select" id="catalogType" $.value="Hash.templateType||''" $onchange="Hash.go({templateType:event.target.value||null})"><option value="">{#全部#}</option><option value="workspace">{#后台管理#}</option><option value="mobile">{#移动应用#}</option><option value="interactive">{#桌面工作台#}</option><option value="website">{#展示网站#}</option></select></div></div></section>
 <section aria-labelledby="readyHeading"><h2 id="readyHeading" class="h5 mb-3">{#可用系统#} <span class="text-body-secondary fw-normal" $text="matchingTemplates().length"></span></h2><div class="row g-4"><article class="col-12 col-lg-6 col-xxl-4" $each="matchingTemplates()" as="entry" key="id"><div class="card h-100"><a $href="entry.entry" tabindex="-1" aria-hidden="true"><div class="ratio ratio-16x9 border-bottom bg-body-tertiary"><img class="w-100 h-100 object-fit-contain" $src="entry.preview" alt="" loading="lazy" width="640" height="400"></div></a><div class="card-body d-flex flex-column"><h3 class="h4" $text="entry.title"></h3><p class="text-body-secondary" $text="entry.description"></p><p class="small text-body-secondary" $text="entry.layouts+' {#种布局#} · '+entry.scenarios.join(' / ')"></p><div class="mt-auto d-flex flex-wrap gap-2"><a class="btn btn-primary" $href="entry.entry">{#进入系统#}<i class="bi bi-arrow-right ms-1" aria-hidden="true"></i></a><a class="btn btn-outline-secondary" $href="entry.guide">{#取用说明#}</a><a class="btn btn-link" $href="entry.manifest">{#源文件清单#}</a></div></div></div></article></div><div class="p-4 border rounded bg-body" $if="!matchingTemplates().length"><p>{#没有匹配的模板，请换个关键词或应用类型。#}</p><button type="button" class="btn btn-outline-secondary" $onclick="Hash.go({templateSearch:null,templateType:null})">{#查看全部#}</button></div></section>
-<section class="mt-5"><h2 class="h5">{#尚待覆盖#}</h2><p class="text-body-secondary">{#内容阅读、展示网站、商品与交易系统仍在计划中，不作为已发布入口。#}</p><p class="small text-body-secondary mb-0">{#当前系统使用虚构数据和本机存储，无生产认证、上传服务或支付。预览通过同源 HTTP(S) 加载 View。#}</p></section>
+<section class="mt-5"><h2 class="h5">{#尚待覆盖#}</h2><p class="text-body-secondary">{#真实上传传输、生产认证与支付、原生小程序适配和高级排期仍需专项接入与验收。#}</p><p class="small text-body-secondary mb-0">{#当前系统使用虚构数据和本机存储，无生产认证、上传服务或支付。预览通过同源 HTTP(S) 加载 View。#}</p></section>
 </main></body></html>

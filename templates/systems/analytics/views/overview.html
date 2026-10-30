@@ -1,0 +1,99 @@
+<Pane scroll="auto">
+<PageHeader slot="header" heading="{#经营概览#}" $.state.description="'{#使用明确的虚构日数据，筛选、图表、明细和导出来自同一数据范围。#}'">
+<template slot="actions">
+</template>
+</PageHeader>
+<div slot="content" class="p-3 p-md-4">
+<form class="row g-2 mb-4 align-items-end" $onsubmit="analyticsApply(event)">
+<div class="col-12 col-sm-6 col-md-3">
+<label class="d-block">
+<span class="form-label">{#开始日期#}</span>
+<input class="form-control" type="date" $bind="analytics_state.from" required>
+</label>
+</div>
+<div class="col-12 col-sm-6 col-md-3">
+<label class="d-block">
+<span class="form-label">{#结束日期#}</span>
+<input class="form-control" type="date" $bind="analytics_state.to" required>
+</label>
+</div>
+<div class="col-8 col-md-4">
+<label class="d-block">
+<span class="form-label">{#渠道#}</span>
+<select aria-label="{#渠道#}" class="form-select" $bind="analytics_state.channel" >
+<option value="">{#全部渠道#}</option>
+<option value="官网">{#官网#}</option>
+<option value="门店">{#门店#}</option>
+<option value="合作伙伴">{#合作伙伴#}</option>
+</select>
+</label>
+</div>
+<div class="col-4 col-md-2">
+<button type="submit" class="btn btn-primary w-100" aria-label="{#查询#}">
+<i class="bi bi-search" aria-hidden="true">
+</i>
+<span class="d-none d-sm-inline ms-1">{#查询#}</span>
+</button>
+</div>
+</form>
+<div class="row g-3 mb-4">
+<div class="col-6 col-xl-3">
+<section class="border rounded p-3 h-100">
+<div class="small text-body-secondary mb-2">{#销售额#}</div>
+<div class="h3 mb-0" $text="templateMoney(analyticsSum('revenue'))">
+</div>
+</section>
+</div>
+<div class="col-6 col-xl-3">
+<section class="border rounded p-3 h-100">
+<div class="small text-body-secondary mb-2">{#订单#}</div>
+<div class="h3 mb-0" $text="analyticsSum('orders')">
+</div>
+</section>
+</div>
+<div class="col-6 col-xl-3">
+<section class="border rounded p-3 h-100">
+<div class="small text-body-secondary mb-2">{#新增客户#}</div>
+<div class="h3 mb-0" $text="analyticsSum('customers')">
+</div>
+</section>
+</div>
+<div class="col-6 col-xl-3">
+<section class="border rounded p-3 h-100">
+<div class="small text-body-secondary mb-2">{#退货单#}</div>
+<div class="h3 mb-0" $text="analyticsSum('returns')">
+</div>
+</section>
+</div>
+</div>
+<div class="row g-4">
+<section class="col-12 col-lg-8">
+<h2 class="h5">{#每日销售额#}</h2>
+<Chart $.state.config="analyticsChart('bar')">
+</Chart>
+</section>
+<section class="col-12 col-lg-4">
+<h2 class="h5">{#渠道汇总#}</h2>
+<div class="table-responsive">
+<table class="table align-middle text-nowrap">
+<thead>
+<tr>
+<th scope="col">{#渠道#}</th>
+<th scope="col">{#销售额#}</th>
+</tr>
+</thead>
+<tbody>
+<tr $each="analyticsChannels()" as="row" key="id">
+<td class="" $text="row.name">
+</td>
+<td class="text-end" $text="templateMoney(row.revenue)">
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+</section>
+</div>
+<p class="text-body-secondary p-3" $if="!analyticsData().length">{#该范围没有数据，调整日期或渠道。#}</p>
+</div>
+</Pane>

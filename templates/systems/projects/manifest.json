@@ -1,0 +1,147 @@
+{
+  "id": "projects",
+  "title": "{#云间项目协作#}",
+  "entry": "index.html",
+  "description": "列表与看板共用任务，复用 Kanban 的编辑、拖动和保存，并保留负责人、截止日期与活动。",
+  "layouts": [
+    {
+      "id": "sidebar",
+      "file": "layouts/sidebar.html"
+    },
+    {
+      "id": "topnav",
+      "file": "layouts/topnav.html"
+    }
+  ],
+  "views": [
+    {
+      "id": "overview",
+      "file": "views/overview.html"
+    },
+    {
+      "id": "board",
+      "file": "views/board.html"
+    },
+    {
+      "id": "tasks",
+      "file": "views/tasks.html"
+    },
+    {
+      "id": "detail",
+      "file": "views/detail.html"
+    },
+    {
+      "id": "editor",
+      "file": "views/editor.html"
+    },
+    {
+      "id": "team",
+      "file": "views/team.html"
+    },
+    {
+      "id": "history",
+      "file": "views/history.html"
+    }
+  ],
+  "routes": [
+    [
+      "overview",
+      "项目概览",
+      "kanban"
+    ],
+    [
+      "board",
+      "看板",
+      "columns-gap"
+    ],
+    [
+      "tasks",
+      "任务",
+      "list-task"
+    ],
+    [
+      "team",
+      "团队",
+      "people"
+    ],
+    [
+      "history",
+      "活动",
+      "clock-history"
+    ],
+    [
+      "detail",
+      "任务详情",
+      ""
+    ],
+    [
+      "editor",
+      "编辑任务",
+      ""
+    ]
+  ],
+  "shared": [
+    "../../shared/tools.js",
+    "../../shared/blocks/header.html"
+  ],
+  "data": "Explicit browser-local fictional fixtures; no server authorization, stock, payment or transport is claimed",
+  "components": [
+    "AppShell",
+    "Kanban",
+    "Nav",
+    "PageHeader",
+    "RemoteSelect",
+    "Pane",
+    "View"
+  ],
+  "state": {
+    "route": [
+      "projectsPage",
+      "projectsId",
+      "projectsLayout"
+    ],
+    "storage": [
+      "projectsTemplateData",
+      "templateDensity",
+      "templateLink",
+      "templateDark",
+      "projectsNavigationWidth"
+    ],
+    "draft": "projects_state.draft"
+  },
+  "translations": "Master translation markers; no local dictionary",
+  "scroll": "AppShell viewport; each Pane owns its content scroll; PagedList/Kanban/CodeEditor own bounded work regions",
+  "fixtures": "data/fixtures.js",
+  "scripts": [
+    "../../../frameworks/State.js",
+    "../../../frameworks/Bootstrap.js",
+    "../../../utilities/HTTP.js",
+    "../../../utilities/UUID.js",
+    "../../../utilities/Disposer.js",
+    "../../../utilities/MouseMover.js",
+    "../../../utilities/ListDataSource.js",
+    "../../../libraries/SortableJS.js",
+    "../../../utilities/SortableAPI.js",
+    "../../../components/base/Resizer.js",
+    "../../../components/base/SplitPane.js",
+    "../../../components/base/View.js",
+    "../../../components/base/Modal.js",
+    "../../../components/base/Dialog.js",
+    "../../../components/base/Toast.js",
+    "../../../components/base/AutoForm.js",
+    "../../../components/base/Nav.js",
+    "../../../components/base/AppShell.js",
+    "../../../components/base/Pane.js",
+    "../../../components/base/PageHeader.js",
+    "../../../components/base/RequestState.js",
+    "../../../components/base/Pagination.js",
+    "../../../components/base/ItemCollection.js",
+    "../../../components/data/PagedList.js",
+    "../../../utilities/Editor.js",
+    "../../../components/editor/Kanban.js",
+    "../../shared/tools.js",
+    "data/fixtures.js",
+    "app.js",
+    "../../../components/form/RemoteSelect.js"
+  ]
+}

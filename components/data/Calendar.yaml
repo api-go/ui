@@ -1,0 +1,33 @@
+name: Calendar
+kind: component
+src: /ui/components/data/Calendar.js
+purpose: Local-date month grid and week/day agendas with host-owned events and navigation state.
+properties:
+  value: Selected local YYYY-MM-DD date, bindable; invalid dates ignored. External assignment is silent.
+  mode: month (default), week or day; external assignment silent.
+  events: 'Array {id,start,end?,title,summary?}. ISO local date or local datetime; no implicit UTC conversion. Date-only end is inclusive; datetime end at midnight (including zero seconds/fraction) is exclusive. Backend/range adapter owns timezone normalization and booking validation.'
+methods:
+  range: 'range()=>{start,end,mode}, end exclusive. Monday-first week; month grid always six weeks.'
+  select: select(date) publishes change and rangechange.
+  setMode: setMode(mode) publishes modechange and rangechange.
+  move: move(-1 or 1) moves month/week/day; month-end clamps instead of skipping February.
+  today: Select the browser local today.
+  open: open(event) publishes eventclick.
+slots:
+  tools: Additional host actions; component does not create or save events.
+  event: Agenda event content with entry variable. Month cells show compact titles; mobile shows day/count indicator and selected-day agenda.
+events:
+  change: Selected local date from user navigation.
+  modechange: User selected month/week/day mode.
+  rangechange: '{start,end,mode} after user navigation; host request adapter owns cancellation/loading. On initial bind host may call range() explicitly.'
+  eventclick: Event copy for host detail navigation.
+rules:
+  - Bind date and mode directly to Hash for refresh/share restoration. No hidden calendar storage, conflict logic, timezone conversion, or appointment persistence.
+  - Arrow keys move date-grid focus and selection. Agenda exposes all events; compact month cells may show only two titles and a remainder count. Do not claim resource/time-grid drag scheduling.
+tests: [Calendar.test.yaml]
+examples:
+  hash: |
+    <Calendar $bind="Hash.bookingDate" $.mode="Hash.bookingMode||'month'"
+      $.events="booking_state.events" $onmodechange="Hash.go({bookingMode:event.detail})"
+      $oneventclick="openAppointment(event.detail.id)"></Calendar>
+    <!-- Normalize restored dates and initialize the host's request using calendar.range(). -->

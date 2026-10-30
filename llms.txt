@@ -175,3 +175,14 @@ When the hosting service manages static asset versions and conditional caching, 
 ## Verification
 
 Exercise the primary task, long content, loading/empty/error, route reload/history, narrow and wide layouts, both themes and keyboard operation. Component contracts require executable regression coverage; application tasks require real host interaction and persistence evidence. A Bootstrap-based screenshot alone is not acceptance.
+
+## Additional shared capabilities
+
+- [ResourcePicker](components/form/ResourcePicker.yaml): shared value/event behavior with executable contracts.
+- [TreeSelect](components/form/TreeSelect.yaml): shared value/event behavior with executable contracts.
+- [FileUpload](components/form/FileUpload.yaml): shared value/event behavior with executable contracts.
+- [StepForm](components/form/StepForm.yaml): shared value/event behavior with executable contracts.
+- [ImageViewer](components/data/ImageViewer.yaml): shared value/event behavior with executable contracts.
+- [Calendar](components/data/Calendar.yaml): shared value/event behavior with executable contracts.
+
+[Coverage roadmap](UI-COVERAGE.md) · [Current component acceptance](templates/COMPONENTS-REVIEW.md).

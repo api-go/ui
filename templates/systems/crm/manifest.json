@@ -1,0 +1,185 @@
+{
+  "id": "crm",
+  "title": "{#云间客户关系#}",
+  "entry": "index.html",
+  "description": "线索转客户、跟进记录、商机阶段与报价，复用同一组详情和编辑 View。",
+  "layouts": [
+    {
+      "id": "sidebar",
+      "file": "layouts/sidebar.html"
+    },
+    {
+      "id": "topnav",
+      "file": "layouts/topnav.html"
+    }
+  ],
+  "views": [
+    {
+      "id": "overview",
+      "file": "views/overview.html"
+    },
+    {
+      "id": "leads",
+      "file": "views/leads.html"
+    },
+    {
+      "id": "customers",
+      "file": "views/customers.html"
+    },
+    {
+      "id": "customer",
+      "file": "views/customer.html"
+    },
+    {
+      "id": "customer-edit",
+      "file": "views/customer-edit.html"
+    },
+    {
+      "id": "pipeline",
+      "file": "views/pipeline.html"
+    },
+    {
+      "id": "opportunity",
+      "file": "views/opportunity.html"
+    },
+    {
+      "id": "opportunity-edit",
+      "file": "views/opportunity-edit.html"
+    },
+    {
+      "id": "quotes",
+      "file": "views/quotes.html"
+    },
+    {
+      "id": "quote-edit",
+      "file": "views/quote-edit.html"
+    },
+    {
+      "id": "quote",
+      "file": "views/quote.html"
+    }
+  ],
+  "routes": [
+    [
+      "overview",
+      "销售工作台",
+      "graph-up"
+    ],
+    [
+      "leads",
+      "线索",
+      "person-plus"
+    ],
+    [
+      "customers",
+      "客户",
+      "people"
+    ],
+    [
+      "pipeline",
+      "销售漏斗",
+      "funnel"
+    ],
+    [
+      "quotes",
+      "报价",
+      "file-earmark-text"
+    ],
+    [
+      "customer",
+      "客户详情",
+      ""
+    ],
+    [
+      "customer-edit",
+      "编辑客户",
+      ""
+    ],
+    [
+      "opportunity",
+      "商机详情",
+      ""
+    ],
+    [
+      "opportunity-edit",
+      "编辑商机",
+      ""
+    ],
+    [
+      "quote-edit",
+      "创建报价",
+      ""
+    ],
+    [
+      "quote",
+      "报价详情",
+      ""
+    ]
+  ],
+  "shared": [
+    "../../shared/tools.js",
+    "../../shared/blocks/header.html"
+  ],
+  "data": "Explicit browser-local fictional fixtures; no server authorization, stock, payment or transport is claimed",
+  "components": [
+    "AppShell",
+    "Nav",
+    "PageHeader",
+    "RemoteSelect",
+    "PagedList",
+    "Pane",
+    "View",
+    "ResourcePicker"
+  ],
+  "state": {
+    "route": [
+      "crmPage",
+      "crmId",
+      "crmLayout",
+      "crmCustomers",
+      "crmLeads"
+    ],
+    "storage": [
+      "crmTemplateData",
+      "templateDensity",
+      "templateLink",
+      "templateDark",
+      "crmNavigationWidth"
+    ],
+    "draft": "crm_state.draft"
+  },
+  "translations": "Master translation markers; no local dictionary",
+  "scroll": "AppShell viewport; each Pane owns its content scroll; PagedList/Kanban/CodeEditor own bounded work regions",
+  "fixtures": "data/fixtures.js",
+  "scripts": [
+    "../../../frameworks/State.js",
+    "../../../frameworks/Bootstrap.js",
+    "../../../utilities/HTTP.js",
+    "../../../utilities/UUID.js",
+    "../../../utilities/Disposer.js",
+    "../../../utilities/MouseMover.js",
+    "../../../utilities/ListDataSource.js",
+    "../../../libraries/SortableJS.js",
+    "../../../utilities/SortableAPI.js",
+    "../../../components/base/Resizer.js",
+    "../../../components/base/SplitPane.js",
+    "../../../components/base/View.js",
+    "../../../components/base/Modal.js",
+    "../../../components/base/Dialog.js",
+    "../../../components/base/Toast.js",
+    "../../../components/base/AutoForm.js",
+    "../../../components/base/Nav.js",
+    "../../../components/base/AppShell.js",
+    "../../../components/base/Pane.js",
+    "../../../components/base/PageHeader.js",
+    "../../../components/base/RequestState.js",
+    "../../../components/base/Pagination.js",
+    "../../../components/base/ItemCollection.js",
+    "../../../components/data/PagedList.js",
+    "../../shared/tools.js",
+    "data/fixtures.js",
+    "app.js",
+    "../../../components/form/RemoteSelect.js",
+    "../../../components/form/ResourcePicker.js"
+  ]
+}

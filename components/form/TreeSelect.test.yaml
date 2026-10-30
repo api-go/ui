@@ -1,0 +1,109 @@
+timeout: 30000
+testData: {single: '', multiple: []}
+init:
+  - "globalThis.treeChoices=[{id:'root',label:'Company',parent:''},{id:'design',label:'Design',parent:'root'},{id:'engineering',label:'Engineering',parent:'root'},{id:'disabled',label:'Unavailable',parent:'root',disabled:true}]"
+cases:
+  - name: row activation and directional keyboard operate native choices
+    attributes: {id: subject, mode: tree, '$.items': treeChoices}
+    actions:
+      - call: {method: show}
+      - wait: 600
+      - script: |
+          const branch=subject.querySelector('[data-tree-choice=root]');branch.focus();branch.dispatchEvent(new KeyboardEvent('keydown',{key:'ArrowRight',bubbles:true,cancelable:true}));
+      - wait: 50
+      - script: |
+          const choice=subject.querySelector('input[data-tree-choice=design]');choice.focus();choice.dispatchEvent(new KeyboardEvent('keydown',{key:'ArrowDown',bubbles:true,cancelable:true}));
+          if(document.activeElement.dataset.treeChoice!=='engineering')throw Error('Directional focus failed');
+          [...subject.querySelectorAll('.list-primary-text')].find(el=>el.textContent==='Design').click();
+          if(subject.querySelector('ResourcePicker').pending[0]!=='design')throw Error('Row did not select');
+      - call: {method: cancel}
+      - wait: 600
+    after:
+      - property: {path: subject.value, equals: ''}
+  - name: tree leaf selection has one confirmation boundary and derived path
+    attributes: {id: subject, mode: tree, title: Choose department, required: true, "$.items": treeChoices, "$bind": testData.single}
+    slots: {item-extra: '<span class="department-extra small">Department</span>'}
+    before:
+      - property: {path: subject.items.length, equals: 4}
+    actions:
+      - call: {method: show}
+      - wait: 600
+      - call: {method: expand, args: [{id: root, label: Company}]}
+      - call: {method: choose, args: [root]}
+      - script: "return subject.querySelector('ResourcePicker').pending.length===0"
+      - call: {method: choose, args: [design]}
+      - script: "return testData.single===''"
+      - script: "await subject.querySelector('ResourcePicker').confirm();return true"
+      - wait: 600
+      - call: {method: path, args: [design], saveAs: selectedPath}
+    after:
+      - data: {path: testData.single, equals: design}
+      - script: "return selectedPath.map(node=>node.label).join('/')==='Company/Design'&&subject.textContent.includes('Company / Design')"
+      - event: {name: change, count: 1, last: design}
+  - name: cascade navigates one level and restores ancestor labels
+    attributes: {id: subject, mode: cascade, "$.items": treeChoices}
+    actions:
+      - call: {method: show}
+      - wait: 600
+      - script: "return subject.visible().length===1"
+      - call: {method: expand, args: [{id: root, label: Company}]}
+      - script: "return subject.visible().length===3&&subject.state.trail[0]==='root'"
+      - call: {method: choose, args: [engineering]}
+      - script: "await subject.querySelector('ResourcePicker').confirm();return true"
+      - wait: 600
+    after:
+      - property: {path: subject.value, equals: engineering}
+  - name: multiple independent parents and leaves cancel without writing
+    attributes: {id: subject, multiple: true, selectparents: true, "$.items": treeChoices, "$bind": testData.multiple}
+    actions:
+      - call: {method: show}
+      - wait: 600
+      - call: {method: choose, args: [root]}
+      - call: {method: choose, args: [design]}
+      - script: "return JSON.stringify(subject.querySelector('ResourcePicker').pending)==='[\"root\",\"design\"]'"
+      - call: {method: cancel}
+      - wait: 600
+    after:
+      - data: {path: testData.multiple, equals: []}
+      - event: {name: change, count: 0}
+      - event: {name: cancel, count: 1}
+  - name: disabled nodes cannot select and explicit clear publishes empty IDs
+    attributes: {id: subject, "$.items": treeChoices}
+    actions:
+      - call: {method: show}
+      - wait: 600
+      - call: {method: choose, args: [disabled]}
+      - script: "return !subject.querySelector('ResourcePicker').pending.length"
+      - call: {method: cancel}
+      - wait: 600
+      - call: {method: clear}
+    after:
+      - property: {path: subject.value, equals: ''}
+      - event: {name: change, count: 1, last: ''}
+  - name: lazy children fail visibly then retry publishes a bounded branch
+    covers: [properties.loadchildren]
+    attributes: {id: subject, mode: cascade, "$.items": "[{id:'root',label:'Company',hasChildren:true}]", "$.loadchildren": "async()=>{throw Error('fixture')}"}
+    actions:
+      - call: {method: show}
+      - wait: 600
+      - call: {method: expand, args: [{id: root, hasChildren: true}]}
+      - script: "return !!subject.state.error&&subject.value===''"
+      - script: "subject.loadchildren=async()=>[{id:'child',label:'Loaded'}];return true"
+      - call: {method: expand, args: [{id: root, hasChildren: true}]}
+      - script: "return !subject.state.error&&subject.node('child').parent==='root'"
+      - call: {method: cancel}
+      - wait: 600
+  - name: invalid identity and cyclic data cannot replace the current collection
+    attributes: {id: subject, "$.items": treeChoices, disabled: true}
+    actions:
+      - call: {method: show}
+      - script: "try{subject.items=[{id:'a',parent:'b'},{id:'b',parent:'a'}];return false}catch{return subject.items.length===4}"
+    after:
+      - dom: {selector: '#subject Modal.show', count: 0}
+  - name: lazy response after cancel is discarded
+    attributes: {id: subject, "$.items": "[{id:'root',label:'Company',hasChildren:true}]"}
+    actions:
+      - call: {method: show}
+      - wait: 600
+      - script: "let finish;subject.loadchildren=()=>new Promise(r=>finish=r);const pending=subject.expand({id:'root',hasChildren:true});subject.cancel();finish([{id:'late',label:'Late'}]);await pending;return !subject.node('late')"
+      - wait: 600

@@ -1,6 +1,6 @@
 (() => {
   // Updated by `npm run build`. Source files stay directly executable.
-  const build = { version: 'mvtbwh5y', files: {"frameworks/Bootstrap.js":"mvtbklv0","frameworks/State.js":"mv92v90i","libraries/ChartJS.js":"mrpzd5nk","libraries/CodeMirror.js":"mvtbwgz9","libraries/CodeMirrorCPP.js":"mvtbwh2e","libraries/CodeMirrorCSS.js":"mvtbwh4k","libraries/CodeMirrorGo.js":"mvtbwh2e","libraries/CodeMirrorHTML.js":"mvtbwh58","libraries/CodeMirrorJSON.js":"mvtbwh2d","libraries/CodeMirrorJava.js":"mvtbwh4k","libraries/CodeMirrorJavaScript.js":"mvtbwh2e","libraries/CodeMirrorMarkdown.js":"mvtbwh5y","libraries/CodeMirrorPlain.js":"mvtbwgzl","libraries/CodeMirrorPython.js":"mvtbwh4k","libraries/CodeMirrorRust.js":"mvtbwh4k","libraries/CodeMirrorSQL.js":"mvtbwh0i","libraries/CodeMirrorShell.js":"mvtbwh0i","libraries/CodeMirrorTypeScript.js":"mvtbwh2f","libraries/CodeMirrorXML.js":"mvtbwh2e","libraries/CodeMirrorYAML.js":"mvtbwh2e","libraries/Markdown.js":"mvtbwh4l","libraries/SortableJS.js":"mrpzd5nk","utilities/Disposer.js":"mv92v90c","utilities/Editor.js":"mv92v90d","utilities/GraphCanvas.js":"mv92v90d","utilities/GraphDocument.js":"mv92v90d","utilities/HTTP.js":"mv92v90e","utilities/ListDataSource.js":"mvrz6r0d","utilities/MouseMover.js":"mv92v90e","utilities/SortableAPI.js":"mv92v90e","utilities/UUID.js":"mv92v90e","utilities/VirtualScroll.js":"mv92v90e","components/base/API.js":"mv92v8zx","components/base/ActionBar.js":"mv92v8zy","components/base/AppShell.js":"mvtah4q7","components/base/AutoForm.js":"mvrz6qy6","components/base/Dialog.js":"mv92v8zz","components/base/FilterBar.js":"mv92v900","components/base/ItemCollection.js":"mv92v900","components/base/List.js":"mv9ar9ds","components/base/Modal.js":"mv92v901","components/base/Nav.js":"mvtbwgdj","components/base/PageHeader.js":"mv92v902","components/base/Pagination.js":"mvtayqbd","components/base/Pane.js":"mv92v902","components/base/RequestState.js":"mv92v902","components/base/Resizer.js":"mv92v903","components/base/SidePanel.js":"mv92v903","components/base/SplitPane.js":"mvtb3eey","components/base/Toast.js":"mv92v904","components/base/View.js":"mv92v905","components/data/CardGrid.js":"mv92v905","components/data/Chart.js":"mv92v906","components/data/DataGrid.js":"mv92v907","components/data/PagedList.js":"mvt04ji6","components/editor/CodeEditor.js":"mv92v908","components/editor/GraphEditor.js":"mv92v908","components/editor/Kanban.js":"mv92v909","components/editor/MarkdownViewer.js":"mv92v909","components/editor/Mindmap.js":"mv92v90a","components/editor/Resizer.js":"mt1jtr6w","components/form/ColorPicker.js":"mv92v90a","components/form/DatePicker.js":"mv92v90b","components/form/IconPicker.js":"mv92v90b","components/form/RemoteSelect.js":"mv92v90c","components/form/TagsInput.js":"mv92v90c"} };
+  const build = { version: 'mvuanuyr', files: {"frameworks/Bootstrap.js":"mvtbklv0","frameworks/State.js":"mv92v90i","libraries/ChartJS.js":"mrpzd5nk","libraries/CodeMirror.js":"mvuanus6","libraries/CodeMirrorCPP.js":"mvuanuwz","libraries/CodeMirrorCSS.js":"mvuanux8","libraries/CodeMirrorGo.js":"mvuanuxc","libraries/CodeMirrorHTML.js":"mvuanuy1","libraries/CodeMirrorJSON.js":"mvuanuwx","libraries/CodeMirrorJava.js":"mvuanux8","libraries/CodeMirrorJavaScript.js":"mvuanuwy","libraries/CodeMirrorMarkdown.js":"mvuanuyr","libraries/CodeMirrorPlain.js":"mvuanusa","libraries/CodeMirrorPython.js":"mvuanuxc","libraries/CodeMirrorRust.js":"mvuanuwz","libraries/CodeMirrorSQL.js":"mvuanut7","libraries/CodeMirrorShell.js":"mvuanut7","libraries/CodeMirrorTypeScript.js":"mvuanuwx","libraries/CodeMirrorXML.js":"mvuanuwy","libraries/CodeMirrorYAML.js":"mvuanuwz","libraries/Markdown.js":"mvuanuwz","libraries/SortableJS.js":"mrpzd5nk","utilities/Disposer.js":"mv92v90c","utilities/Editor.js":"mv92v90d","utilities/GraphCanvas.js":"mv92v90d","utilities/GraphDocument.js":"mv92v90d","utilities/HTTP.js":"mv92v90e","utilities/ListDataSource.js":"mvrz6r0d","utilities/MouseMover.js":"mv92v90e","utilities/SortableAPI.js":"mv92v90e","utilities/UUID.js":"mv92v90e","utilities/VirtualScroll.js":"mv92v90e","components/base/API.js":"mv92v8zx","components/base/ActionBar.js":"mv92v8zy","components/base/AppShell.js":"mvtah4q7","components/base/AutoForm.js":"mvrz6qy6","components/base/Dialog.js":"mvuam04o","components/base/FilterBar.js":"mv92v900","components/base/ItemCollection.js":"mvuam04z","components/base/List.js":"mvuam068","components/base/Modal.js":"mvuam07j","components/base/Nav.js":"mvuam08f","components/base/PageHeader.js":"mv92v902","components/base/Pagination.js":"mvtayqbd","components/base/Pane.js":"mv92v902","components/base/RequestState.js":"mv92v902","components/base/Resizer.js":"mv92v903","components/base/SidePanel.js":"mv92v903","components/base/SplitPane.js":"mvtb3eey","components/base/Toast.js":"mv92v904","components/base/View.js":"mv92v905","components/data/Calendar.js":"mvuam02b","components/data/CardGrid.js":"mv92v905","components/data/Chart.js":"mv92v906","components/data/DataGrid.js":"mv92v907","components/data/ImageViewer.js":"mvuam02c","components/data/PagedList.js":"mvt04ji6","components/editor/CodeEditor.js":"mv92v908","components/editor/GraphEditor.js":"mv92v908","components/editor/Kanban.js":"mvuam09a","components/editor/MarkdownViewer.js":"mv92v909","components/editor/Mindmap.js":"mv92v90a","components/editor/Resizer.js":"mt1jtr6w","components/form/ColorPicker.js":"mv92v90a","components/form/DatePicker.js":"mvuam0ae","components/form/FileUpload.js":"mvuam02c","components/form/IconPicker.js":"mv92v90b","components/form/RemoteSelect.js":"mvuam0bi","components/form/ResourcePicker.js":"mvuam02d","components/form/StepForm.js":"mvuam02d","components/form/TagsInput.js":"mv92v90c","components/form/TreeSelect.js":"mvuam02d"} };
   const script = document.currentScript;
   if (!script || document.readyState !== 'loading') {
     throw new Error('ui.js must be loaded by a normal <script> while the document is parsing');
@@ -30,9 +30,9 @@
     AutoForm: { path: 'components/base/AutoForm.js', needs: ['Toast','UUID','Disposer'] },
     Dialog: { path: 'components/base/Dialog.js', needs: ['Modal'] },
     FilterBar: { path: 'components/base/FilterBar.js' },
-    ItemCollection: { path: 'components/base/ItemCollection.js', needs: ['SortableAPI'] },
+    ItemCollection: { path: 'components/base/ItemCollection.js', needs: ['SortableAPI','Disposer'] },
     List: { path: 'components/base/List.js', needs: ['VirtualScroll','Dialog','Disposer'] },
-    Modal: { path: 'components/base/Modal.js' },
+    Modal: { path: 'components/base/Modal.js', needs: ['Disposer'] },
     Nav: { path: 'components/base/Nav.js', needs: ['Dialog','Disposer'] },
     PageHeader: { path: 'components/base/PageHeader.js' },
     Pagination: { path: 'components/base/Pagination.js', needs: ['Disposer'] },
@@ -58,6 +58,12 @@
     DatePicker: { path: 'components/form/DatePicker.js', needs: ['AutoForm'] },
     IconPicker: { path: 'components/form/IconPicker.js', needs: ['AutoForm'] },
     RemoteSelect: { path: 'components/form/RemoteSelect.js', needs: ['HTTP','Toast','Disposer'] },
+    ResourcePicker: { path: 'components/form/ResourcePicker.js', needs: ["Modal", "PagedList", "Disposer"] },
+    TreeSelect: { path: 'components/form/TreeSelect.js', needs: ["List", "ResourcePicker", "Disposer"] },
+    FileUpload: { path: 'components/form/FileUpload.js', needs: ["Disposer"] },
+    StepForm: { path: 'components/form/StepForm.js', needs: ["Disposer"] },
+    ImageViewer: { path: 'components/data/ImageViewer.js', needs: ["Modal", "Disposer"] },
+    Calendar: { path: 'components/data/Calendar.js', needs: [] },
     TagsInput: { path: 'components/form/TagsInput.js', needs: ['AutoForm'] }
   };
 
@@ -84,6 +90,10 @@
     "View"
   ],
   "form": [
+    "StepForm",
+    "FileUpload",
+    "TreeSelect",
+    "ResourcePicker",
     "ColorPicker",
     "DatePicker",
     "IconPicker",
@@ -91,6 +101,8 @@
     "TagsInput"
   ],
   "data": [
+    "Calendar",
+    "ImageViewer",
     "PagedList",
     "CardGrid",
     "Chart",

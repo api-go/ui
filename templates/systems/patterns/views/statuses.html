@@ -1,0 +1,27 @@
+<Pane scroll="auto">
+<PageHeader slot="header" heading="{#页面状态#}" $.state.description="'{#错误、离线、维护和空状态的可编辑页面，保留明确恢复入口。#}'">
+<template slot="actions">
+</template>
+</PageHeader>
+<div slot="content" class="p-3 p-md-4">
+<label class="d-block mb-4">
+<span class="form-label">{#预览状态#}</span>
+<select aria-label="{#预览状态#}" class="form-select" $.value="Hash.patternsStatus||'404'" $onchange="Hash.go({patternsStatus:event.target.value})">
+<option value="404">{#页面不存在#}</option>
+<option value="403">{#无法访问#}</option>
+<option value="500">{#暂时出错#}</option>
+<option value="offline">{#离线#}</option>
+<option value="maintenance">{#维护中#}</option>
+<option value="empty">{#暂无内容#}</option>
+</select>
+</label>
+<section class="text-center py-4 py-md-5 border rounded">
+<i class="display-3 text-body-tertiary" $class="'bi bi-'+({'404':'signpost-split','403':'shield-lock','500':'exclamation-triangle',offline:'wifi-off',maintenance:'tools',empty:'inbox'}[Hash.patternsStatus||'404']||'question-circle')" aria-hidden="true">
+</i>
+<h2 class="h3 mt-4" $text="({'404':'{#找不到这个页面#}','403':'{#你暂时无法访问这里#}','500':'{#服务暂时出错#}',offline:'{#网络连接已断开#}',maintenance:'{#正在进行维护#}',empty:'{#这里还没有内容#}'}[Hash.patternsStatus||'404']||'{#未知页面状态#}')">
+</h2>
+<p class="text-body-secondary mb-4">{#保留当前工作，返回可用页面继续。#}</p>
+<button type="button" class="btn btn-outline-primary" $onclick="patternsGo('profile')" >{#返回个人资料#}</button>
+</section>
+</div>
+</Pane>

@@ -1,0 +1,29 @@
+<Pane scroll="none">
+<PageHeader slot="header" heading="{#工单列表#}" $.state.description="''">
+<template slot="actions">
+<button type="button" class="btn btn-primary" $onclick="serviceGo('editor')" >
+<i class="bi bi-plus-lg me-1" aria-hidden="true">
+</i>{#创建工单#}</button>
+</template>
+</PageHeader>
+<div slot="content" class="d-flex flex-column overflow-hidden">
+<PagedList id="service_stateList" searchable sortable  height="100%" $.source="service_state.source" $.state.columns="[{name:'name',label:'{#工单#}',class:'col-7'},{name:'status',label:'{#状态#}',class:'col-5'}]" $.state.sortoptions="[{value:'name',label:'{#名称#}'},{value:'-name',label:'{#名称倒序#}'}]">
+<template slot="item">
+<div class="row g-2 align-items-center">
+<div class="col-7">
+<button type="button" class="btn btn-link p-0 text-start" $text="item.name" $onclick="serviceGo('detail',item.id)">
+</button>
+<span class="small text-body-secondary d-block" $text="item.customer+' · '+item.assignee">
+</span>
+</div>
+<div class="col-5">
+<span class="badge me-2" $class="item.priority==='高'?'bg-danger-subtle text-danger-emphasis':'bg-secondary-subtle text-secondary-emphasis'" $text="item.priority">
+</span>
+<span class="small" $text="item.status">
+</span>
+</div>
+</div>
+</template>
+</PagedList>
+</div>
+</Pane>

@@ -1,0 +1,13 @@
+const analytics_state=NewState({rows:analyticsRows,from:Hash.analyticsFrom||'2026-10-01',to:Hash.analyticsTo||'2026-10-30',channel:Hash.analyticsChannel||'',error:'',notice:'',viewError:''});
+function analyticsPage(){return typeof Hash.analyticsPage==='string'?Hash.analyticsPage:'overview'}
+function analyticsActive(){return analyticsPage()}
+function analyticsParent(){return ''}
+async function analyticsGo(page){Hash.go({analyticsPage:page});if(globalThis.templateShell?.state)templateShell.state.navOpen=false}
+function analyticsData(){return analytics_state.rows.filter(x=>x.date>=(Hash.analyticsFrom||'2026-10-01')&&x.date<=(Hash.analyticsTo||'2026-10-30')&&(!Hash.analyticsChannel||x.channel===Hash.analyticsChannel))}
+function analyticsSum(key){return analyticsData().reduce((n,x)=>n+x[key],0)}
+function analyticsApply(e){e.preventDefault();if(analytics_state.from>analytics_state.to){analytics_state.error='{#开始日期不能晚于结束日期。#}';return}analytics_state.error='';Hash.go({analyticsFrom:analytics_state.from,analyticsTo:analytics_state.to,analyticsChannel:analytics_state.channel||null})}
+function analyticsChart(type='bar',metric='revenue'){const rows=analyticsData(),dark=!!LocalStorage.templateDark;return {type,data:{labels:rows.map(x=>x.date.slice(5)),datasets:[{label:metric==='revenue'?'{#销售额#}':metric==='orders'?'{#订单#}':'{#库存#}',data:rows.map(x=>x[metric]),backgroundColor:dark?'#6ea8fe':'#0d6efd',borderColor:dark?'#6ea8fe':'#0d6efd',tension:.25}]},options:{responsive:true,maintainAspectRatio:true,aspectRatio:2.2,plugins:{legend:{display:false}},scales:{x:{ticks:{color:dark?'#adb5bd':'#495057'},grid:{display:false}},y:{beginAtZero:true,ticks:{color:dark?'#adb5bd':'#495057'},grid:{color:dark?'#343a40':'#e9ecef'}}}}}}
+function analyticsChannels(){return ['官网','门店','合作伙伴'].map(name=>({id:name,name,revenue:analyticsData().filter(x=>x.channel===name).reduce((n,x)=>n+x.revenue,0),orders:analyticsData().filter(x=>x.channel===name).reduce((n,x)=>n+x.orders,0)}))}
+for(const key of ['analyticsFrom','analyticsTo','analyticsChannel'])Hash.__watch(key,()=>{analytics_state.from=Hash.analyticsFrom||'2026-10-01';analytics_state.to=Hash.analyticsTo||'2026-10-30';analytics_state.channel=Hash.analyticsChannel||''});
+
+const templateApp={id:'analytics',title:'{#云间经营分析#}',icon:'bar-chart',changeKey:'Analytics',state:analytics_state,routes:[{"id": "overview", "title": "{#经营概览#}", "icon": "bar-chart"}, {"id": "sales", "title": "{#销售分析#}", "icon": "graph-up"}, {"id": "inventory", "title": "{#库存趋势#}", "icon": "boxes"}, {"id": "report", "title": "{#报表明细#}", "icon": "table"}],layouts:["sidebar", "topnav"],page:analyticsPage,go:analyticsGo,layout:()=>templateLayout('analytics',["sidebar", "topnav"]),active:()=>analyticsActive(),parent:()=>analyticsParent()};

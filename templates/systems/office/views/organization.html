@@ -1,0 +1,36 @@
+<Pane scroll="auto">
+<PageHeader slot="header" heading="{#组织通讯录#}" $.state.description="''">
+<template slot="actions">
+</template>
+</PageHeader>
+<div slot="content" class="p-3 p-md-4">
+<form class="mb-4" $onsubmit="event.preventDefault();Hash.go({officePeopleSearch:office_state.peopleSearch||null})">
+<div class="input-group">
+<input class="form-control" type="search" aria-label="{#查找同事#}" placeholder="{#姓名或部门#}" $bind="office_state.peopleSearch">
+<button class="btn btn-outline-primary" type="submit">
+<i class="bi bi-search" aria-hidden="true">
+</i>
+<span class="ms-1">{#搜索#}</span>
+</button>
+</div>
+</form>
+<div class="row g-3">
+<article class="col-12 col-md-6 col-xl-4" $each="office_state.data.people.filter(x=>!Hash.officePeopleSearch||(x.name+x.department).includes(Hash.officePeopleSearch))" as="person" key="id">
+<div class="border rounded p-3">
+<div class="d-flex gap-3 align-items-center">
+<i class="bi bi-person-circle fs-2 text-primary" aria-hidden="true">
+</i>
+<div>
+<h2 class="h6 mb-1" $text="person.name">
+</h2>
+<span class="text-body-secondary small" $text="person.department+' · '+person.role">
+</span>
+</div>
+</div>
+<a class="d-block mt-3 text-break" $href="'mailto:'+person.email" $text="person.email">
+</a>
+</div>
+</article>
+</div>
+</div>
+</Pane>

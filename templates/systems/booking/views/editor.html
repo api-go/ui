@@ -1,0 +1,66 @@
+<Pane scroll="auto">
+<PageHeader slot="header" heading="{#编辑预约#}" $.state.description="''">
+<template slot="actions">
+</template>
+</PageHeader>
+<div slot="content" class="p-3 p-md-4">
+<form $onsubmit="bookingSave(event)" $oninput="State.changes.Booking=true" $onchange="State.changes.Booking=true">
+<div class="row g-3">
+<div class="col-12 col-md-6">
+<label class="d-block">
+<span class="form-label">{#预约主题#}</span>
+<input class="form-control" type="text" $bind="booking_state.draft.name" required maxlength="100">
+</label>
+</div>
+<div class="col-12 col-md-6">
+<label class="d-block">
+<span class="form-label">{#资源#}</span>
+<select aria-label="{#资源#}" required class="form-select" $bind="booking_state.draft.resourceId">
+<option $each="booking_state.data.resources" as="resource" key="id" $value="resource.id" $text="resource.name+' · '+resource.capacity+' {#人#}'">
+</option>
+</select>
+</label>
+</div>
+<div class="col-12 col-md-6">
+<label class="d-block">
+<span class="form-label">{#预约日期#}</span>
+<DatePicker label="{#预约日期#}" $bind="booking_state.draft.date" required></DatePicker>
+</label>
+</div>
+<div class="col-12 col-md-6">
+<label class="d-block">
+<span class="form-label">{#联系人#}</span>
+<input class="form-control" type="text" $bind="booking_state.draft.owner" required>
+</label>
+</div>
+<div class="col-12 col-md-6">
+<label class="d-block">
+<span class="form-label">{#开始时间#}</span>
+<DatePicker type="time" label="{#开始时间#}" step="900" $bind="booking_state.draft.start" required></DatePicker>
+</label>
+</div>
+<div class="col-12 col-md-6">
+<label class="d-block">
+<span class="form-label">{#结束时间#}</span>
+<DatePicker type="time" label="{#结束时间#}" step="900" $bind="booking_state.draft.end" required></DatePicker>
+</label>
+</div>
+<div class="col-12 col-md-6">
+<label class="d-block">
+<span class="form-label">{#参与人数#}</span>
+<input class="form-control" type="number" $bind="booking_state.draft.people" required min="1" step="1">
+</label>
+</div>
+</div>
+<label class="d-block mt-3">
+<span class="form-label">{#备注#}</span>
+<textarea class="form-control" rows="3" $bind="booking_state.draft.notes">
+</textarea>
+</label>
+<div class="d-flex flex-wrap gap-2 border-top pt-3 mt-4">
+<button type="submit" class="btn btn-primary">{#保存#}</button>
+<button type="button" class="btn btn-outline-secondary" $onclick="bookingGo('appointments')" >{#取消#}</button>
+</div>
+</form>
+</div>
+</Pane>

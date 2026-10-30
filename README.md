@@ -1,5 +1,7 @@
 # @apigo.cc/ui
 
+Unreleased repository update: 15 interactive template systems, confirmed resource/tree selection, attachment queues, image preview, retained step forms and calendar browsing. See [acceptance](templates/COMPONENTS-REVIEW.md) and [next iteration](templates/NEXT-ROUND.md). This source update has not been published to npm; the CDN version below remains the last published package.
+
 [中文文档](README.zh-CN.md) | English
 
 `@apigo.cc/ui` is the build-free UI package for the Apigo browser framework.

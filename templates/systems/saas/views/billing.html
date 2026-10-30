@@ -1,0 +1,47 @@
+<Pane scroll="auto">
+<PageHeader slot="header" heading="{#账单与订阅#}" $.state.description="''">
+<template slot="actions">
+</template>
+</PageHeader>
+<div slot="content" class="p-3 p-md-4">
+<div class="border rounded p-3 p-md-4 mb-4">
+<div class="d-flex flex-wrap gap-3 justify-content-between">
+<div>
+<span class="badge bg-primary-subtle text-primary-emphasis mb-2">{#当前方案#}</span>
+<h2 class="h4">{#团队版#}</h2>
+<p class="text-body-secondary mb-0">{#十个协作席位 · 按月付费示例#}</p>
+</div>
+<div class="fs-3">¥ 990 <span class="small text-body-secondary">/ {#月#}</span>
+</div>
+</div>
+</div>
+<h2 class="h5">{#账单记录#}</h2>
+<div class="table-responsive">
+<table class="table align-middle text-nowrap">
+<thead>
+<tr>
+<th scope="col">{#账单#}</th>
+<th scope="col">{#日期#}</th>
+<th scope="col">{#金额#}</th>
+<th scope="col">{#状态#}</th>
+</tr>
+</thead>
+<tbody>
+<tr $each="saas_state.data.invoices" as="row" key="id">
+<td>
+<button class="btn btn-link p-0 text-start" $text="row.name" $onclick="saasGo('invoice',row.id)">
+</button>
+</td>
+<td class="" $text="row.date">
+</td>
+<td class="text-end" $text="templateMoney(row.amount)">
+</td>
+<td class="" $text="row.status">
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+<p class="small text-body-secondary">{#本页不连接支付服务，账单均为虚构数据。#}</p>
+</div>
+</Pane>

@@ -1,0 +1,55 @@
+<Pane scroll="auto">
+<PageHeader slot="header" heading="{#待办中心#}" $.state.description="'{#集中查看待审批与草稿申请。#}'">
+<template slot="actions">
+<button type="button" class="btn btn-primary" $onclick="officeGo('editor')" >
+<i class="bi bi-plus-lg me-1" aria-hidden="true">
+</i>{#发起申请#}</button>
+</template>
+</PageHeader>
+<div slot="content" class="p-3 p-md-4">
+<div class="row g-3 mb-4">
+<div class="col-6 col-xl-3">
+<section class="border rounded p-3 h-100">
+<div class="small text-body-secondary mb-2">{#待审批#}</div>
+<div class="h3 mb-0" $text="office_state.data.requests.filter(x=>x.status==='待审批').length">
+</div>
+</section>
+</div>
+<div class="col-6 col-xl-3">
+<section class="border rounded p-3 h-100">
+<div class="small text-body-secondary mb-2">{#草稿#}</div>
+<div class="h3 mb-0" $text="office_state.data.requests.filter(x=>x.status==='草稿').length">
+</div>
+</section>
+</div>
+<div class="col-6 col-xl-3">
+<section class="border rounded p-3 h-100">
+<div class="small text-body-secondary mb-2">{#已完成#}</div>
+<div class="h3 mb-0" $text="office_state.data.requests.filter(x=>x.status==='已通过').length">
+</div>
+</section>
+</div>
+<div class="col-6 col-xl-3">
+<section class="border rounded p-3 h-100">
+<div class="small text-body-secondary mb-2">{#组织成员#}</div>
+<div class="h3 mb-0" $text="office_state.data.people.length">
+</div>
+</section>
+</div>
+</div>
+<h2 class="h5">{#需要处理#}</h2>
+<ul class="list-group list-group-flush">
+<li class="list-group-item px-0 py-3 d-flex justify-content-between gap-3 align-items-center" $each="office_state.data.requests.filter(x=>x.status==='待审批')" as="request" key="id">
+<div>
+<button class="btn btn-link p-0" $text="request.name" $onclick="officeGo('detail',request.id)">
+</button>
+<span class="small text-body-secondary d-block" $text="request.applicant+' · '+request.type">
+</span>
+</div>
+<i class="bi bi-chevron-right text-body-secondary" aria-hidden="true">
+</i>
+</li>
+</ul>
+<p class="text-body-secondary p-3" $if="!office_state.data.requests.some(x=>x.status==='待审批')">{#所有待办都已处理。#}</p>
+</div>
+</Pane>

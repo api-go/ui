@@ -71,6 +71,7 @@ rules:
   - 'Use `noselect: true` and nav for actions such as Logout, including buttons inside dropdowns: `$onnav="if(event.detail.name===''logout'') logout()"`. Use change only for selected-page state.'
   - 'Use the same `navItems` data for horizontal and vertical navigation when comparing layouts.'
   - 'Selected items use the same neutral secondary surface in horizontal and vertical modes; selection must not depend on the application primary color.'
+  - 'item.class applies equally to visible items and overflow-menu destinations. Bootstrap utilities may override the neutral surface: use bg-transparent text-body-emphasis for plain text website navigation; the current item retains font weight and aria-current.'
   - 'Change protection runs before selection and nav. Cancellation emits neither event. Confirmed local discard clears its source; `*` clears only State.changes entries strictly equal to true.'
 
 tests:

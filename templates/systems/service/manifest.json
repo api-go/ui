@@ -1,0 +1,136 @@
+{
+  "id": "service",
+  "title": "{#云间服务台#}",
+  "entry": "index.html",
+  "description": "工单筛选、指派、优先级、沟通记录和关闭重开，知识文章与工单共用导航。",
+  "layouts": [
+    {
+      "id": "sidebar",
+      "file": "layouts/sidebar.html"
+    },
+    {
+      "id": "topnav",
+      "file": "layouts/topnav.html"
+    }
+  ],
+  "views": [
+    {
+      "id": "overview",
+      "file": "views/overview.html"
+    },
+    {
+      "id": "tickets",
+      "file": "views/tickets.html"
+    },
+    {
+      "id": "editor",
+      "file": "views/editor.html"
+    },
+    {
+      "id": "detail",
+      "file": "views/detail.html"
+    },
+    {
+      "id": "knowledge",
+      "file": "views/knowledge.html"
+    },
+    {
+      "id": "article",
+      "file": "views/article.html"
+    }
+  ],
+  "routes": [
+    [
+      "overview",
+      "服务工作台",
+      "headset"
+    ],
+    [
+      "tickets",
+      "工单",
+      "ticket-detailed"
+    ],
+    [
+      "knowledge",
+      "知识库",
+      "book"
+    ],
+    [
+      "editor",
+      "创建工单",
+      ""
+    ],
+    [
+      "detail",
+      "工单详情",
+      ""
+    ],
+    [
+      "article",
+      "知识文章",
+      ""
+    ]
+  ],
+  "shared": [
+    "../../shared/tools.js",
+    "../../shared/blocks/header.html"
+  ],
+  "data": "Explicit browser-local fictional fixtures; no server authorization, stock, payment or transport is claimed",
+  "components": [
+    "AppShell",
+    "Nav",
+    "PageHeader",
+    "PagedList",
+    "Pane",
+    "View"
+  ],
+  "state": {
+    "route": [
+      "servicePage",
+      "serviceId",
+      "serviceLayout",
+      "serviceQuery",
+      "serviceSearch"
+    ],
+    "storage": [
+      "serviceTemplateData",
+      "templateDensity",
+      "templateLink",
+      "templateDark",
+      "serviceNavigationWidth"
+    ],
+    "draft": "service_state.draft"
+  },
+  "translations": "Master translation markers; no local dictionary",
+  "scroll": "AppShell viewport; each Pane owns its content scroll; PagedList/Kanban/CodeEditor own bounded work regions",
+  "fixtures": "data/fixtures.js",
+  "scripts": [
+    "../../../frameworks/State.js",
+    "../../../frameworks/Bootstrap.js",
+    "../../../utilities/HTTP.js",
+    "../../../utilities/UUID.js",
+    "../../../utilities/Disposer.js",
+    "../../../utilities/MouseMover.js",
+    "../../../utilities/ListDataSource.js",
+    "../../../libraries/SortableJS.js",
+    "../../../utilities/SortableAPI.js",
+    "../../../components/base/Resizer.js",
+    "../../../components/base/SplitPane.js",
+    "../../../components/base/View.js",
+    "../../../components/base/Modal.js",
+    "../../../components/base/Dialog.js",
+    "../../../components/base/Toast.js",
+    "../../../components/base/AutoForm.js",
+    "../../../components/base/Nav.js",
+    "../../../components/base/AppShell.js",
+    "../../../components/base/Pane.js",
+    "../../../components/base/PageHeader.js",
+    "../../../components/base/RequestState.js",
+    "../../../components/base/Pagination.js",
+    "../../../components/base/ItemCollection.js",
+    "../../../components/data/PagedList.js",
+    "../../shared/tools.js",
+    "data/fixtures.js",
+    "app.js"
+  ]
+}

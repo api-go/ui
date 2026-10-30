@@ -1,0 +1,38 @@
+<Pane scroll="auto">
+<PageHeader slot="header" heading="{#报价单#}" $.state.description="''">
+<template slot="actions">
+<button type="button" class="btn btn-primary" $onclick="crmGo('quote-edit')" >
+<i class="bi bi-plus-lg me-1" aria-hidden="true">
+</i>{#创建报价#}</button>
+</template>
+</PageHeader>
+<div slot="content" class="p-3 p-md-4">
+<div class="table-responsive">
+<table class="table align-middle text-nowrap">
+<thead>
+<tr>
+<th scope="col">{#报价#}</th>
+<th scope="col">{#客户#}</th>
+<th scope="col">{#金额#}</th>
+<th scope="col">{#状态#}</th>
+</tr>
+</thead>
+<tbody>
+<tr $each="crm_state.data.quotes" as="row" key="id">
+<td>
+<button class="btn btn-link p-0 text-start" $text="row.name" $onclick="crmGo('quote',row.id)">
+</button>
+</td>
+<td class="" $text="crmCustomer(row.customerId)?.name">
+</td>
+<td class="text-end" $text="templateMoney(row.total)">
+</td>
+<td class="" $text="row.status">
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+<p class="text-body-secondary p-3" $if="!crm_state.data.quotes.length">{#还没有报价，创建一份后可下载并跟踪状态。#}</p>
+</div>
+</Pane>

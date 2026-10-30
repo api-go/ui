@@ -1,0 +1,55 @@
+timeout: 20000
+testData: {index: 0}
+init:
+  - "globalThis.viewerImages=[{src:'data:image/svg+xml,'+encodeURIComponent('<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"640\" height=\"400\"><rect width=\"640\" height=\"400\" fill=\"#0d6efd\"/></svg>'),alt:'First image'},{src:'data:image/svg+xml,'+encodeURIComponent('<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"400\" height=\"640\"><rect width=\"400\" height=\"640\" fill=\"#198754\"/></svg>'),alt:'Second image'}]"
+cases:
+  - name: bound index navigation and trigger slot
+    attributes: {id: subject, "$.images": viewerImages, "$bind": testData.index}
+    slots: {trigger: '<span class="viewer-trigger">Product photos</span>'}
+    actions:
+      - call: {method: show}
+      - wait: 600
+      - call: {method: next}
+      - wait: 50
+      - script: "return subject.querySelector('img').alt==='Second image'&&!subject.state.loading"
+      - call: {method: previous}
+      - call: {method: select, args: [99]}
+      - call: {method: hide}
+      - wait: 600
+    after:
+      - data: {path: testData.index, equals: 0}
+      - event: {name: change, count: 2, last: 0}
+      - dom: {selector: '#subject .viewer-trigger', text: Product photos}
+  - name: keyboard zoom navigation and reset remain bounded
+    attributes: {id: subject, "$.images": viewerImages}
+    actions:
+      - call: {method: show}
+      - wait: 600
+      - script: "subject.key(new KeyboardEvent('keydown',{key:'ArrowRight'}));subject.key(new KeyboardEvent('keydown',{key:'+'}));return subject.value===1&&subject.state.zoom===1.25"
+      - call: {method: zoom, args: [20]}
+      - script: "return subject.state.zoom===5"
+      - call: {method: reset}
+      - script: "return subject.state.zoom===1&&subject.state.x===0"
+      - call: {method: hide}
+      - wait: 600
+    after:
+      - property: {path: subject.value, equals: 1}
+  - name: image failure preserves navigation and retry remounts it
+    attributes: {id: subject, "$.images": "[{src:'data:image/png;base64,invalid',alt:'Broken'}]"}
+    actions:
+      - call: {method: show}
+      - wait: 600
+      - script: "return subject.state.error&&!!subject.querySelector('[role=alert]')"
+      - call: {method: retry}
+      - wait: 50
+      - script: "return subject.state.error"
+      - call: {method: hide}
+      - wait: 600
+  - name: replacing empty images closes the overlay and invalid selection is ignored
+    attributes: {id: subject, "$.images": viewerImages}
+    actions:
+      - call: {method: show}
+      - wait: 600
+      - script: "subject.images=[];await new Promise(r=>setTimeout(r,600));return !subject.state.open"
+    after:
+      - property: {path: subject.images.length, equals: 0}

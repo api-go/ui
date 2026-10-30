@@ -1,0 +1,139 @@
+timeout: 30000
+testData: {single: '', multi: [a]}
+init:
+  - "globalThis.pickerRows=[{id:'a',name:'Ada',summary:'Design'},{id:'b',name:'Grace',summary:'Engineering'},{id:'c',name:'Disabled',disabled:true}]"
+cases:
+  - name: scalar selection writes only after confirmation and uses item slot
+    attributes: {id: subject, title: Choose owner, required: true, idfield: id, labelfield: name, "$.items": pickerRows, "$bind": testData.single}
+    slots: {item: '<strong class="resource-custom" $text="item.name"></strong>'}
+    before:
+      - property: {path: subject.items.length, equals: 3}
+    actions:
+      - call: {method: show}
+      - wait: 600
+      - call: {method: toggle, args: [{id: b, name: Grace}]}
+      - script: "return testData.single===''&&subject.state.pending[0]==='b'"
+      - call: {method: confirm}
+      - wait: 600
+    after:
+      - data: {path: testData.single, equals: b}
+      - property: {path: subject.pending, equals: []}
+      - event: {name: change, count: 1, last: b}
+      - dom: {selector: '#subject .resource-custom', count: 3}
+  - name: multiple cancel and reopen start from the committed IDs
+    attributes: {id: subject, multiple: true, "$.items": pickerRows, "$bind": testData.multi}
+    actions:
+      - call: {method: show}
+      - wait: 600
+      - call: {method: toggle, args: [{id: b, name: Grace}]}
+      - call: {method: cancel}
+      - wait: 600
+      - call: {method: show}
+      - wait: 600
+      - script: "return JSON.stringify(subject.state.pending)==='[\"a\"]'"
+      - call: {method: cancel}
+      - wait: 600
+    after:
+      - data: {path: testData.multi, equals: [a]}
+      - event: {name: change, count: 0}
+      - event: {name: cancel, count: 2}
+  - name: selected labels resolve and pending remove commits an empty array
+    covers: [properties.resolve]
+    attributes: {id: subject, multiple: true, "$.items": pickerRows, "$.resolve": "async ids=>pickerRows.filter(item=>ids.includes(item.id)).map(item=>({...item,name:'Resolved '+item.name}))", "$bind": testData.multi}
+    slots: {selection: '<span class="custom-trigger">Choose team</span>'}
+    actions:
+      - call: {method: show}
+      - wait: 600
+      - script: "return subject.pendingLabel('a')==='Resolved Ada'"
+      - call: {method: remove, args: [a]}
+      - call: {method: confirm}
+      - wait: 600
+    after:
+      - data: {path: testData.multi, equals: []}
+      - dom: {selector: '#subject .custom-trigger', text: Choose team}
+      - event: {name: change, count: 1, last: []}
+  - name: required disabled and canceled beforeconfirm retain committed value
+    attributes: {id: subject, required: true, "$.items": pickerRows}
+    actions:
+      - call: {method: show}
+      - wait: 600
+      - call: {method: confirm}
+      - script: "return !!subject.state.error&&subject.state.open"
+      - call: {method: toggle, args: [{id: c, name: Disabled, disabled: true}]}
+      - script: "return !subject.state.pending.length"
+      - call: {method: toggle, args: [{id: a, name: Ada}]}
+      - prevent: beforeconfirm
+      - call: {method: confirm}
+      - call: {method: cancel}
+      - wait: 600
+    after:
+      - property: {path: subject.value, equals: ''}
+      - event: {name: change, count: 0}
+      - event: {name: beforeconfirm, count: 1, last: a}
+  - name: disabled picker cannot open
+    attributes: {id: subject, disabled: true}
+    actions: [{call: {method: show}}]
+    after:
+      - property: {path: subject.state.open, equals: false}
+  - name: async validation fails without discarding choices then succeeds on retry
+    covers: [properties.validate]
+    attributes: {id: subject, "$.items": pickerRows, "$.validate": "async()=>'{#Resource no longer available#}'"}
+    actions:
+      - call: {method: show}
+      - wait: 600
+      - call: {method: toggle, args: [{id: a, name: Ada}]}
+      - call: {method: confirm}
+      - script: "return subject.state.open&&subject.state.pending[0]==='a'&&!!subject.state.error&&subject.value===''"
+      - script: "subject.validate=async()=>'';return true"
+      - call: {method: confirm}
+      - wait: 600
+    after:
+      - property: {path: subject.value, equals: a}
+      - event: {name: change, count: 1, last: a}
+  - name: a canceled pending confirmation cannot commit after its callback finishes
+    attributes: {id: subject, "$.items": pickerRows}
+    actions:
+      - call: {method: show}
+      - wait: 600
+      - call: {method: toggle, args: [{id: a, name: Ada}]}
+      - script: "let finish;subject.validate=()=>new Promise(r=>finish=r);const pending=subject.confirm();subject.cancel();finish('');await pending;return true"
+      - wait: 600
+    after:
+      - property: {path: subject.value, equals: ''}
+      - event: {name: change, count: 0}
+  - name: host owned source remains usable after selection changes
+    attributes: {id: subject, "$.source": "ListDataSource.create({items:pickerRows,pagesize:1})"}
+    actions:
+      - call: {method: show}
+      - wait: 600
+      - call: {method: toggle, args: [{id: a, name: Ada}]}
+      - script: "await subject.source.setPage(2);await new Promise(r=>setTimeout(r,40));return subject.state.pending[0]==='a'"
+      - call: {method: confirm}
+      - wait: 600
+      - script: "await subject.source.reload();return subject.source.state.total===3"
+    after:
+      - property: {path: subject.value, equals: a}
+      - property: {path: subject.source.state.total, equals: 3}
+  - name: confirmation closes a modal opened by the real trigger
+    attributes: {id: subject, "$.items": pickerRows}
+    actions:
+      - click: '#subject > button'
+      - wait: 600
+      - check: {selector: '#subject PagedList input[type=radio]', checked: true}
+      - call: {method: confirm}
+      - wait: 600
+    after:
+      - property: {path: subject.value, equals: a}
+  - name: custom content keeps required confirmation behavior
+    attributes: {id: subject}
+    slots:
+      content: |
+        <button type="button" class="custom-content" $onclick="thisNode.closest('ResourcePicker').toggle({id:'custom',name:'Custom'})">Custom resource</button>
+    actions:
+      - call: {method: show}
+      - wait: 600
+      - click: '#subject .custom-content'
+      - call: {method: confirm}
+      - wait: 600
+    after:
+      - property: {path: subject.value, equals: custom}

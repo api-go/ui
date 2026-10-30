@@ -1,0 +1,73 @@
+<Pane scroll="auto">
+<PageHeader slot="header" heading="{#成员与邀请#}" $.state.description="''">
+<template slot="actions">
+</template>
+</PageHeader>
+<div slot="content" class="p-3 p-md-4">
+<form class="border rounded p-3 mb-4" $onsubmit="saasInvite(event)">
+<h2 class="h5">{#邀请成员#}</h2>
+<div class="row g-3 align-items-end">
+<div class="col-12 col-md-3">
+<label class="d-block">
+<span class="form-label">{#姓名#}</span>
+<input class="form-control" type="text" $bind="saas_state.inviteName" required>
+</label>
+</div>
+<div class="col-12 col-md-4">
+<label class="d-block">
+<span class="form-label">{#电子邮箱#}</span>
+<input class="form-control" type="email" $bind="saas_state.inviteEmail" required>
+</label>
+</div>
+<div class="col-8 col-md-3">
+<label class="d-block">
+<span class="form-label">{#角色#}</span>
+<select aria-label="{#角色#}" class="form-select" $bind="saas_state.inviteRole">
+<option $each="saas_state.data.roles" as="role" key="id" $value="role.name" $text="role.name">
+</option>
+</select>
+</label>
+</div>
+<div class="col-4 col-md-2">
+<button class="btn btn-primary w-100" type="submit">{#创建邀请#}</button>
+</div>
+</div>
+<p class="small text-body-secondary mt-3 mb-0">{#只创建示例记录，不会发送邮件。#}</p>
+</form>
+<div class="table-responsive">
+<table class="table align-middle text-nowrap">
+<thead>
+<tr>
+<th scope="col">{#成员#}</th>
+<th scope="col">{#邮箱#}</th>
+<th scope="col">{#角色#}</th>
+<th scope="col">{#状态#}</th>
+<th scope="col">{#操作#}</th>
+</tr>
+</thead>
+<tbody>
+<tr $each="saas_state.data.members" as="row" key="id">
+<td class="" $text="row.name">
+</td>
+<td class="" $text="row.email">
+</td>
+<td>
+<select class="form-select" $aria-label="'{#角色#} '+row.name" $.value="row.role" $onchange="saasMemberRole(row.id,event.target.value).then(()=>event.target.value=saas_state.data.members.find(member=>member.id===row.id)?.role)">
+<option $each="saas_state.data.roles" as="role" key="id" $value="role.name" $text="role.name">
+</option>
+</select>
+</td>
+<td class="" $text="row.status">
+</td>
+<td>
+<button class="btn btn-link text-body-secondary" type="button" $onclick="saasRemove(row.id)" $aria-label="'{#移除#} '+row.name">
+<i class="bi bi-person-dash" aria-hidden="true">
+</i>
+</button>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+</Pane>

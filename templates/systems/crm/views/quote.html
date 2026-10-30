@@ -1,0 +1,67 @@
+<Pane scroll="auto">
+<PageHeader slot="header" heading="{#报价详情#}" $.state.description="''">
+<template slot="actions">
+</template>
+</PageHeader>
+<div slot="content" class="p-3 p-md-4">
+<template $if="crmQuote()">
+<div class="border rounded p-3 p-md-4">
+<div class="d-flex flex-wrap justify-content-between gap-2">
+<h2 class="h3">{#服务报价单#}</h2>
+<span class="text-body-secondary" $text="crmQuote()?.id">
+</span>
+</div>
+<dl class="row g-3 my-3">
+<div class="col-6 col-lg-3">
+<dt class="small text-body-secondary fw-normal">{#客户#}</dt>
+<dd class="mt-1" $text="crmCustomer(crmQuote()?.customerId)?.name">
+</dd>
+</div>
+<div class="col-6 col-lg-3">
+<dt class="small text-body-secondary fw-normal">{#有效期至#}</dt>
+<dd class="mt-1" $text="crmQuote()?.validUntil">
+</dd>
+</div>
+<div class="col-6 col-lg-3">
+<dt class="small text-body-secondary fw-normal">{#状态#}</dt>
+<dd class="mt-1" $text="crmQuote()?.status">
+</dd>
+</div>
+</dl>
+<div class="table-responsive">
+<table class="table align-middle text-nowrap">
+<thead>
+<tr>
+<th scope="col">{#服务#}</th>
+<th scope="col">{#数量#}</th>
+<th scope="col">{#单价#}</th>
+<th scope="col">{#金额#}</th>
+</tr>
+</thead>
+<tbody>
+<tr $each="crmQuote()?[crmQuote()]:[]" as="row" key="id">
+<td class="" $text="row.name">
+</td>
+<td class="text-end" $text="row.qty">
+</td>
+<td class="text-end" $text="templateMoney(row.price)">
+</td>
+<td class="text-end" $text="templateMoney(row.total)">
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="text-end fs-3" $text="templateMoney(crmQuote()?.total)">
+</div>
+</div>
+<div class="d-flex flex-wrap gap-2 mt-4">
+<button type="button" class="btn btn-primary" $onclick="crmQuoteStatus('已发送')" $if="crmQuote()?.status==='待发送'">{#标记已发送#}</button>
+<button type="button" class="btn btn-primary" $onclick="crmQuoteStatus('已接受')" $if="crmQuote()?.status==='已发送'">{#标记已接受#}</button>
+<button type="button" class="btn btn-outline-secondary" $onclick="templateDownload('quote.json',crmQuote())" >{#下载报价#}</button>
+</div>
+<p class="small text-body-secondary mt-3">{#此按钮只记录本机状态，不会发送邮件或生成合同。#}</p>
+</template>
+<div class="alert alert-warning" $if="!(crmQuote())">{#记录不存在，请返回列表选择。#}</div>
+</div>
+</Pane>

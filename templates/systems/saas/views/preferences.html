@@ -1,0 +1,42 @@
+<Pane scroll="auto">
+<PageHeader slot="header" heading="{#组织设置#}" $.state.description="''">
+<template slot="actions">
+</template>
+</PageHeader>
+<div slot="content" class="p-3 p-md-4">
+<form $onsubmit="saasSavePreferences(event)" $oninput="State.changes.Saas=true" $onchange="State.changes.Saas=true">
+<div class="row g-3">
+<div class="col-12 col-md-6">
+<label class="d-block">
+<span class="form-label">{#组织名称#}</span>
+<input class="form-control" type="text" $bind="saas_state.draft.name" required>
+</label>
+</div>
+<div class="col-12 col-md-6">
+<label class="d-block">
+<span class="form-label">{#域名#}</span>
+<input class="form-control" type="text" $bind="saas_state.draft.domain" required>
+</label>
+</div>
+<div class="col-12 col-md-6">
+<label class="d-block">
+<span class="form-label">{#联系邮箱#}</span>
+<input class="form-control" type="email" $bind="saas_state.draft.email" required>
+</label>
+</div>
+<div class="col-12 col-md-6">
+<label class="d-block">
+<span class="form-label">{#时区#}</span>
+<select aria-label="{#时区#}" class="form-select" $bind="saas_state.draft.timezone" >
+<option value="Asia/Shanghai">{#中国标准时间#}</option>
+<option value="UTC">{#协调世界时#}</option>
+</select>
+</label>
+</div>
+</div>
+<div class="d-flex flex-wrap gap-2 border-top pt-3 mt-4">
+<button type="submit" class="btn btn-primary">{#保存#}</button>
+</div>
+</form>
+</div>
+</Pane>

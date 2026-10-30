@@ -1,0 +1,29 @@
+cases:
+  - name: a midnight datetime end is excluded with or without zero seconds
+    attributes: {id: subject, '$.value': "'2026-05-02'", '$.mode': "'day'", '$.events': "[{id:'a',start:'2026-05-01T10:00',end:'2026-05-02T00:00:00.000',title:'Ended'},{id:'b',start:'2026-05-01T10:00',end:'2026-05-02T00:00',title:'Also ended'}]"}
+    after:
+      - dom: {selector: '#subject .list-group-item', count: 0}
+      - script: "return subject.textContent.includes('No events')"
+  - name: month end range agenda event and responsive slots
+    covers: [properties.value, properties.mode, properties.events, methods.range, methods.select, methods.setMode, methods.move, methods.today, methods.open, slots.tools, slots.event, events.change, events.modechange, events.rangechange, events.eventclick]
+    attributes: {id: subject, '$.value': "'2026-01-31'", '$.events': "[{id:'a',start:'2026-02-28T10:00',title:'Meeting'}]"}
+    slots:
+      tools: '<span>Schedule</span>'
+      event: '<strong class="agenda-title" $text="entry.title"></strong>'
+    actions:
+      - call: {method: move, args: [1]}
+      - script: "if(subject.value!=='2026-02-28')throw Error('Month skipped');const r=subject.range();if(r.start!=='2026-01-26'||r.end!=='2026-03-09')throw Error('Wrong month range')"
+      - call: {method: setMode, args: [week]}
+      - wait: 30
+      - click: {selector: '.agenda-title'}
+      - call: {method: setMode, args: [day]}
+      - call: {method: today}
+      - call: {method: select, args: ['2026-02-28']}
+    after:
+      - property: {path: subject.value, equals: '2026-02-28'}
+      - property: {path: subject.mode, equals: day}
+      - dom: {selector: .agenda-title, text: Meeting}
+      - event: {name: eventclick, count: 1}
+      - event: {name: modechange, count: 2}
+      - event: {name: change, count: 3}
+      - event: {name: rangechange, count: 5}

@@ -1,0 +1,68 @@
+<Pane scroll="auto">
+<PageHeader slot="header" heading="{#销售工作台#}" $.state.description="''">
+<template slot="actions">
+<button type="button" class="btn btn-primary" $onclick="crmGo('opportunity-edit')" >
+<i class="bi bi-plus-lg me-1" aria-hidden="true">
+</i>{#新增商机#}</button>
+</template>
+</PageHeader>
+<div slot="content" class="p-3 p-md-4">
+<div class="row g-3 mb-4">
+<div class="col-6 col-xl-3">
+<section class="border rounded p-3 h-100">
+<div class="small text-body-secondary mb-2">{#客户#}</div>
+<div class="h3 mb-0" $text="crm_state.data.customers.length">
+</div>
+</section>
+</div>
+<div class="col-6 col-xl-3">
+<section class="border rounded p-3 h-100">
+<div class="small text-body-secondary mb-2">{#待跟进线索#}</div>
+<div class="h3 mb-0" $text="crm_state.data.leads.filter(x=>x.status==='待跟进').length">
+</div>
+</section>
+</div>
+<div class="col-6 col-xl-3">
+<section class="border rounded p-3 h-100">
+<div class="small text-body-secondary mb-2">{#在谈金额#}</div>
+<div class="h3 mb-0" $text="templateMoney(crm_state.data.opportunities.filter(x=>!['赢单','丢单'].includes(x.stage)).reduce((n,x)=>n+x.amount,0))">
+</div>
+</section>
+</div>
+<div class="col-6 col-xl-3">
+<section class="border rounded p-3 h-100">
+<div class="small text-body-secondary mb-2">{#赢单金额#}</div>
+<div class="h3 mb-0" $text="templateMoney(crm_state.data.opportunities.filter(x=>x.stage==='赢单').reduce((n,x)=>n+x.amount,0))">
+</div>
+</section>
+</div>
+</div>
+<h2 class="h5">{#近期商机#}</h2>
+<div class="table-responsive">
+<table class="table align-middle text-nowrap">
+<thead>
+<tr>
+<th scope="col">{#商机#}</th>
+<th scope="col">{#客户#}</th>
+<th scope="col">{#金额#}</th>
+<th scope="col">{#预计成交#}</th>
+</tr>
+</thead>
+<tbody>
+<tr $each="crm_state.data.opportunities.slice(0,6)" as="row" key="id">
+<td>
+<button class="btn btn-link p-0 text-start" $text="row.name" $onclick="crmGo('opportunity',row.id)">
+</button>
+</td>
+<td class="" $text="crmCustomer(row.customerId)?.name">
+</td>
+<td class="text-end" $text="templateMoney(row.amount)">
+</td>
+<td class="" $text="row.date">
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+</Pane>

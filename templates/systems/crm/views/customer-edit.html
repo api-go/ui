@@ -1,0 +1,61 @@
+<Pane scroll="auto">
+<PageHeader slot="header" heading="{#编辑客户#}" $.state.description="''">
+<template slot="actions">
+</template>
+</PageHeader>
+<div slot="content" class="p-3 p-md-4">
+<form $onsubmit="crmSaveCustomer(event)" $oninput="State.changes.Crm=true" $onchange="State.changes.Crm=true">
+<div class="row g-3">
+<div class="col-12 col-md-6">
+<label class="d-block">
+<span class="form-label">{#客户名称#}</span>
+<input class="form-control" type="text" $bind="crm_state.draft.name" required maxlength="100">
+</label>
+</div>
+<div class="col-12 col-md-6">
+<label class="d-block">
+<span class="form-label">{#联系人#}</span>
+<input class="form-control" type="text" $bind="crm_state.draft.contact" required>
+</label>
+</div>
+<div class="col-12 col-md-6">
+<label class="d-block">
+<span class="form-label">{#电子邮箱#}</span>
+<input class="form-control" type="email" $bind="crm_state.draft.email" >
+</label>
+</div>
+<div class="col-12 col-md-6">
+<label class="d-block">
+<span class="form-label">{#电话#}</span>
+<input class="form-control" type="tel" $bind="crm_state.draft.phone" >
+</label>
+</div>
+<div class="col-12 col-md-6">
+<label class="d-block">
+<span class="form-label">{#行业#}</span>
+<select aria-label="{#行业#}" class="form-select" $bind="crm_state.draft.industry" >
+<option value="设计服务">{#设计服务#}</option>
+<option value="软件">{#软件#}</option>
+<option value="贸易">{#贸易#}</option>
+</select>
+</label>
+</div>
+<div class="col-12 col-md-6">
+<label class="d-block">
+<span class="form-label">{#负责人#}</span>
+<input class="form-control" type="text" $bind="crm_state.draft.owner" >
+</label>
+</div>
+</div>
+<label class="d-block mt-3">
+<span class="form-label">{#备注#}</span>
+<textarea class="form-control" rows="3" $bind="crm_state.draft.notes">
+</textarea>
+</label>
+<div class="d-flex flex-wrap gap-2 border-top pt-3 mt-4">
+<button type="submit" class="btn btn-primary">{#保存#}</button>
+<button type="button" class="btn btn-outline-secondary" $onclick="crmGo('customers')" >{#取消#}</button>
+</div>
+</form>
+</div>
+</Pane>

@@ -1,0 +1,68 @@
+<section class="container py-4 py-md-5">
+<h1 class="display-6 fw-semibold mb-3">{#聊聊你的团队需求#}</h1>
+<div class="row gx-4 gy-5">
+<section class="col-12 col-lg-8">
+<form $onsubmit="websiteSubmit(event)" $oninput="website_state.editingPage=websitePage();website_state.editingId=null;State.changes.Website=true" $onchange="website_state.editingPage=websitePage();website_state.editingId=null;State.changes.Website=true">
+<div class="row g-3">
+<div class="col-12 col-md-6">
+<label class="d-block">
+<span class="form-label">{#姓名#}</span>
+<input class="form-control" type="text" $bind="website_state.draft.name" required maxlength="50" autocomplete="name">
+</label>
+</div>
+<div class="col-12 col-md-6">
+<label class="d-block">
+<span class="form-label">{#电子邮箱#}</span>
+<input class="form-control" type="email" $bind="website_state.draft.email" required autocomplete="email">
+</label>
+</div>
+<div class="col-12 col-md-6">
+<label class="d-block">
+<span class="form-label">{#团队或公司#}</span>
+<input class="form-control" type="text" $bind="website_state.draft.company" required>
+</label>
+</div>
+<div class="col-12 col-md-6">
+<label class="d-block">
+<span class="form-label">{#感兴趣的方案#}</span>
+<select aria-label="{#感兴趣的方案#}" class="form-select" $bind="website_state.draft.plan" >
+<option value="starter">{#起步版#}</option>
+<option value="team">{#团队版#}</option>
+<option value="business">{#企业版#}</option>
+</select>
+</label>
+</div>
+</div>
+<label class="d-block mt-3">
+<span class="form-label">{#想解决什么问题？#}</span>
+<textarea class="form-control" rows="4" required $bind="website_state.draft.message">
+</textarea>
+</label>
+<label class="d-flex gap-2 align-items-start mt-3">
+<input class="form-check-input flex-shrink-0" type="checkbox" required $bind="website_state.draft.consent">
+<span class="small text-body-secondary">{#我只填写虚构信息，知道此页面不会发出真实申请。#}</span>
+</label>
+<div class="d-flex flex-wrap gap-2 border-top pt-3 mt-4">
+<button type="submit" class="btn btn-primary">{#保存演示申请#}</button>
+</div>
+</form>
+</section>
+<aside class="col-12 col-lg-4">
+<div class="border rounded p-4">
+<h2 class="h5">{#一起理清下一步#}</h2>
+<p class="text-body-secondary">{#告诉我们团队规模、业务场景和目前最大的阻碍。#}</p>
+<ul class="list-unstyled mb-0">
+<li class="mb-3">
+<i class="bi bi-check2 text-success me-2" aria-hidden="true">
+</i>{#业务场景梳理#}</li>
+<li class="mb-3">
+<i class="bi bi-check2 text-success me-2" aria-hidden="true">
+</i>{#产品演示#}</li>
+<li>
+<i class="bi bi-check2 text-success me-2" aria-hidden="true">
+</i>{#实施路径讨论#}</li>
+</ul>
+</div>
+</aside>
+</div>
+</section>

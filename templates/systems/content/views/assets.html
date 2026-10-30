@@ -1,0 +1,50 @@
+<Pane scroll="auto">
+<PageHeader slot="header" heading="{#素材文件#}" $.state.description="''">
+<template slot="actions">
+</template>
+</PageHeader>
+<div slot="content" class="p-3 p-md-4">
+<section class="border rounded p-3 mb-4">
+<h2 class="h5">{#选择本地文件#}</h2>
+<p class="small text-body-secondary">{#演示记录文件名、大小和类型，不上传或保存文件内容。单个文件最多 5 MB。#}</p>
+<input class="form-control" type="file" multiple aria-label="{#选择素材#}" $onchange="contentFiles(event)">
+<ul class="list-group list-group-flush my-3">
+<li class="list-group-item px-0" $each="content_state.files" as="file">
+<span $text="file.name">
+</span>
+<span class="small text-body-secondary ms-2" $text="Math.ceil(file.size/1024)+' KB'">
+</span>
+</li>
+</ul>
+<button type="button" class="btn btn-primary" $onclick="contentSaveAssets()" $disabled="!content_state.files.length">{#记录文件信息#}</button>
+</section>
+<div class="table-responsive">
+<table class="table align-middle text-nowrap">
+<thead>
+<tr>
+<th scope="col">{#文件#}</th>
+<th scope="col">{#大小#}</th>
+<th scope="col">{#类型#}</th>
+<th scope="col">{#操作#}</th>
+</tr>
+</thead>
+<tbody>
+<tr $each="content_state.data.assets" as="row" key="id">
+<td class="" $text="row.name">
+</td>
+<td class="" $text="Math.ceil(row.size/1024)+' KB'">
+</td>
+<td class="" $text="row.type">
+</td>
+<td>
+<button class="btn btn-link text-body-secondary" type="button" $onclick="contentRemoveAsset(row.id)" $aria-label="'{#移除#} '+row.name">
+<i class="bi bi-trash" aria-hidden="true">
+</i>
+</button>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+</Pane>

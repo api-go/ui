@@ -121,6 +121,9 @@ When the hosting service manages static asset versions and conditional caching, 
 
 ## Base components
 
+- [Drawer](components/base/Drawer.yaml): retained offcanvas surface.
+- [ActionSheet](components/base/ActionSheet.yaml): cancellable action selection.
+
 - [AppShell](components/base/AppShell.yaml): bounded application frame and narrow navigation.
 - [SplitPane](components/base/SplitPane.yaml): sidebar/main layout with automatic Resizer and retained narrow panes.
 - [Pane](components/base/Pane.yaml): fixed header/toolbar/footer and explicit content scrolling.
@@ -186,3 +189,7 @@ Exercise the primary task, long content, loading/empty/error, route reload/histo
 - [Calendar](components/data/Calendar.yaml): shared value/event behavior with executable contracts.
 
 [Coverage roadmap](UI-COVERAGE.md) · [Current component acceptance](templates/COMPONENTS-REVIEW.md).
+
+## Source update (2026-10-30)
+
+Drawer and ActionSheet are available in the source tree with their YAML contracts and executable examples. The shared DrawerFrame utility loads before either component, including when only ActionSheet is requested. Published CDN references retain the existing release version.

@@ -1,0 +1,46 @@
+name: ActionSheet
+kind: component
+src: /ui/components/base/ActionSheet.js
+dependencies: [Drawer]
+purpose: Data-driven actions, inline destructive confirmation and abortable host execution on the shared modal Drawer lifecycle.
+attributes:
+  title: Accessible action sheet heading.
+  description: Optional short context shown above the action list.
+  placement: 'Inherited Drawer placement; default bottom at every width. Explicit end/start adapts to bottom below 576px.'
+properties:
+  value: Boolean open state, bindable to a namespaced Hash boolean; external restore is silent.
+  actions: 'Array of unique {id,label,icon?,description?,disabled?,danger?,confirm?}. icon is a Bootstrap Icons suffix. confirm is explicit consequence text; it switches to inline Confirm/Go back without a second overlay.'
+  execute: 'Optional async (action,{signal})=>{value?}|{error:string}|false. Host performs authorization/validation/persistence; error retains the sheet and confirmation for retry, false keeps it open silently. No callback defaults to selecting the action id. Abort does not imply a server transaction was rolled back.'
+methods:
+  show: Inherited Drawer Promise resolved after terminal close, sharing/reopening cycles.
+  close: 'Inherited close(value): explicit accepted result; does not execute an action or publish select.'
+  cancel: 'Inherited cancellation; aborts pending execution and discards late results. No selected action is published.'
+  choose: 'await choose(id,confirmed=false)=>boolean. Unknown/disabled/busy actions do nothing. A confirm action requires a separate confirmed call. Publishes select only after a successful current host result and accepted Drawer close.'
+  back: Leave inline confirmation and clear its error, retaining the action list. Disabled while executing.
+slots:
+  action: Replace action label/description with action variable. Component owns the action button, disabled state and execution.
+events:
+  change: Inherited boolean open/terminal-close for $bind; native controls are not sheet values.
+  opened: Inherited once per logical cycle after visible opening.
+  beforeclose: Inherited cancelable close result; host should put business validation in execute before persistence.
+  closed: 'Inherited terminal {reason,value?}; a confirmed action value is {id,value}.'
+  cancel: Inherited non-confirmed terminal reason.
+  beforeselect: Cancelable action record before invoking execute; preserving the sheet on veto.
+  select: '{id,value} after successful current action execution; close animation may still be finishing. Host may navigate from this event; removal completes physical cleanup.'
+rules:
+  - Shared Drawer owns portal, scroll lock, focus, safe-area footer, responsive placement, nested suspension and disposal. SidePanel remains a non-modal resource workspace.
+  - Each action has a clear verb and consequence. Dangerous actions use danger plus confirm text, not color alone. Disabled actions stay visible with meaningful descriptions; long labels wrap.
+  - Entering inline confirmation focuses Go back, never the destructive confirmation. Going back restores the invoking action. While executing, action/confirmation buttons are disabled and a real working state is shown; header close and Escape can still cancel. Cancellation/reconfiguration/removal aborts and invalidates pending results. Failed execution stays open for explicit retry; no fake progress or hidden retry queue.
+  - Do not implement HTTP, persistence or Hash navigation inside the component. Hosts bind one open flag, execute their domain action, and retain their original validation and save boundaries. Use inline confirmation instead of opening a separate Dialog over the sheet.
+tests: [ActionSheet.test.yaml]
+examples:
+  booking: |
+    <ActionSheet title="{#Appointment actions#}" $bind="Hash.bookingActions"
+      $.actions="bookingState.actions" $.execute="runBookingAction"
+      $onselect="openBookingResult(event.detail)"></ActionSheet>
+  configuration: |
+    // Snapshot action configuration when opening, rather than rebuilding it
+    // from data that execute itself will change. Reconfiguration aborts work.
+    bookingState.actions = [{id:'cancel',label:'{#Cancel appointment#}',danger:true,
+      confirm:'{#Cancel this appointment and release its time slot?#}'}]
+    Hash.go({bookingActions:true})

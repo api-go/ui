@@ -1,0 +1,37 @@
+{
+  "date": "2026-10-30",
+  "sourceMasterCommit": "178ac12",
+  "scope": [
+    "Drawer",
+    "ActionSheet",
+    "DrawerFrame"
+  ],
+  "build": "npm run build passed: 53 contracts, 42 public components, 75 module files",
+  "browser": "Codex in-app browser",
+  "results": [
+    {
+      "viewport": "default",
+      "Drawer": {
+        "passed": 9,
+        "failed": 0
+      },
+      "ActionSheet": {
+        "passed": 6,
+        "failed": 0
+      }
+    },
+    {
+      "viewport": "390x844",
+      "Drawer": {
+        "passed": 9,
+        "failed": 0
+      },
+      "ActionSheet": {
+        "passed": 6,
+        "failed": 0
+      }
+    }
+  ],
+  "console": "No warnings or errors observed on the affected contract pages",
+  "release": "Local source commit; existing version retained; no tag, push, npm publication or standalone loader update"
+}

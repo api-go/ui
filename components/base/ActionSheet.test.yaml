@@ -1,0 +1,87 @@
+timeout: 30000
+testData: {open: false}
+cases:
+  - name: bound action has one host execution result and custom content
+    covers: [properties.value, properties.actions, properties.execute, methods.show, events.change, events.opened, events.closed, events.select, slots.action]
+    attributes: {id: subject, title: Appointment actions, description: Choose one operation, placement: bottom, '$bind': testData.open, '$.actions': "[{id:'edit',label:'Edit',icon:'pencil',description:'Change time'},{id:'blocked',label:'Unavailable',disabled:true}]", '$.execute': "async action=>({value:{route:action.id}})"}
+    slots: {action: '<span class="custom-action" $text="action.label"></span>'}
+    actions:
+      - script: "subject.show()"
+      - wait: 500
+      - call: {method: choose, args: [blocked]}
+      - script: "return subject.value"
+      - click: {selector: '.offcanvas.show .custom-action'}
+      - wait: 500
+    after:
+      - property: {path: subject.value, equals: false}
+      - data: {path: testData.open, equals: false}
+      - event: {name: select, count: 1, last: {id: edit, value: {route: edit}}}
+      - event: {name: change, count: 2}
+      - event: {name: opened, count: 1}
+      - event: {name: closed, count: 1}
+  - name: destructive confirmation back failure and retry keep one overlay
+    covers: [methods.show, methods.back, events.beforeselect]
+    attributes: {id: subject, '$.actions': "[{id:'cancel',label:'Cancel appointment',danger:true,confirm:'Release this reserved time?'}]"}
+    actions:
+      - script: "let attempt=0;subject.execute=async()=>++attempt===1?{error:'Save failed. Retry.'}:{value:42};subject.show()"
+      - wait: 500
+      - call: {method: choose, args: [cancel]}
+      - script: "return subject.state.confirming==='cancel'&&!subject.state.busy"
+      - call: {method: back}
+      - script: "return subject.state.confirming===''"
+      - call: {method: choose, args: [cancel]}
+      - call: {method: choose, args: [cancel, true]}
+      - script: "return subject.value&&subject.state.error==='Save failed. Retry.'&&document.querySelectorAll('.offcanvas-backdrop').length===1"
+      - call: {method: choose, args: [cancel, true]}
+      - wait: 500
+    after:
+      - event: {name: beforeselect, count: 2}
+      - event: {name: select, count: 1, last: {id: cancel, value: 42}}
+      - dom: {selector: '.offcanvas-backdrop', count: 0}
+  - name: cancellation aborts and rejects late async action results
+    covers: [methods.show, methods.cancel, events.cancel]
+    attributes: {id: subject, '$.actions': "[{id:'slow',label:'Slow action'}]"}
+    actions:
+      - script: "subject.show()"
+      - wait: 500
+      - script: |
+          let finish,signal;subject.execute=(action,context)=>{signal=context.signal;return new Promise(r=>finish=r)};
+          const pending=subject.choose('slow');if(!subject.state.busy)throw Error('No busy state');subject.cancel();finish({value:'late'});if(await pending||!signal.aborted)throw Error('Canceled result accepted');
+      - wait: 500
+    after:
+      - event: {name: select, count: 0}
+      - event: {name: cancel, count: 1}
+  - name: beforeselect veto and explicit inherited close preserve a single boundary
+    covers: [methods.show, methods.close, events.beforeclose]
+    attributes: {id: subject, '$.actions': "[{id:'action',label:'Run'}]"}
+    actions:
+      - script: "subject.show()"
+      - wait: 500
+      - prevent: beforeselect
+      - call: {method: choose, args: [action]}
+      - script: "return subject.value"
+      - call: {method: close, args: [external]}
+      - wait: 500
+    after:
+      - event: {name: beforeclose, count: 1}
+      - event: {name: select, count: 0}
+  - name: rejected and superseded actions remain safe and duplicate ids do not replace configuration
+    attributes: {id: subject, '$.actions': "[{id:'run',label:'Run'}]"}
+    actions:
+      - script: "subject.show()"
+      - wait: 500
+      - script: "subject.execute=async()=>{throw Error('fixture')};await subject.choose('run');if(!subject.state.error||!subject.value)throw Error('Failure hidden');try{subject.actions=[{id:'same'},{id:'same'}];throw Error('accepted')}catch(e){if(e.message==='accepted')throw e}"
+      - call: {method: cancel}
+      - wait: 500
+    after:
+      - property: {path: subject.actions.length, equals: 1}
+      - event: {name: select, count: 0}
+  - name: explicit null result is preserved and replacing actions aborts stale work
+    attributes: {id: subject}
+    actions:
+      - script: |
+          subject.actions=[{id:'one',label:'One'}];subject.execute=async()=>({value:null});const first=subject.show();await new Promise(r=>setTimeout(r,500));await subject.choose('one');if((await first).value.value!==null)throw Error('Explicit null was replaced');
+          let complete,signal;subject.execute=(_,context)=>{signal=context.signal;return new Promise(r=>complete=r)};const second=subject.show();await new Promise(r=>setTimeout(r,500));const pending=subject.choose('one');subject.actions=[{id:'two',label:'Two'}];complete({value:'late'});await pending;if(!signal.aborted||!subject.value)throw Error('Reconfiguration accepted stale completion');subject.cancel();await second;
+    after:
+      - event: {name: select, count: 1}
+      - dom: {selector: '.offcanvas-backdrop', count: 0}

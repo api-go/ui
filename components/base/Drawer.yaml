@@ -1,0 +1,46 @@
+name: Drawer
+kind: component
+src: /ui/components/base/Drawer.js
+dependencies: [UUID, Disposer, /ui/utilities/DrawerFrame.js]
+purpose: Modal Bootstrap Offcanvas with retained slotted content, responsive placement and a single physical overlay stack.
+attributes:
+  placement: 'end (default), start, top or bottom. Side placements adapt to bottom below 576px without remounting controls.'
+  noadaptive: Keep the specified placement at narrow viewport widths.
+  static: Prevent implicit Escape/backdrop dismissal; explicit close/cancel remain available.
+  title: Default accessible heading; may instead bind state.title.
+  body-class: 'Body spacing classes, default p-3. Use p-0 when a composed PagedList already owns gutters.'
+  width: 'Optional side width CSS value, clipped to viewport width; default min(100vw,32rem).'
+  height: 'Optional top/bottom height CSS value; default auto, capped at 90dvh.'
+properties:
+  value: 'Boolean logical open state, $bind compatible. External true/false is authoritative and silent; false cancels even if beforeclose would prevent a user dismissal.'
+state:
+  title: Accessible visible heading, reactive.
+methods:
+  show: 'show()=>Promise<{reason,value?}> resolved after terminal close. Repeated open calls share the cycle; calls during closing queue a fresh cycle. A foreign Modal/unmanaged Offcanvas blocks opening with reason blocked. No history is created by the component.'
+  close: 'close(value)=>boolean accepts a result and closes with reason confirm, subject to beforeclose.'
+  cancel: 'cancel(reason=cancel)=>boolean closes without a confirmed value, subject to beforeclose. Closing a parent cancels descendants with reason parent. Removal settles reason removed.'
+events:
+  change: 'Boolean for user/public-method open/terminal-close. Binding restore is silent; physical parent suspension does not publish false.'
+  opened: Once per logical opening after the first visible transition; not repeated on resume.
+  beforeclose: 'Cancelable {reason,value?} before user/explicit close. Not emitted for authoritative binding/removal or physical suspension. Host owns dirty navigation guards and business validation.'
+  closed: 'Terminal {reason,value?}; reasons confirm/cancel/close/escape/dismiss/bind/parent. Detached removal still resolves show(), without publishing into an unloaded host.'
+  cancel: '{reason} for a terminal non-confirmed close; no business value is committed.'
+slots:
+  body: Retained content; owns the scroll region. Put a native form or changebind scope inside this slot, not around the Drawer host.
+  footer: Stable actions outside body scrolling. Omitted footer is hidden; use native form=id for buttons submitting a body form.
+rules:
+  - This is modal UI, distinct from non-modal SidePanel resource workspaces and SplitPane navigation. It does not own resources, business drafts, requests or Hash.
+  - Surface is portalled after binding initialization to escape transformed/overflow ancestors. The host remains View-owned; removal closes/disposes the surface, backdrop and scroll lock. Native form/changebind ancestry must be contained in the body slot. Existing directives and draft objects retain identity.
+  - Nearest ui-default/ui-sm/ui-lg, ui-link and data-bs-theme are retained by the surface and tracked on ancestor changes; no density-based breakpoints or fixed control boxes.
+  - One physical Bootstrap overlay is active. Nested Drawer/ActionSheet suspends the parent, retaining DOM and logical value; closing the child resumes the parent's Bootstrap focus trap and previous focused control. A parent close/removal also cancels children. No private Bootstrap fields are used.
+  - Do not open an unmanaged Modal/Offcanvas while this stack is active. Close the current Drawer before opening other overlay families; ActionSheet provides inline destructive confirmation. Existing foreign overlays block new Drawer opening instead of corrupting scroll/focus ownership.
+  - Escape, backdrop, explicit actions, resize during transition, queued reopen, removal and canceled beforeclose must leave at most one backdrop and restore connected focus. Inner native change events are not public Drawer changes.
+  - Bind namespaced Hash booleans when Back/reload/copied links should restore the overlay. Host owns route normalization and unsaved-change policy; the component never pushes history or copies drafts into a URL.
+tests: [Drawer.test.yaml]
+examples:
+  host: |
+    <button $onclick="Hash.go({productPicker:true})">{#Choose products#}</button>
+    <Drawer id="productDrawer" title="{#Choose products#}" $bind="Hash.productPicker">
+      <div slot="body" data-no-changebind>Host-owned selection controls</div>
+      <template slot="footer"><button class="btn btn-link" $onclick="productDrawer.cancel()">{#Cancel#}</button><button class="btn btn-primary" $onclick="productDrawer.close(selectedIds)">{#Confirm#}</button></template>
+    </Drawer>

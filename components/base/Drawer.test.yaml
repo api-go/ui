@@ -1,0 +1,124 @@
+timeout: 30000
+testData: {open: false}
+cases:
+  - name: confirmed binding result retains the same slotted controls and accessible title
+    covers: [methods.show, properties.value, events.opened, events.closed]
+    attributes: {id: subject, title: Choose products, '$bind': testData.open, '$.state.title': "'Product selection'"}
+    slots:
+      body: '<label>Name<input class="drawer-draft form-control" aria-label="Name"></label>'
+      footer: '<button class="btn btn-primary" type="button" $onclick="this.close(7)">Confirm item</button>'
+    actions:
+      - script: "globalThis.drawerResult=subject.show()"
+      - wait: 500
+      - script: "globalThis.drawerInput=document.querySelector('.offcanvas.show input')"
+      - fill: {selector: '.offcanvas.show .drawer-draft', value: Retained}
+      - script: "const p=document.querySelector('.offcanvas.show');if(p.getAttribute('aria-labelledby')!==p.querySelector('h2').id)throw Error('No accessible heading');return true"
+      - call: {method: close, args: [7]}
+      - wait: 500
+      - script: "const result=await drawerResult;if(result.reason!=='confirm'||result.value!==7)throw Error('Wrong result');globalThis.drawerAgain=subject.show()"
+      - wait: 500
+      - script: "if(document.querySelector('.offcanvas.show input')!==drawerInput||drawerInput.value!=='Retained')throw Error('Draft was remounted')"
+      - call: {method: cancel}
+      - wait: 500
+    after:
+      - property: {path: subject.value, equals: false}
+      - property: {path: subject.state.title, equals: Product selection}
+      - data: {path: testData.open, equals: false}
+      - event: {name: opened, count: 2}
+      - event: {name: cancel, count: 1}
+      - event: {name: closed, count: 2}
+      - event: {name: change, count: 4}
+  - name: start placement fixed on narrow screens and user close may be vetoed
+    attributes: {id: subject, placement: start, noadaptive: true}
+    slots: {body: '<div>Left content</div>'}
+    actions:
+      - script: "subject.show()"
+      - wait: 500
+      - prevent: beforeclose
+      - call: {method: cancel}
+    after:
+      - dom: {selector: '.offcanvas.show.offcanvas-start', count: 1}
+      - property: {path: subject.value, equals: true}
+      - event: {name: beforeclose, count: 1}
+      - script: "subject.value=false;await new Promise(r=>setTimeout(r,500));return !document.querySelector('.offcanvas-backdrop')"
+  - name: top and bottom placement use native scroll ownership
+    attributes: {id: subject, placement: top}
+    slots: {body: '<div>Scrollable content</div>'}
+    actions:
+      - script: "subject.show()"
+      - wait: 500
+    after:
+      - dom: {selector: '.offcanvas.show.offcanvas-top', count: 1}
+      - script: "const body=document.querySelector('.offcanvas.show .drawer-body');return getComputedStyle(body).overflowY==='auto'"
+      - script: "subject.cancel();await new Promise(r=>setTimeout(r,500));return true"
+  - name: static bottom prevents implicit escape but explicit cancellation works
+    attributes: {id: subject, placement: bottom, static: true, body-class: p-0, width: 30rem, height: 60dvh}
+    slots: {body: '<div>Static action</div>'}
+    actions:
+      - script: "subject.show()"
+      - wait: 500
+      - script: "document.dispatchEvent(new KeyboardEvent('keydown',{key:'Escape',bubbles:true}));return subject.value"
+      - call: {method: cancel}
+      - wait: 500
+    after:
+      - dom: {selector: '.offcanvas-backdrop', count: 0}
+      - script: "const p=document.querySelector('[data-drawer-surface]');return p.style.getPropertyValue('--bs-offcanvas-width')==='30rem'&&p.style.getPropertyValue('--bs-offcanvas-height')==='60dvh'&&getComputedStyle(p.querySelector('.drawer-body')).padding==='0px'"
+  - name: nested drawers suspend and resume without losing focus or producing two backdrops
+    covers: [methods.show]
+    attributes: {id: subject, placement: end}
+    slots: {body: '<input class="parent-draft form-control" value="Retained">'}
+    actions:
+      - script: "subject.show()"
+      - wait: 500
+      - script: |
+          const parent=document.querySelector('.offcanvas.show'),input=parent.querySelector('input');input.focus();
+          const child=document.createElement('Drawer');child.setAttribute('title','Child');child.innerHTML='<div slot="body"><button type="button">Child action</button></div>';parent.querySelector('.drawer-body').append(child);
+          await new Promise(r=>setTimeout(r,30));const pending=child.show();await new Promise(r=>setTimeout(r,850));
+          if(document.querySelectorAll('.offcanvas-backdrop').length!==1||!subject.value||subject.state.phase!=='suspended')throw Error('Nested physical stack failed');
+          child.cancel();await pending;await new Promise(r=>setTimeout(r,500));
+          if(document.activeElement!==input||input.value!=='Retained'||document.querySelectorAll('.offcanvas.show').length!==1)throw Error('Parent resume lost focus or draft');
+          child.remove();subject.cancel();await new Promise(r=>setTimeout(r,500));
+    after:
+      - dom: {selector: '.offcanvas-backdrop', count: 0}
+  - name: removal during opening releases the native instance backdrop and body lock
+    attributes: {id: subject}
+    slots: {body: '<input class="form-control">'}
+    actions:
+      - script: |
+          const pending=subject.show();await new Promise(r=>setTimeout(r,80));const panel=document.querySelector('[data-drawer-surface]');subject.remove();
+          const result=await pending;if(result.reason!=='removed')throw Error('Removed cycle unresolved');await new Promise(r=>setTimeout(r,50));
+          if(bootstrap.Offcanvas.getInstance(panel))throw Error('Instance not disposed');
+    after:
+      - dom: {selector: '.offcanvas-backdrop', count: 0}
+      - script: "return document.body.style.overflow!=='hidden'"
+  - name: early Escape and a reopen queued during closing complete in order
+    attributes: {id: subject}
+    slots: {body: '<div>Queued cycle</div>'}
+    actions:
+      - script: |
+          const first=subject.show();document.dispatchEvent(new KeyboardEvent('keydown',{key:'Escape',bubbles:true}));
+          if((await first).reason!=='escape')throw Error('Opening escape was ignored');
+          const second=subject.show();await new Promise(r=>setTimeout(r,500));subject.cancel();const third=subject.show();await second;await new Promise(r=>setTimeout(r,850));
+          if(!subject.value||document.querySelectorAll('.offcanvas-backdrop').length!==1)throw Error('Queued reopen was lost');subject.cancel();await third;
+    after:
+      - dom: {selector: '.offcanvas-backdrop', count: 0}
+  - name: foreign modal blocks opening without claiming its scroll or backdrop
+    attributes: {id: subject}
+    actions:
+      - script: |
+          const foreign=document.createElement('div');foreign.className='modal show';document.body.append(foreign);
+          try{const result=await subject.show();if(result.reason!=='blocked'||subject.value)throw Error('Foreign overlay was not respected')}finally{foreign.remove()}
+    after:
+      - dom: {selector: '.offcanvas-backdrop', count: 0}
+  - name: removing suspended parent cancels active child and releases both portals
+    attributes: {id: subject}
+    slots: {body: '<div>Parent</div>'}
+    actions:
+      - script: |
+          const parentResult=subject.show();await new Promise(r=>setTimeout(r,500));
+          const child=document.createElement('Drawer');child.innerHTML='<div slot="body">Child</div>';subject.ownerDocument.querySelector('.offcanvas.show .drawer-body').append(child);await new Promise(r=>setTimeout(r,40));
+          const childResult=child.show();await new Promise(r=>setTimeout(r,850));subject.remove();
+          const results=await Promise.all([parentResult,childResult]);if(results[0].reason!=='removed'||results[1].reason!=='parent')throw Error('Parent removal did not cancel child');await new Promise(r=>setTimeout(r,100));
+    after:
+      - dom: {selector: '.offcanvas-backdrop', count: 0}
+      - script: "return document.body.style.overflow!=='hidden'&&!document.querySelector('[data-drawer-surface]')"

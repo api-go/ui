@@ -28,3 +28,7 @@ Start with [llms.txt](llms.txt), choose a page type and open [the template galle
 PagedList provides lightweight list/card views, schema filters, selection slots and an independent Pagination connected through ListDataSource. Use ui-link for shared link buttons and underlined controls; ui-toolbar standardizes density-aware spacing. AutoForm validates the complete draft asynchronously and reveals field errors before saving.
 
 See [UI design SOP](Interface-Design.md) and the three runnable systems in [templates](templates/index.html): admin layouts share business Views; mobile navigation adapts across bottom/rail/sidebar; desktop uses a resizable resource list and a narrow drawer. Theme declarations use static `dark light` meta and shared data-bs-theme CSS.
+
+## Source update (2026-10-30)
+
+Drawer and ActionSheet are available in the source tree with their YAML contracts and executable examples. The shared DrawerFrame utility loads before either component, including when only ActionSheet is requested. Published CDN references retain the existing release version.

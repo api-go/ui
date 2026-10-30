@@ -2,6 +2,9 @@
 
 ## Unreleased — 2026-10-30
 
+- Add Drawer and ActionSheet contracts and examples from Master.
+- Load their shared DrawerFrame utility before component registration.
+
 - 新增交互式场景模板与 ResourcePicker、TreeSelect、FileUpload、ImageViewer、StepForm、Calendar。
 - 增强日期时间及重复明细校验，修复 Modal/Dialog 焦点与取消、List 虚拟窗口及空摘要行为。
 - 同步应用层 UI SOP、覆盖矩阵和下一轮移动交互计划；保留 State 和既有树能力。

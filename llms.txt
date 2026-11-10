@@ -1,10 +1,10 @@
-# @apigo.cc/ui
+# @api-go/ui
 
 > AI-first, build-free native JavaScript UI framework. Start here: classify the page, read its composition contract, load only the capabilities it uses, then verify real behavior.
 
-Version: 1.0.10
+Version: 1.0.11
 
-Load `<script src="https://cdn.jsdelivr.net/npm/@apigo.cc/ui@1.0.10/ui.js" components="base,form,data"></script>` as a normal head script. All dependencies load from the same pinned package.
+Load `<script src="https://cdn.jsdelivr.net/npm/@api-go/ui@1.0.11/ui.js" components="base,form,data"></script>` as a normal head script. All dependencies load from the same pinned package.
 
 ## Start with the interface type
 
@@ -63,9 +63,9 @@ Templates use relative package-owned assets and work on ordinary static hosting 
 
 Choose one version-pinned npm CDN. `ui.js` loads all adjacent framework, utility, and component files from the same origin.
 
-- jsDelivr (primary): `https://cdn.jsdelivr.net/npm/@apigo.cc/ui@1.0.10/ui.js`
-- UNPKG (alternative): `https://unpkg.com/@apigo.cc/ui@1.0.10/ui.js`
-- JSDMirror (China-optimized alternative): `https://cdn.jsdmirror.com/npm/@apigo.cc/ui@1.0.10/ui.js`
+- jsDelivr (primary): `https://cdn.jsdelivr.net/npm/@api-go/ui@1.0.11/ui.js`
+- UNPKG (alternative): `https://unpkg.com/@api-go/ui@1.0.11/ui.js`
+- JSDMirror (China-optimized alternative): `https://cdn.jsdmirror.com/npm/@api-go/ui@1.0.11/ui.js`
 
 Load the chosen URL in `<head>` without `async`, `defer`, or `type="module"`. A minimal complete published-package page is:
 
@@ -77,7 +77,7 @@ When the hosting service manages static asset versions and conditional caching, 
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
-  <script src="https://cdn.jsdelivr.net/npm/@apigo.cc/ui@1.0.10/ui.js" components="List"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@api-go/ui@1.0.11/ui.js" components="List"></script>
   <script>
     const users = [{ id: 'ada', label: 'Ada', summary: 'Admin' }]
   </script>

@@ -17,7 +17,7 @@ async function validateDocs(){
    if(d.coverage.missing.length||d.coverage.unknown.length)errors.push(c.name+' coverage '+JSON.stringify(d.coverage))
   }
  }
- const versions=[...llms.matchAll(/@apigo\.cc\/ui@([^/"\s]+)/g)].map(m=>m[1]);if(!versions.length||versions.some(v=>v!==pkg.version))errors.push('llms version mismatch')
+ const versions=[...llms.matchAll(/@api-go\/ui@([^/"\s]+)/g)].map(m=>m[1]);if(!versions.length||versions.some(v=>v!==pkg.version))errors.push('llms version mismatch')
  if(errors.length)throw new Error(errors.join('\n'))
  console.log(`Validated ${Object.keys(all).length} contracts and ${implemented.length} public components`)
 }

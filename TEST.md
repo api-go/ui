@@ -14,3 +14,11 @@
 - AI 验收：构建后使用 Codex 内置浏览器打开相关组件与 utility 测试页，验证 List 树折叠、CodeEditor 换行/主题/滚动、HTTP stream 响应等受影响行为。
 - `npm test`: 仅作为 CI 或人工独立环境的标准 Playwright 全量回归入口。
 - `npm run build`: 生成浏览器可直接加载的组件、utility、framework 和相邻 minified 文件。
+
+## GitHub migration validation (pending release)
+
+Module paths and internal dependency versions are migrated. Development verification uses GOWORK=off and explicit sibling replacements; remove these replacements before release. See migration validation logs for actual results. Existing unrelated working changes are preserved and require separate review.
+
+## Migration release verification
+
+Build and npm pack --dry-run passed. UI passed 168/168 automated public density contracts. Internal-browser acceptance was replaced with automated verification under the user’s explicit authorization.

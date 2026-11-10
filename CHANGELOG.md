@@ -1,3 +1,7 @@
+## [v1.0.11] - 2026-11-10
+
+- 迁移至 github.com/api-go/ui，同步内部模块路径与依赖。
+
 # Changelog
 
 ## Unreleased — 2026-10-30

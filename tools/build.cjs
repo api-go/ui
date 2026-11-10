@@ -46,7 +46,7 @@ const translationTexts = source => {
   const llmsFile = join(root, 'llms.txt');
   const llmsSource = await readFile(llmsFile, 'utf8');
   const versionLine = /^Version: \S+$/m;
-  const cdnVersion = /(@apigo\.cc\/ui@)[^/"\s]+(?=\/ui(?:\.min)?\.js)/g;
+  const cdnVersion = /(@api-go\/ui@)[^/"\s]+(?=\/ui(?:\.min)?\.js)/g;
   if (!versionLine.test(llmsSource) || !cdnVersion.test(llmsSource)) throw new Error('llms.txt version markers are missing');
   cdnVersion.lastIndex = 0;
   const builtLlms = llmsSource
@@ -86,5 +86,5 @@ const translationTexts = source => {
   };
   await Promise.all([...sources, uiFile].map(minify));
 
-  console.log(`Built @apigo.cc/ui (${sources.length} module files; cache ${buildVersion})`);
+  console.log(`Built @api-go/ui (${sources.length} module files; cache ${buildVersion})`);
 })();

@@ -104,7 +104,7 @@ ${lineControls}:disabled {color: var(--bs-tertiary-color);}
 	document.head.appendChild(style);
 })();
 (function(global, factory) {
-	typeof exports === "object" && typeof module !== "undefined" ? factory(exports, require("@apigo.cc/state")) : typeof define === "function" && define.amd ? define(["exports", "@apigo.cc/state"], factory) : (global = typeof globalThis !== "undefined" ? globalThis : global || self, factory(global.ApigoBootstrap = global.ApigoBootstrap || {}, global.ApigoState));
+	typeof exports === "object" && typeof module !== "undefined" ? factory(exports, require("@api-go/state")) : typeof define === "function" && define.amd ? define(["exports", "@api-go/state"], factory) : (global = typeof globalThis !== "undefined" ? globalThis : global || self, factory(global.ApigoBootstrap = global.ApigoBootstrap || {}, global.ApigoState));
 })(this, function(exports, _apigo_cc_state) {
 	Object.defineProperties(exports, {
 		__esModule: { value: true },
@@ -4937,7 +4937,7 @@ ${lineControls}:disabled {color: var(--bs-tertiary-color);}
 		}
 	};
 	/**
-	* @apigo.cc/bootstrap
+	* @api-go/bootstrap
 	* 自包含的 Bootstrap 5.3 集成引擎
 	*/
 	var Bootstrap = {

@@ -9,7 +9,7 @@ Unreleased repository update: 15 interactive template systems, confirmed resourc
 Pages load `ui.js` directly from a CDN and explicitly declare required public APIs:
 
 ```html
-<script src="https://cdn.jsdelivr.net/npm/@api-go/ui@1.0.10/ui.js" components="base,form"></script>
+<script src="https://cdn.jsdelivr.net/npm/@api-go/ui@1.0.12/ui.js" components="base,form"></script>
 ```
 
 `ui.js` always loads the framework and core utilities. Specialized utilities and embedded libraries are resolved automatically from component dependencies. The `components` attribute accepts public component names and the `base`, `form`, `data`, and `editor` categories; both forms can be mixed.
